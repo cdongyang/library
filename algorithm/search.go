@@ -11,20 +11,20 @@ type Interface interface {
 }
 
 type SearchIntSlice struct {
-	data []int
-	key  int
+	Data []int
+	Key  int
 }
 
-//if use *SearchInt32Slice there will cause 1 allocs/op and the time use will become almost double
+//if use *SearchInt32Slice there will cause 1 allocs/op and the time use will become double or more
 
 func (s SearchIntSlice) Less(i int) bool {
-	return s.data[i] < s.key
+	return s.Data[i] < s.Key
 }
 func (s SearchIntSlice) Greater(i int) bool {
-	return s.data[i] > s.key
+	return s.Data[i] > s.Key
 }
 func (s SearchIntSlice) Len() int {
-	return len(s.data)
+	return len(s.Data)
 }
 func (s SearchIntSlice) LowerBound() int {
 	return lowerBound(s.Less, s.Len())

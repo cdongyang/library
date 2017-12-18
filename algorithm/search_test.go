@@ -1,7 +1,8 @@
-package algorithm
+package algorithm_test
 
 import "testing"
 import "fmt"
+import . "github.com/cdongyang/library/algorithm"
 
 var intSlice = []int{1, 2, 3, 3, 3, 4, 4, 5}
 
