@@ -7,8 +7,8 @@ import . "github.com/cdongyang/library/algorithm"
 var intSlice = []int{1, 2, 3, 3, 3, 4, 4, 5}
 
 func ExampleSliceLowerBound() {
-	id := SliceLowerBound(intSlice, func(i int) bool {
-		return intSlice[i] < 3
+	id := SliceLowerBound(intSlice, func(i int) int {
+		return intSlice[i] - 3
 	})
 	fmt.Println(id, intSlice[id])
 	// Output: 2 3
@@ -25,8 +25,8 @@ func ExampleUpperBound() {
 	// Output: 5 4
 }
 func ExampleSliceUpperBound() {
-	id := SliceUpperBound(intSlice, func(i int) bool {
-		return intSlice[i] > 3
+	id := SliceUpperBound(intSlice, func(i int) int {
+		return intSlice[i] - 3
 	})
 	fmt.Println(id, intSlice[id])
 	// Output: 5 4
@@ -77,8 +77,8 @@ func BenchmarkLowerBound(t *testing.B) {
 
 func BenchmarkSliceLowerBound(t *testing.B) {
 	for i := 0; i < t.N; i++ {
-		SliceLowerBound(intSlice1M, func(i int) bool {
-			return intSlice1M[i] < intSlice1MKey
+		SliceLowerBound(intSlice1M, func(i int) int {
+			return intSlice1M[i] - intSlice1MKey
 		})
 	}
 }
@@ -117,8 +117,8 @@ func BenchmarkUpperBound(t *testing.B) {
 
 func BenchmarkSliceUpperBound(t *testing.B) {
 	for i := 0; i < t.N; i++ {
-		SliceUpperBound(intSlice1M, func(i int) bool {
-			return intSlice1M[i] > intSlice1MKey
+		SliceUpperBound(intSlice1M, func(i int) int {
+			return intSlice1M[i] - intSlice1MKey
 		})
 	}
 }
