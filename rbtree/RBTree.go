@@ -3,9 +3,7 @@ package rbtree
 type Iterator interface {
 	Next(Iterator) Iterator
 	Last(Iterator) Iterator
-	SetKey(interface{})
-	GetKey() interface{}
-	Copy(Iterator, Iterator)
+	Copy(des Iterator, src Iterator)
 
 	leftChild() Iterator
 	leftChildPoiter() *Iterator
@@ -20,6 +18,11 @@ type Iterator interface {
 	init(*RBTree)
 }
 
+//RBTreeNode is the node of RBTree,you can inherit RBTreeNode to build you own tree node like
+//	type mytreeNode struct {
+//		RBTreeNode
+//		key interface{}
+//	}
 type RBTreeNode struct {
 	left, right, parent Iterator
 	color               bool
@@ -77,17 +80,12 @@ func (node *RBTreeNode) getColor() bool {
 	return node.color
 }
 
-func (node *RBTreeNode) SetKey(interface{}) {
-}
-
-func (node *RBTreeNode) GetKey() interface{} {
-	return nil
-}
-
+//Copy copy the key and val from src to des Iterator
 func (node *RBTreeNode) Copy(des, src Iterator) {
-	des.SetKey(src.GetKey())
+	panic("copy nothing")
 }
 
+//Next find the next Iterator follow by root
 func (node *RBTreeNode) Next(root Iterator) Iterator {
 	var null = node.tree.null
 	if root.rightChild() != null {
@@ -106,6 +104,7 @@ func (node *RBTreeNode) Next(root Iterator) Iterator {
 	return root.getParent()
 }
 
+//Last find the last Iterator follow by root
 func (node *RBTreeNode) Last(root Iterator) Iterator {
 	var null = node.tree.null
 	if root.leftChild() != null {
@@ -121,6 +120,7 @@ func (node *RBTreeNode) Last(root Iterator) Iterator {
 	return root.getParent()
 }
 
+//RBTree is a red-black tree
 type RBTree struct {
 	size                   int
 	null, root, begin, end Iterator
@@ -129,6 +129,7 @@ type RBTree struct {
 	deleteElem             func(Iterator)
 }
 
+//NewRBTree return a poiter of RBTree with the nil value of elem type Iterator,compare func,newElem func,deleteElem func
 func NewRBTree(
 	root Iterator,
 	compare func(Iterator, Iterator) int,
@@ -162,6 +163,7 @@ func (t *RBTree) Empty() bool {
 	return t.size == 0
 }
 
+//Begin return the first Iterator of RBTree
 func (t *RBTree) Begin() Iterator {
 	var root = t.root
 	for root != t.null && root.leftChild() != t.null {
@@ -170,10 +172,12 @@ func (t *RBTree) Begin() Iterator {
 	return root
 }
 
+//End return the Iterator represent as the end of tree
 func (t *RBTree) End() Iterator {
 	return t.null
 }
 
+//EndNode return the last node Iterator of RBTree
 func (t *RBTree) EndNode() Iterator {
 	var root = t.root
 	for root != t.null && root.rightChild() != t.null {
@@ -182,7 +186,7 @@ func (t *RBTree) EndNode() Iterator {
 	return root
 }
 
-func (t *RBTree) LeftRoate(node Iterator) {
+func (t *RBTree) leftRoate(node Iterator) {
 	var (
 		tmp     = node.leftChild() // tmp maybe nil
 		parent  = node.getParent()
@@ -207,7 +211,7 @@ func (t *RBTree) LeftRoate(node Iterator) {
 	}
 }
 
-func (t *RBTree) RightRoate(node Iterator) {
+func (t *RBTree) rightRoate(node Iterator) {
 	var (
 		tmp     = node.rightChild()
 		parent  = node.getParent()
@@ -250,11 +254,11 @@ func (t *RBTree) insertAdjust(node Iterator) {
 	}
 	if grandpa.rightChild() == parent {
 		if parent.leftChild() == node {
-			t.RightRoate(node)
+			t.rightRoate(node)
 		} else {
 			node = node.getParent()
 		}
-		t.LeftRoate(node)
+		t.leftRoate(node)
 		//swap node.color node.left.color
 		var tmp = node.leftChild().getColor()
 		node.leftChild().setColor(node.getColor())
@@ -263,11 +267,11 @@ func (t *RBTree) insertAdjust(node Iterator) {
 	}
 	if grandpa.leftChild() == parent {
 		if parent.rightChild() == node {
-			t.LeftRoate(node)
+			t.leftRoate(node)
 		} else {
 			node = node.getParent()
 		}
-		t.RightRoate(node)
+		t.rightRoate(node)
 		//swap root.color root.right.color
 		var tmp = node.rightChild().getColor()
 		node.rightChild().setColor(node.getColor())
@@ -415,23 +419,23 @@ func (t *RBTree) eraseAdjust(node, parent Iterator) {
 			if brother != t.null && brother.leftChild() != t.null && brother.leftChild().getColor() == red {
 				//brother's children are red and ?
 				parent.setColor(black)
-				t.RightRoate(brother.leftChild())
-				t.LeftRoate(parent.rightChild())
+				t.rightRoate(brother.leftChild())
+				t.leftRoate(parent.rightChild())
 				return
 			}
 			//brother's children are black and red
-			t.LeftRoate(brother)
+			t.leftRoate(brother)
 			return
 		} else {
 			if brother != t.null && brother.rightChild() != t.null && brother.rightChild().getColor() == red {
 				//brother's children are ? and red
 				parent.setColor(black)
-				t.LeftRoate(brother.rightChild())
-				t.RightRoate(parent.leftChild())
+				t.leftRoate(brother.rightChild())
+				t.rightRoate(parent.leftChild())
 				return
 			}
 			//brother's children are red and black
-			t.RightRoate(brother)
+			t.rightRoate(brother)
 			return
 		}
 	}
@@ -443,9 +447,9 @@ func (t *RBTree) eraseAdjust(node, parent Iterator) {
 		parent.setColor(brother.getColor())
 		brother.setColor(tmp)
 		if parent.leftChild() == node {
-			t.LeftRoate(brother)
+			t.leftRoate(brother)
 		} else {
-			t.RightRoate(brother)
+			t.rightRoate(brother)
 		}
 		//after deal in the path of node and parent is still need a black node,adjust again
 		t.eraseAdjust(node, parent)
@@ -463,25 +467,25 @@ func (t *RBTree) eraseAdjust(node, parent Iterator) {
 		if brother.leftChild() != t.null && brother.leftChild().getColor() == red {
 			//brother's children are red and ?
 			brother.leftChild().setColor(black)
-			t.RightRoate(brother.leftChild())
-			t.LeftRoate(parent.rightChild())
+			t.rightRoate(brother.leftChild())
+			t.leftRoate(parent.rightChild())
 			return
 		}
 		//brother's children and black and red
 		brother.rightChild().setColor(black)
-		t.LeftRoate(brother)
+		t.leftRoate(brother)
 		return
 	} else {
 		if brother.rightChild() != t.null && brother.rightChild().getColor() == red {
 			brother.rightChild().setColor(black)
 			//brother's children are ? and red
-			t.LeftRoate(brother.rightChild())
-			t.RightRoate(parent.leftChild())
+			t.leftRoate(brother.rightChild())
+			t.rightRoate(parent.leftChild())
 			return
 		}
 		//brother's children are red and black
 		brother.leftChild().setColor(black)
-		t.RightRoate(brother)
+		t.rightRoate(brother)
 		return
 	}
 }
@@ -557,9 +561,9 @@ func (t *RBTree) eraseIterator(node Iterator) bool {
 }
 
 //Clear erase all the elem from RBTree (O(N))
-func (t *RBTree) Clear(root *Iterator) {
+func (t *RBTree) Clear() {
 	t.size = 0
-	t.clear(root)
+	t.clear(&t.root)
 }
 func (t *RBTree) clear(root *Iterator) {
 	if *root == t.null {
