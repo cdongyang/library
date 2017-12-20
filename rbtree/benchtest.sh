@@ -1,0 +1,1 @@
+GODEBUG=gctrace=1 go test -v -benchmem -bench="." -benchtime 10s
