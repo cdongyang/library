@@ -17,11 +17,8 @@ type node struct {
 	key int
 }
 
-func (n *node) GetKey() interface{} {
-	return n.key
-}
-func (n *node) SetKey(k interface{}) {
-	n.key = k.(int)
+func (n *node) Copy(des, src Iterator) {
+	des.(*node).key = src.(*node).key
 }
 
 type mytree struct {
@@ -70,17 +67,17 @@ func testRBTree(t *testing.T, length int) {
 	iter = tree.LowerBound(intSlice1K[0])
 	if iter == tree.End() {
 		//t.Fatal("UpperBound to End", intSlice1K[0], sortSlice)
-	} else if iter.(*node).GetKey() != intSlice1K[0] {
-		if iter.(*node).GetKey().(int) < intSlice1K[0] {
-			t.Fatal("LowerBound error", iter.(*node).GetKey(), intSlice1K[0])
+	} else if iter.(*node).key != intSlice1K[0] {
+		if iter.(*node).key < intSlice1K[0] {
+			t.Fatal("LowerBound error", iter.(*node).key, intSlice1K[0])
 		}
 	}
 	//test UpperBound method
 	iter = tree.UpperBound(intSlice1K[0])
 	if iter == tree.End() {
 		//t.Fatal("UpperBound to End", intSlice1K[0], sortSlice)
-	} else if iter.(*node).GetKey().(int) < intSlice1K[0] {
-		t.Fatal("UpperBound error", iter.(*node).GetKey(), intSlice1K[0])
+	} else if iter.(*node).key < intSlice1K[0] {
+		t.Fatal("UpperBound error", iter.(*node).key, intSlice1K[0])
 	}
 	//test Insert method
 	for _, val := range intSlice1K {
@@ -92,9 +89,6 @@ func testRBTree(t *testing.T, length int) {
 	}
 	var sortSlice = make([]int, len(intSlice1K))
 	copy(sortSlice, intSlice1K)
-	/*sort.Slice(sortSlice, func(i, j int) bool {
-		return sortSlice[i] < sortSlice[j]
-	})*/
 	sort.IntSlice(sortSlice).Sort()
 	var uniqueN = 1
 	for i := range sortSlice {
@@ -108,38 +102,38 @@ func testRBTree(t *testing.T, length int) {
 	iter = tree.LowerBound(intSlice1K[0])
 	if iter == tree.End() {
 		//t.Fatal("UpperBound to End", intSlice1K[0], sortSlice)
-	} else if iter.(*node).GetKey() != intSlice1K[0] {
-		if iter.(*node).GetKey().(int) < intSlice1K[0] {
-			t.Fatal("LowerBound error", iter.(*node).GetKey(), intSlice1K[0])
+	} else if iter.(*node).key != intSlice1K[0] {
+		if iter.(*node).key < intSlice1K[0] {
+			t.Fatal("LowerBound error", iter.(*node).key, intSlice1K[0])
 		}
 	}
 	//test UpperBound method
 	iter = tree.UpperBound(intSlice1K[0])
 	if iter == tree.End() {
 		//t.Fatal("UpperBound to End", intSlice1K[0], sortSlice)
-	} else if iter.(*node).GetKey().(int) < intSlice1K[0] {
-		t.Fatal("UpperBound error", iter.(*node).GetKey(), intSlice1K[0])
+	} else if iter.(*node).key < intSlice1K[0] {
+		t.Fatal("UpperBound error", iter.(*node).key, intSlice1K[0])
 	}
 	//test Begin and EndNode method
-	if tree.Begin().(*node).GetKey() != sortSlice[0] {
-		t.Fatal("begin error", tree.Begin().(*node).GetKey(), sortSlice[0])
+	if tree.Begin().(*node).key != sortSlice[0] {
+		t.Fatal("begin error", tree.Begin().(*node).key, sortSlice[0])
 	}
-	if tree.EndNode().(*node).GetKey() != sortSlice[len(sortSlice)-1] {
-		t.Fatal("endNode error", tree.Begin().(*node).GetKey(), sortSlice[len(sortSlice)-1])
+	if tree.EndNode().(*node).key != sortSlice[len(sortSlice)-1] {
+		t.Fatal("endNode error", tree.Begin().(*node).key, sortSlice[len(sortSlice)-1])
 	}
 	//test Begin and End and Next method
 	var i int
 	for it := tree.Begin(); it != tree.End(); it = it.Next(it) {
-		if it.(*node).GetKey() != sortSlice[i] {
-			t.Fatal("go through error", it.(*node).GetKey(), sortSlice[i])
+		if it.(*node).key != sortSlice[i] {
+			t.Fatal("go through error", it.(*node).key, sortSlice[i])
 		}
 		i++
 	}
 	//test EndNode and End and Last method
 	i = len(sortSlice) - 1
 	for it := tree.EndNode(); it != tree.End(); it = it.Last(it) {
-		if it.(*node).GetKey() != sortSlice[i] {
-			t.Fatal("go back tree error", it.(*node).GetKey(), sortSlice[i])
+		if it.(*node).key != sortSlice[i] {
+			t.Fatal("go back tree error", it.(*node).key, sortSlice[i])
 		}
 		i--
 	}
@@ -147,7 +141,7 @@ func testRBTree(t *testing.T, length int) {
 	iter = tree.Find(intSlice1K[0])
 	if iter == tree.End() {
 		t.Fatal("find error", intSlice1K[0])
-	} else if iter.(*node).GetKey() != intSlice1K[0] {
+	} else if iter.(*node).key != intSlice1K[0] {
 		t.Fatal("find not equal", intSlice1K[0])
 	}
 	if tree.Find(max) != tree.End() {
