@@ -33,8 +33,33 @@ func (s *SetNode) SetKey(key interface{}) {
 	s.key = key
 }
 
+func (s *SetNode) Copy(des, src Iterator) {
+	des.(*SetNode).key = src.(*SetNode).key
+}
+
 type Set struct {
 	RBTree
+}
+
+func NewSetNode(elem interface{}) *SetNode {
+	return &SetNode{key: elem}
+}
+
+func NewSet(
+	compare func(SetIterator, SetIterator) int,
+	newElem func(interface{}) SetIterator,
+	deleteElem func(SetIterator)) *Set {
+	return &Set{*NewRBTree((*SetNode)(nil),
+		func(a Iterator, b Iterator) int {
+			return compare(a.(*SetNode), b.(*SetNode))
+		},
+		func(elem interface{}) Iterator {
+			return newElem(elem)
+		},
+		func(iter Iterator) {
+			deleteElem(iter.(*SetNode))
+		},
+	)}
 }
 
 func (s *Set) Begin() SetIterator {
@@ -61,11 +86,6 @@ func (s *Set) UpperBound(elem interface{}) SetIterator {
 	return s.RBTree.UpperBound(elem).(*SetNode)
 }
 
-type MultiSet interface {
-}
-
-type Map interface {
-}
-
-type MultiMap interface {
+func (s *Set) EraseIterator(iter SetIterator) bool {
+	return s.RBTree.EraseIterator(iter)
 }

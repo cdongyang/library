@@ -80,7 +80,7 @@ func (node *RBTreeNode) getColor() bool {
 	return node.color
 }
 
-//Copy copy the key and val from src to des Iterator
+//Copy copy the key and val from src to des Iterator,inherit RBTreeNode must rewrite this func
 func (node *RBTreeNode) Copy(des, src Iterator) {
 	panic("copy nothing")
 }

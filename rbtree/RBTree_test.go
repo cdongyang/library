@@ -220,7 +220,7 @@ func memStats() {
 	fmt.Println("HeapAlloc:", mem.HeapAlloc, "HeapInuse:", mem.HeapInuse, "HeapObjects:", mem.HeapObjects, "HeapIdle", mem.HeapIdle, "HeapReleased", mem.HeapReleased, "HeapSys", mem.HeapSys)
 	runtime.GC()
 }
-func BenchmarkRBTree(b *testing.B) {
+func BenchmarkInsert(b *testing.B) {
 	var (
 		compare = func(a Iterator, b Iterator) int {
 			return a.(*node).key - b.(*node).key
@@ -247,7 +247,7 @@ func BenchmarkRBTree(b *testing.B) {
 	memStats()
 }
 
-func BenchmarkRBTreeWithPool(b *testing.B) {
+func BenchmarkInsertWithPool(b *testing.B) {
 	var (
 		nodePool = &sync.Pool{New: func() interface{} {
 			return &node{}
@@ -280,7 +280,7 @@ func BenchmarkRBTreeWithPool(b *testing.B) {
 	memStats()
 }
 
-func BenchmarkRBTreeWithArr(b *testing.B) {
+func BenchmarkInsertWithArr(b *testing.B) {
 	var (
 		/*nodePool = &sync.Pool{New: func() interface{} {
 			return &node{}
