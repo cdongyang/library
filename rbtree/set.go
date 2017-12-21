@@ -1,14 +1,14 @@
 package rbtree
 
-type Interface interface {
+type Seter interface {
 	Size() int
 	Empty() bool
-	Begin() Iterator
-	End() Iterator
-	EndNode() Iterator
-	Find(interface{}) Iterator
-	LowerBound(interface{}) Iterator
-	UpperBound(interface{}) Iterator
+	Begin() SetIterator
+	End() SetIterator
+	EndNode() SetIterator
+	Find(interface{}) SetIterator
+	LowerBound(interface{}) SetIterator
+	UpperBound(interface{}) SetIterator
 	Insert(interface{}) bool
 	Erase(interface{}) bool
 	EraseIterator(Iterator) bool
@@ -34,7 +34,7 @@ func (s *SetNode) SetKey(key interface{}) {
 }
 
 func (s *SetNode) Copy(des, src Iterator) {
-	des.(*SetNode).key = src.(*SetNode).key
+	des.(*SetNode).SetKey(src.(*SetNode).GetKey())
 }
 
 type Set struct {
@@ -45,20 +45,33 @@ func NewSetNode(elem interface{}) *SetNode {
 	return &SetNode{key: elem}
 }
 
-func NewSet(
-	compare func(SetIterator, SetIterator) int,
-	newElem func(interface{}) SetIterator,
-	deleteElem func(SetIterator)) *Set {
-	return &Set{*NewRBTree((*SetNode)(nil),
-		func(a Iterator, b Iterator) int {
+func NewSet(compare func(SetIterator, SetIterator) int) *Set {
+	return &Set{*NewCustomRBTree(
+		true,
+		(*SetNode)(nil),
+		func(a, b Iterator) int {
 			return compare(a.(*SetNode), b.(*SetNode))
 		},
 		func(elem interface{}) Iterator {
-			return newElem(elem)
+			return &SetNode{key: elem}
 		},
-		func(iter Iterator) {
-			deleteElem(iter.(*SetNode))
+		func(Iterator) {
 		},
+	)}
+}
+
+func NewCustomSet(
+	compare func(SetIterator, SetIterator) int,
+	newElem func(interface{}) Iterator,
+	deleteElem func(Iterator)) *Set {
+	return &Set{*NewCustomRBTree(
+		true,
+		(*SetNode)(nil),
+		func(a, b Iterator) int {
+			return compare(a.(*SetNode), b.(*SetNode))
+		},
+		newElem,
+		deleteElem,
 	)}
 }
 
@@ -86,6 +99,34 @@ func (s *Set) UpperBound(elem interface{}) SetIterator {
 	return s.RBTree.UpperBound(elem).(*SetNode)
 }
 
-func (s *Set) EraseIterator(iter SetIterator) bool {
-	return s.RBTree.EraseIterator(iter)
+type MultiSet struct {
+	Set
+}
+
+func NewMultiSet(compare func(SetIterator, SetIterator) int) *MultiSet {
+	return &MultiSet{Set{*NewCustomRBTree(
+		false,
+		(*SetNode)(nil),
+		func(a, b Iterator) int {
+			return compare(a.(*SetNode), b.(*SetNode))
+		},
+		func(elem interface{}) Iterator {
+			return &SetNode{key: elem}
+		},
+		func(Iterator) {
+
+		},
+	)}}
+}
+
+func (ms *MultiSet) EqualRange(elem interface{}) (SetIterator, SetIterator) {
+	return ms.LowerBound(elem), ms.UpperBound(elem)
+}
+
+func (ms *MultiSet) Count(elem interface{}) (c int) {
+	var beg, end Iterator = ms.LowerBound(elem), ms.UpperBound(elem)
+	for ; beg != end; beg = beg.Next(beg) {
+		c++
+	}
+	return c
 }

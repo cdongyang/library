@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"runtime"
 	"sort"
-	"sync"
 	"testing"
 )
 
@@ -75,11 +74,13 @@ func testRBTree(t *testing.T, length int) {
 		deleteElem = func(elem Iterator) {
 		}
 	)
-	tree := NewRBTree((*node)(nil), compare, newElem, deleteElem)
+	tree := NewCustomRBTree(true, (*node)(nil), compare, newElem, deleteElem)
 	var exists = make(map[int]bool, len(intSlice1K))
 	if !tree.Empty() {
-		panic("empty")
+		t.Fatal("empty")
 	}
+	//test RBTreer
+	var _ RBTreer = tree
 	var iter = tree.End()
 	//test LowerBound method
 	iter = tree.LowerBound(intSlice1K[0])
@@ -111,9 +112,6 @@ func testRBTree(t *testing.T, length int) {
 	}
 	var sortSlice = make([]int, len(intSlice1K))
 	copy(sortSlice, intSlice1K)
-	/*sort.Slice(sortSlice, func(i, j int) bool {
-		return sortSlice[i] < sortSlice[j]
-	})*/
 	sort.IntSlice(sortSlice).Sort()
 	var uniqueN = 1
 	for i := range sortSlice {
@@ -240,40 +238,7 @@ func BenchmarkInsert(b *testing.B) {
 		deleteElem = func(elem Iterator) {
 		}
 	)
-	tree := NewRBTree((*node)(nil), compare, newElem, deleteElem)
-	for i := 0; i < b.N; i++ {
-		tree.Insert(rand.Int())
-	}
-	memStats()
-}
-
-func BenchmarkInsertWithPool(b *testing.B) {
-	var (
-		nodePool = &sync.Pool{New: func() interface{} {
-			return &node{}
-		}}
-		compare = func(a Iterator, b Iterator) int {
-			return a.(*node).key - b.(*node).key
-		}
-		newElem = func(elem interface{}) Iterator {
-			switch e := elem.(type) {
-			case node:
-				return &e
-			case *node:
-				return e
-			case int:
-				var iter = nodePool.Get().(*node)
-				iter.key = e
-				return iter
-			default:
-				panic("error new type")
-			}
-		}
-		deleteElem = func(elem Iterator) {
-			nodePool.Put(elem)
-		}
-	)
-	tree := NewRBTree((*node)(nil), compare, newElem, deleteElem)
+	tree := NewCustomRBTree(true, (*node)(nil), compare, newElem, deleteElem)
 	for i := 0; i < b.N; i++ {
 		tree.Insert(rand.Int())
 	}
@@ -282,13 +247,10 @@ func BenchmarkInsertWithPool(b *testing.B) {
 
 func BenchmarkInsertWithArr(b *testing.B) {
 	var (
-		/*nodePool = &sync.Pool{New: func() interface{} {
-			return &node{}
-		}}*/
 		compare = func(a Iterator, b Iterator) int {
 			return a.(*node).key - b.(*node).key
 		}
-		nodeArr [1 << 20]node
+		nodeArr = make([]node, b.N)
 		num     = 0
 		newElem = func(elem interface{}) Iterator {
 			switch e := elem.(type) {
@@ -297,7 +259,7 @@ func BenchmarkInsertWithArr(b *testing.B) {
 			case *node:
 				return e
 			case int:
-				if num >= (1 << 20) {
+				if num >= b.N {
 					return &node{key: e}
 				}
 				nodeArr[num].key = e
@@ -310,9 +272,23 @@ func BenchmarkInsertWithArr(b *testing.B) {
 		deleteElem = func(elem Iterator) {
 		}
 	)
-	tree := NewRBTree((*node)(nil), compare, newElem, deleteElem)
+	tree := NewCustomRBTree(true, (*node)(nil), compare, newElem, deleteElem)
 	for i := 0; i < b.N; i++ {
 		tree.Insert(rand.Int())
 	}
 	memStats()
+}
+
+func BenchmarkSysHashMapInsert(b *testing.B) {
+	var mp = make(map[int]bool)
+	for i := 0; i < b.N; i++ {
+		mp[rand.Int()] = true
+	}
+}
+
+func BenchmarkSysHashMapInsertWithBuf(b *testing.B) {
+	var mp = make(map[int]bool, b.N)
+	for i := 0; i < b.N; i++ {
+		mp[rand.Int()] = true
+	}
 }

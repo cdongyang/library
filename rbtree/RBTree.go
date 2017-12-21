@@ -1,5 +1,20 @@
 package rbtree
 
+type RBTreer interface {
+	Size() int
+	Empty() bool
+	Begin() Iterator
+	End() Iterator
+	EndNode() Iterator
+	Find(interface{}) Iterator
+	LowerBound(interface{}) Iterator
+	UpperBound(interface{}) Iterator
+	Insert(interface{}) bool
+	Erase(interface{}) bool
+	EraseIterator(Iterator) bool
+	Clear()
+}
+
 type Iterator interface {
 	Next(Iterator) Iterator
 	Last(Iterator) Iterator
@@ -18,7 +33,7 @@ type Iterator interface {
 	init(*RBTree)
 }
 
-//RBTreeNode is the node of RBTree,you can inherit RBTreeNode to build you own tree node like
+// RBTreeNode is the node of RBTree,you can inherit RBTreeNode to build you own tree node like
 //	type mytreeNode struct {
 //		RBTreeNode
 //		key interface{}
@@ -80,12 +95,13 @@ func (node *RBTreeNode) getColor() bool {
 	return node.color
 }
 
-//Copy copy the key and val from src to des Iterator,inherit RBTreeNode must rewrite this func
+// Copy copy the key and val from src to des Iterator.
+// inherit RBTreeNode must rewrite this func,otherwise it will panic.
 func (node *RBTreeNode) Copy(des, src Iterator) {
 	panic("copy nothing")
 }
 
-//Next find the next Iterator follow by root
+// Next find the next Iterator follow by root
 func (node *RBTreeNode) Next(root Iterator) Iterator {
 	var null = node.tree.null
 	if root.rightChild() != null {
@@ -104,7 +120,7 @@ func (node *RBTreeNode) Next(root Iterator) Iterator {
 	return root.getParent()
 }
 
-//Last find the last Iterator follow by root
+// Last find the last Iterator follow by root
 func (node *RBTreeNode) Last(root Iterator) Iterator {
 	var null = node.tree.null
 	if root.leftChild() != null {
@@ -120,8 +136,9 @@ func (node *RBTreeNode) Last(root Iterator) Iterator {
 	return root.getParent()
 }
 
-//RBTree is a red-black tree
+// RBTree is a red-black tree
 type RBTree struct {
+	unique                 bool // node is unique?
 	size                   int
 	null, root, begin, end Iterator
 	compare                func(Iterator, Iterator) int
@@ -129,13 +146,15 @@ type RBTree struct {
 	deleteElem             func(Iterator)
 }
 
-//NewRBTree return a poiter of RBTree with the nil value of elem type Iterator,compare func,newElem func,deleteElem func
-func NewRBTree(
+// NewCustomRBTree return a poiter of RBTree with the nil value of elem type Iterator,compare func,newElem func,deleteElem func
+func NewCustomRBTree(
+	unique bool,
 	root Iterator,
 	compare func(Iterator, Iterator) int,
 	newElem func(interface{}) Iterator,
 	deleteElem func(Iterator)) *RBTree {
 	var tree = &RBTree{
+		unique:     unique,
 		size:       0,
 		null:       root,
 		root:       root,
@@ -365,12 +384,16 @@ func (t *RBTree) insert(elem Iterator) bool {
 	var parent = node
 	for {
 		parent = node
-		if t.compare(elem, node) == 0 {
-			return false
-		} else if t.compare(elem, node) < 0 {
+		switch cmp := t.compare(elem, node); {
+		case cmp == 0:
+			if t.unique { // if node exists,check tree is unique?
+				return false
+			}
+			fallthrough
+		case cmp < 0:
 			nodePoiter = node.leftChildPoiter()
 			node = node.leftChild()
-		} else {
+		case cmp > 0:
 			nodePoiter = node.rightChildPoiter()
 			node = node.rightChild()
 		}
@@ -508,6 +531,7 @@ func (t *RBTree) EraseIterator(node Iterator) bool {
 	}
 	return ok
 }
+
 func (t *RBTree) eraseIterator(node Iterator) bool {
 	if node == t.null {
 		return false
@@ -560,11 +584,12 @@ func (t *RBTree) eraseIterator(node Iterator) bool {
 	return true
 }
 
-//Clear erase all the elem from RBTree (O(N))
+//Clear clear all the elem from RBTree (O(N))
 func (t *RBTree) Clear() {
 	t.size = 0
 	t.clear(&t.root)
 }
+
 func (t *RBTree) clear(root *Iterator) {
 	if *root == t.null {
 		return

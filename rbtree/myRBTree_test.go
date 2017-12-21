@@ -57,7 +57,7 @@ func testRBTree(t *testing.T, length int) {
 		deleteElem = func(elem Iterator) {
 		}
 	)
-	tree := rbtree.NewRBTree((*node)(nil), compare, newElem, deleteElem)
+	tree := rbtree.NewCustomRBTree(true, (*node)(nil), compare, newElem, deleteElem)
 	var exists = make(map[int]bool, len(intSlice1K))
 	if !tree.Empty() {
 		panic("empty")

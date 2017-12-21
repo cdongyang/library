@@ -36,6 +36,27 @@ func ExampleInterface() {
 	//*node
 }
 
+func ExampleNullFunc() {
+	defer func() {
+		var err = recover()
+		fmt.Println(err)
+	}()
+	type a struct {
+		out func(int) int
+	}
+	var b = &a{out: func(i int) int {
+		fmt.Println("b:", i)
+		return i
+	}}
+	fmt.Println("b.out:", b.out(10))
+	var c a
+	fmt.Println(c.out(10))
+	// Output:
+	//b: 10
+	//b.out: 10
+	//runtime error: invalid memory address or nil pointer dereference
+}
+
 func BenchmarkInterface(b *testing.B) {
 	var iface interface{}
 	for i := 0; i < b.N; i++ {
