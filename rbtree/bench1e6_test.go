@@ -1,6 +1,7 @@
 package rbtree_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/cdongyang/library/rbtree"
@@ -131,6 +132,18 @@ func BenchmarkSetInsert1E6(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		set.Insert(rand.Int())
 	}
+	b.StopTimer()
+	memStats()
+}
+
+func BenchmarkSort(b *testing.B) {
+	b.N = 1e6
+	var rand = benchRand
+	var keys = make([]int, b.N)
+	for i := 0; i < b.N; i++ {
+		keys[i] = rand.Int()
+	}
+	sort.IntSlice(keys).Sort()
 	memStats()
 }
 
