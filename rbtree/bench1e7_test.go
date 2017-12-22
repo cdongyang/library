@@ -8,8 +8,8 @@ import (
 	"github.com/cdongyang/library/rbtree"
 )
 
-func BenchmarkSort1E6(b *testing.B) {
-	b.N = 1e6
+func BenchmarkSort1E7(b *testing.B) {
+	b.N = 1e7
 	var rand = benchRand
 	var keys = make([]int, b.N)
 	for i := 0; i < b.N; i++ {
@@ -19,8 +19,8 @@ func BenchmarkSort1E6(b *testing.B) {
 	memStats()
 }
 
-func BenchmarkSetInsert1E6(b *testing.B) {
-	b.N = 1e6
+func BenchmarkSetInsert1E7(b *testing.B) {
+	b.N = 1e7
 	var rand = benchRand
 	var set = rbtree.NewSet(
 		func(a rbtree.SetIterator, b rbtree.SetIterator) int {
@@ -32,8 +32,8 @@ func BenchmarkSetInsert1E6(b *testing.B) {
 	memStats()
 }
 
-func BenchmarkSetInsertAndErase1E6(b *testing.B) {
-	b.N = 1e6
+func BenchmarkSetInsertAndErase1E7(b *testing.B) {
+	b.N = 1e7
 	var rand = benchRand
 	var keys = make([]int, b.N)
 	var insertn, erasen int
@@ -64,8 +64,8 @@ func BenchmarkSetInsertAndErase1E6(b *testing.B) {
 	memStats()
 }
 
-func BenchmarkSetInsertAndEraseWithPool1E6(b *testing.B) {
-	b.N = 1e6
+func BenchmarkSetInsertAndEraseWithPool1E7(b *testing.B) {
+	b.N = 1e7
 	var rand = benchRand
 	var nodePool = sync.Pool{New: func() interface{} {
 		return &rbtree.SetNode{}
@@ -102,8 +102,8 @@ func BenchmarkSetInsertAndEraseWithPool1E6(b *testing.B) {
 	memStats()
 }
 
-func BenchmarkSysHashMapInsert1E6(b *testing.B) {
-	b.N = 1e6
+func BenchmarkSysHashMapInsert1E7(b *testing.B) {
+	b.N = 1e7
 	var rand = benchRand
 	var mp = make(map[int]bool)
 	for i := 0; i < b.N; i++ {
@@ -111,8 +111,8 @@ func BenchmarkSysHashMapInsert1E6(b *testing.B) {
 	}
 }
 
-func BenchmarkSysHashMapErase1E6(b *testing.B) {
-	b.N = 1e6
+func BenchmarkSysHashMapErase1E7(b *testing.B) {
+	b.N = 1e7
 	var rand = benchRand
 	var keys = make([]int, b.N)
 	b.StopTimer()
@@ -127,8 +127,8 @@ func BenchmarkSysHashMapErase1E6(b *testing.B) {
 	}
 }
 
-func BenchmarkSysHashMapInsertAndErase1E6(b *testing.B) {
-	b.N = 1e6
+func BenchmarkSysHashMapInsertAndErase1E7(b *testing.B) {
+	b.N = 1e7
 	var rand = benchRand
 	var keys = make([]int, b.N/10)
 	var insertn, erasen int
@@ -149,8 +149,8 @@ func BenchmarkSysHashMapInsertAndErase1E6(b *testing.B) {
 	}
 }
 
-func BenchmarkSysHashMapInsertAndEraseWithBuf1E6(b *testing.B) {
-	b.N = 1e6
+func BenchmarkSysHashMapInsertAndEraseWithBuf1E7(b *testing.B) {
+	b.N = 1e7
 	var rand = benchRand
 	var keys = make([]int, b.N/10)
 	var insertn, erasen int

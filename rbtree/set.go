@@ -119,6 +119,11 @@ func NewMultiSet(compare func(SetIterator, SetIterator) int) *MultiSet {
 	)}}
 }
 
+//need to rewirte
+func (ms *MultiSet) Erase(elem interface{}) bool {
+	return ms.RBTree.Erase(elem)
+}
+
 func (ms *MultiSet) EqualRange(elem interface{}) (SetIterator, SetIterator) {
 	return ms.LowerBound(elem), ms.UpperBound(elem)
 }

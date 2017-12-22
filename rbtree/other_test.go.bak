@@ -93,6 +93,18 @@ type testInterface interface {
 	testFunc(int) int
 }
 
+func ExampleInterfaceInherit() {
+	type testInterface1 interface {
+		testInterface
+		testFunc1(int) int
+	}
+	var b testInterface = &testStruct{}
+	if b.(testInterface1).testFunc1(100) == 100 {
+		fmt.Println("type assert success!")
+	}
+	// Output: type assert success!
+}
+
 func BenchmarkFunc(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		testFunc(0)
