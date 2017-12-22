@@ -38,6 +38,7 @@ func main() {
 		}
 		fmt.Fprintln(out, s)
 	}
+	fmt.Printf("deal %s to %s.md\n", filename, filename)
 	/*for i, val := range idArr {
 		if i != 0 {
 			fmt.Fprintln(out, strArr[val-6])
