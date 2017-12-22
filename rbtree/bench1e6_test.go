@@ -109,6 +109,7 @@ func BenchmarkSysHashMapInsert1E6(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		mp[rand.Int()] = true
 	}
+	memStats()
 }
 
 func BenchmarkSysHashMapErase1E6(b *testing.B) {
@@ -125,6 +126,7 @@ func BenchmarkSysHashMapErase1E6(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		delete(mp, keys[i])
 	}
+	memStats()
 }
 
 func BenchmarkSysHashMapInsertAndErase1E6(b *testing.B) {
@@ -147,6 +149,7 @@ func BenchmarkSysHashMapInsertAndErase1E6(b *testing.B) {
 			i++
 		}
 	}
+	memStats()
 }
 
 func BenchmarkSysHashMapInsertAndEraseWithBuf1E6(b *testing.B) {
@@ -169,4 +172,5 @@ func BenchmarkSysHashMapInsertAndEraseWithBuf1E6(b *testing.B) {
 			i++
 		}
 	}
+	memStats()
 }
