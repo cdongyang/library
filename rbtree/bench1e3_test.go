@@ -32,6 +32,32 @@ func BenchmarkSetInsert1E3(b *testing.B) {
 	memStats()
 }
 
+func BenchmarkSetErase1E3(b *testing.B) {
+	b.N = 1e3
+	var rand = benchRand
+	var keys = make([]int, b.N)
+	var set = rbtree.NewCustomSet(
+		func(a rbtree.SetIterator, b rbtree.SetIterator) int {
+			return a.GetKey().(int) - b.GetKey().(int)
+		},
+		func(elem interface{}) rbtree.Iterator {
+			return rbtree.NewSetNode(elem)
+		},
+		func(iter rbtree.Iterator) {
+		},
+	)
+	b.StopTimer()
+	for i := 0; i < b.N; i++ {
+		keys[i] = rand.Int()
+		set.Insert(keys[i])
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		set.Erase(keys[i])
+	}
+	memStats()
+}
+
 func BenchmarkSetInsertAndErase1E3(b *testing.B) {
 	b.N = 1e3
 	var rand = benchRand
