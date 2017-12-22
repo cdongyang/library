@@ -2,10 +2,11 @@ package rbtree
 
 import (
 	"fmt"
-	"math/rand"
 	"runtime"
 	"sort"
 	"testing"
+
+	"github.com/cdongyang/library/randint"
 )
 
 type node struct {
@@ -50,6 +51,7 @@ func (t *RBTree) Check(root Iterator) (l int, size int) {
 }
 
 func testRBTree(t *testing.T, length int) {
+	var rand = randint.Rand{First: 23456, Add: 12345, Mod: 1000}
 	var max = rand.Int()%length + 1
 	var intSlice1K = make([]int, length)
 	for i := range intSlice1K {
@@ -206,6 +208,7 @@ func testRBTree(t *testing.T, length int) {
 }
 
 func TestRBtree(t *testing.T) {
+	var rand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
 	for i := 0; i < 100; i++ {
 		testRBTree(t, rand.Int()%1000+1)
 	}
@@ -218,77 +221,5 @@ func memStats() {
 	fmt.Println("HeapAlloc:", mem.HeapAlloc, "HeapInuse:", mem.HeapInuse, "HeapObjects:", mem.HeapObjects, "HeapIdle", mem.HeapIdle, "HeapReleased", mem.HeapReleased, "HeapSys", mem.HeapSys)
 	runtime.GC()
 }
-func BenchmarkInsert(b *testing.B) {
-	var (
-		compare = func(a Iterator, b Iterator) int {
-			return a.(*node).key - b.(*node).key
-		}
-		newElem = func(elem interface{}) Iterator {
-			switch e := elem.(type) {
-			case node:
-				return &e
-			case *node:
-				return e
-			case int:
-				return &node{key: e}
-			default:
-				panic("error new type")
-			}
-		}
-		deleteElem = func(elem Iterator) {
-		}
-	)
-	tree := NewCustomRBTree(true, (*node)(nil), compare, newElem, deleteElem)
-	for i := 0; i < b.N; i++ {
-		tree.Insert(rand.Int())
-	}
-	memStats()
-}
 
-func BenchmarkInsertWithArr(b *testing.B) {
-	var (
-		compare = func(a Iterator, b Iterator) int {
-			return a.(*node).key - b.(*node).key
-		}
-		nodeArr = make([]node, b.N)
-		num     = 0
-		newElem = func(elem interface{}) Iterator {
-			switch e := elem.(type) {
-			case node:
-				return &e
-			case *node:
-				return e
-			case int:
-				if num >= b.N {
-					return &node{key: e}
-				}
-				nodeArr[num].key = e
-				num++
-				return &nodeArr[num-1]
-			default:
-				panic("error new type")
-			}
-		}
-		deleteElem = func(elem Iterator) {
-		}
-	)
-	tree := NewCustomRBTree(true, (*node)(nil), compare, newElem, deleteElem)
-	for i := 0; i < b.N; i++ {
-		tree.Insert(rand.Int())
-	}
-	memStats()
-}
-
-func BenchmarkSysHashMapInsert(b *testing.B) {
-	var mp = make(map[int]bool)
-	for i := 0; i < b.N; i++ {
-		mp[rand.Int()] = true
-	}
-}
-
-func BenchmarkSysHashMapInsertWithBuf(b *testing.B) {
-	var mp = make(map[int]bool, b.N)
-	for i := 0; i < b.N; i++ {
-		mp[rand.Int()] = true
-	}
-}
+var benchRand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
