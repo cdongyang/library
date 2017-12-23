@@ -8,6 +8,9 @@ import (
 	"github.com/cdongyang/library/rbtree"
 )
 
+type IntKey = rbtree.IntKey
+type IntPoiterKey = rbtree.IntPoiterKey
+
 func BenchmarkSort1E5(b *testing.B) {
 	b.N = 1e5
 	var rand = benchRand
@@ -22,12 +25,9 @@ func BenchmarkSort1E5(b *testing.B) {
 func BenchmarkSetInsert1E5(b *testing.B) {
 	b.N = 1e5
 	var rand = benchRand
-	var set = rbtree.NewSet(
-		func(a rbtree.SetIterator, b rbtree.SetIterator) int {
-			return a.GetKey().(int) - b.GetKey().(int)
-		})
+	var set = rbtree.NewSet()
 	for i := 0; i < b.N; i++ {
-		set.Insert(rand.Int())
+		set.Insert(IntKey(rand.Int()))
 	}
 	memStats()
 }
@@ -36,24 +36,15 @@ func BenchmarkSetErase1E5(b *testing.B) {
 	b.N = 1e5
 	var rand = benchRand
 	var keys = make([]int, b.N)
-	var set = rbtree.NewCustomSet(
-		func(a rbtree.SetIterator, b rbtree.SetIterator) int {
-			return a.GetKey().(int) - b.GetKey().(int)
-		},
-		func(elem interface{}) rbtree.Iterator {
-			return rbtree.NewSetNode(elem)
-		},
-		func(iter rbtree.Iterator) {
-		},
-	)
+	var set = rbtree.NewSet()
 	b.StopTimer()
 	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
-		set.Insert(keys[i])
+		set.Insert(IntKey(keys[i]))
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		set.Erase(keys[i])
+		set.Erase(IntKey(keys[i]))
 	}
 	memStats()
 }
@@ -61,22 +52,13 @@ func BenchmarkSetErase1E5(b *testing.B) {
 func BenchmarkSetInsertAndErase1E5(b *testing.B) {
 	b.N = 1e5
 	var rand = benchRand
-	var keys = make([]int, b.N)
+	var keys = make([]IntKey, b.N)
 	var insertn, erasen int
-	var set = rbtree.NewCustomSet(
-		func(a rbtree.SetIterator, b rbtree.SetIterator) int {
-			return a.GetKey().(int) - b.GetKey().(int)
-		},
-		func(elem interface{}) rbtree.Iterator {
-			return rbtree.NewSetNode(elem)
-		},
-		func(iter rbtree.Iterator) {
-		},
-	)
+	var set = rbtree.NewSet()
 	for i := 0; i < b.N; i++ {
 		insertn, erasen = 0, 0
 		for j := 0; j < b.N/10; j++ {
-			keys[insertn] = rand.Int()
+			keys[insertn] = IntKey(rand.Int())
 			set.Insert(keys[insertn])
 			insertn++
 			i++
@@ -96,13 +78,10 @@ func BenchmarkSetInsertAndEraseWithPool1E5(b *testing.B) {
 	var nodePool = sync.Pool{New: func() interface{} {
 		return &rbtree.SetNode{}
 	}}
-	var keys = make([]int, b.N)
+	var keys = make([]IntKey, b.N)
 	var insertn, erasen int
 	var set = rbtree.NewCustomSet(
-		func(a rbtree.SetIterator, b rbtree.SetIterator) int {
-			return a.GetKey().(int) - b.GetKey().(int)
-		},
-		func(elem interface{}) rbtree.Iterator {
+		func(elem rbtree.Keyer) rbtree.Iterator {
 			var iter = nodePool.Get().(*rbtree.SetNode)
 			iter.SetKey(elem)
 			return iter
@@ -114,7 +93,7 @@ func BenchmarkSetInsertAndEraseWithPool1E5(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		insertn, erasen = 0, 0
 		for j := 0; j < b.N/10; j++ {
-			keys[insertn] = rand.Int()
+			keys[insertn] = IntKey(rand.Int())
 			set.Insert(keys[insertn])
 			insertn++
 			i++
@@ -128,49 +107,50 @@ func BenchmarkSetInsertAndEraseWithPool1E5(b *testing.B) {
 	memStats()
 }
 
-func BenchmarkIntSetInsert1E5(b *testing.B) {
+func BenchmarkSetInsertPoiter1E5(b *testing.B) {
 	b.N = 1e5
 	var rand = benchRand
-	var set = rbtree.NewIntSet()
+	var set = rbtree.NewSet()
 	for i := 0; i < b.N; i++ {
-		set.Insert(rand.Int())
+		var tmp = IntPoiterKey(rand.Int())
+		set.Insert(&tmp)
 	}
 	memStats()
 }
 
-func BenchmarkIntSetErase1E5(b *testing.B) {
+func BenchmarkSetErasePoiter1E5(b *testing.B) {
 	b.N = 1e5
 	var rand = benchRand
-	var keys = make([]int, b.N)
-	var set = rbtree.NewIntSet()
+	var keys = make([]IntPoiterKey, b.N)
+	var set = rbtree.NewSet()
 	b.StopTimer()
 	for i := 0; i < b.N; i++ {
-		keys[i] = rand.Int()
-		set.Insert(keys[i])
+		keys[i] = IntPoiterKey(rand.Int())
+		set.Insert(&keys[i])
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		set.Erase(keys[i])
+		set.Erase(&keys[i])
 	}
 	memStats()
 }
 
-func BenchmarkIntSetInsertAndErase1E5(b *testing.B) {
+func BenchmarkSetInsertAndErasePoiter1E5(b *testing.B) {
 	b.N = 1e5
 	var rand = benchRand
-	var keys = make([]int, b.N)
+	var keys = make([]IntPoiterKey, b.N)
 	var insertn, erasen int
-	var set = rbtree.NewIntSet()
+	var set = rbtree.NewSet()
 	for i := 0; i < b.N; i++ {
 		insertn, erasen = 0, 0
 		for j := 0; j < b.N/10; j++ {
-			keys[insertn] = rand.Int()
-			set.Insert(keys[insertn])
+			keys[insertn] = IntPoiterKey(rand.Int())
+			set.Insert(&keys[insertn])
 			insertn++
 			i++
 		}
 		for j := 0; j < b.N/10; j++ {
-			set.Erase(keys[erasen])
+			set.Erase(&keys[erasen])
 			erasen++
 			i++
 		}
@@ -178,17 +158,17 @@ func BenchmarkIntSetInsertAndErase1E5(b *testing.B) {
 	memStats()
 }
 
-func BenchmarkIntSetInsertAndEraseWithPool1E5(b *testing.B) {
+func BenchmarkSetInsertAndErasePoiterWithPool1E5(b *testing.B) {
 	b.N = 1e5
 	var rand = benchRand
 	var nodePool = sync.Pool{New: func() interface{} {
-		return &rbtree.IntSetNode{}
+		return &rbtree.SetNode{}
 	}}
-	var keys = make([]int, b.N)
+	var keys = make([]IntPoiterKey, b.N)
 	var insertn, erasen int
-	var set = rbtree.NewCustomIntSet(
-		func(elem interface{}) rbtree.Iterator {
-			var iter = nodePool.Get().(*rbtree.IntSetNode)
+	var set = rbtree.NewCustomSet(
+		func(elem rbtree.Keyer) rbtree.Iterator {
+			var iter = nodePool.Get().(*rbtree.SetNode)
 			iter.SetKey(elem)
 			return iter
 		},
@@ -199,13 +179,13 @@ func BenchmarkIntSetInsertAndEraseWithPool1E5(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		insertn, erasen = 0, 0
 		for j := 0; j < b.N/10; j++ {
-			keys[insertn] = rand.Int()
-			set.Insert(keys[insertn])
+			keys[insertn] = IntPoiterKey(rand.Int())
+			set.Insert(&keys[insertn])
 			insertn++
 			i++
 		}
 		for j := 0; j < b.N/10; j++ {
-			set.Erase(keys[erasen])
+			set.Erase(&keys[erasen])
 			erasen++
 			i++
 		}

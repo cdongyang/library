@@ -30,8 +30,17 @@ func (s *struct32b) Fun() {
 
 }
 
+func (s *struct32b) Fun1() {
+
+}
+
 type struct32ber interface {
 	Fun()
+}
+
+type struct32ber1 interface {
+	struct32ber
+	Fun1()
 }
 
 type struct40b struct {
@@ -267,6 +276,112 @@ func BenchmarkInterfaceConvertToInterface(b *testing.B) {
 	memStats()
 }
 
+//100000000	        13.3 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkInterfaceConvertToInterface1(b *testing.B) {
+	var s1 struct32ber1 = &struct32b{}
+	var s struct32ber
+	for i := 0; i < b.N; i++ {
+		s = s1
+	}
+	_ = s
+	memStats()
+}
+
+//2000000000	         0.38 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkInterfaceConvertToOriginConvertToInterface(b *testing.B) {
+	var s1 struct32ber1 = &struct32b{}
+	var s struct32ber
+	for i := 0; i < b.N; i++ {
+		s = s1.(*struct32b)
+	}
+	_ = s
+	memStats()
+}
+
+//100000000	        13.3 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkDifferenceInterfaceCompare(b *testing.B) {
+	var s1 struct32ber1 = &struct32b{}
+	var s struct32ber
+	for i := 0; i < b.N; i++ {
+		if s1 == s {
+		}
+	}
+	_ = s
+	memStats()
+}
+
+//BenchmarkSameInterfaceCompare-4   	2000000000	         0.76 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSameInterfaceDifferenceTypeCompare(b *testing.B) {
+	var s1 struct32ber1 = &struct32b{}
+	var s struct32ber1
+	for i := 0; i < b.N; i++ {
+		if s1 == s {
+		}
+	}
+	_ = s
+	memStats()
+}
+
+//BenchmarkSameInterfaceCompare1-4   	200000000	         6.80 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSameInterfaceNilTypeEqualCompare(b *testing.B) {
+	var s1 struct32ber1 = (*struct32b)(nil)
+	var s struct32ber1 = (*struct32b)(nil)
+	for i := 0; i < b.N; i++ {
+		if s1 == s {
+		}
+	}
+	_ = s
+	memStats()
+}
+
+//BenchmarkSameInterfaceCompare2-4   	2000000000	         0.38 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSameInterfaceNilTypeCompare(b *testing.B) {
+	var s struct32ber1
+	for i := 0; i < b.N; i++ {
+		if s == nil {
+		}
+	}
+	_ = s
+	memStats()
+}
+
+//BenchmarkSameInterfaceNotNilTypeEqualCompare-4   	200000000	         6.74 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSameInterfaceNotNilTypeEqualCompare(b *testing.B) {
+	var s1 struct32ber1 = &struct32b{}
+	var s struct32ber1 = &struct32b{}
+	for i := 0; i < b.N; i++ {
+		if s == s1 {
+		}
+	}
+	_ = s
+	memStats()
+}
+
+//BenchmarkSameInterfaceNotNilTypeEqualCompare1-4   	2000000000	         0.38 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSameInterfaceNotNilTypeAssertEqualCompare1(b *testing.B) {
+	var s1 struct32ber1 = &struct32b{}
+	var s struct32ber1 = &struct32b{}
+	for i := 0; i < b.N; i++ {
+		if s.(*struct32b) == s1.(*struct32b) {
+		}
+	}
+	_ = s
+	memStats()
+}
+
+//2000000000	         0.38 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkInterfaceConvertToOriginEqual(b *testing.B) {
+	var s1 struct32ber1 = (*struct32b)(nil)
+	var s struct32ber = (*struct32b)(nil)
+	for i := 0; i < b.N; i++ {
+		if s1.(*struct32b) == s.(*struct32b) {
+
+		}
+	}
+	_ = s
+	memStats()
+}
+
 //为什么是一半heapObjects?
 //HeapAlloc: 400074136 HeapInuse: 400441344 HeapObjects: 25000289 HeapIdle 835584 HeapReleased 0 HeapSys 401276928
 //50000000	        26.8 ns/op	       8 B/op	       1 allocs/op
@@ -295,6 +410,7 @@ func BenchmarkAssignIntPoiterToInterfaceNOGC(b *testing.B) {
 }
 
 /*
+
 goos: linux
 goarch: amd64
 pkg: github.com/cdongyang/library/test/interfaceConvert
@@ -322,4 +438,7 @@ PASS
 	由interface{}断言为原本的类型跟普通int赋值差不多,但断言为其它interface{}时慢几十倍
 	每个interface{}都会持有一个指针,如果赋值给interface{}的是值而不是指针就会在heap新建一份值并将指针赋给interface{}
 	堆内存动态分配内存速度比直接定义变量慢很多,并且会增大heapObjects数量,直接定义的变量应该是在编译阶段就静态分配了内存到栈空间
+	从一个自定义的interface到另一个自定义interface的转化很慢,无论是类型断言还是直接赋值,但断言为原来的类型进行赋值很快
+	用interface进行操作很多时候会比原来的类型慢,尽可能断言为原来的类型进行操作
+
 */

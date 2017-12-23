@@ -16,45 +16,54 @@ type Maper interface {
 }
 
 type MapIterator interface {
-	SetIterator
-	GetValue() interface{}
-	SetValue(interface{})
+	Iterator
+	GetValue() Valuer
+	SetValue(Valuer)
 }
 
 type MapNode struct {
-	SetNode
-	value interface{}
+	RBTreeNode
+	Keyer
+	Valuer
 }
 
-func (m *MapNode) GetValue() interface{} {
-	return m.value
+func (node *MapNode) GetKey() Keyer {
+	return node.Keyer
 }
 
-func (m *MapNode) SetValue(value interface{}) {
-	m.value = value
+func (node *MapNode) SetKey(key Keyer) {
+	node.Keyer = key
 }
 
-func (m *MapNode) Copy(des, src Iterator) {
-	des.(*MapNode).key = src.(*MapNode).key
-	des.(*MapNode).value = src.(*MapNode).value
+func (node *MapNode) GetValue() Valuer {
+	return node.Valuer
+}
+
+func (node *MapNode) SetValue(value Valuer) {
+	node.Valuer = value
+}
+
+func (node *MapNode) Copy(iter Iterator) {
+	node.Keyer = iter.(*MapNode).Keyer
+	node.Valuer = iter.(*MapNode).Valuer
 }
 
 type Map struct {
 	RBTree
 }
 
-func NewMap(
-	compare func(MapIterator, MapIterator) int,
-	newElem func(interface{}) Iterator,
-	deleteElem func(Iterator)) *Map {
+func NewMap() *Map {
 	return &Map{*NewCustomRBTree(
 		true,
 		(*MapNode)(nil),
-		func(a, b Iterator) int {
-			return compare(a.(*MapNode), b.(*MapNode))
+		func(key Keyer) Iterator {
+			return &MapNode{RBTreeNode{}, key.GetKey(), key.(KeyValuer).GetValue()}
 		},
-		newElem,
-		deleteElem,
+		func(Iterator) {
+		},
+		func(a Iterator, b Iterator) bool {
+			return a.(*MapNode) == b.(*MapNode)
+		},
 	)}
 }
 
@@ -70,15 +79,15 @@ func (m *Map) EndNode() MapIterator {
 	return m.RBTree.End().(*MapNode)
 }
 
-func (m *Map) Find(elem interface{}) MapIterator {
+func (m *Map) Find(elem KeyValuer) MapIterator {
 	return m.RBTree.Find(elem).(*MapNode)
 }
 
-func (m *Map) LowerBound(elem interface{}) MapIterator {
+func (m *Map) LowerBound(elem KeyValuer) MapIterator {
 	return m.RBTree.LowerBound(elem).(*MapNode)
 }
 
-func (m *Map) UpperBound(elem interface{}) MapIterator {
+func (m *Map) UpperBound(elem KeyValuer) MapIterator {
 	return m.RBTree.UpperBound(elem).(*MapNode)
 }
 
@@ -87,25 +96,24 @@ type MultiMap struct {
 }
 
 func NewMultiMap(
-	compare func(MapIterator, MapIterator) int,
-	newElem func(interface{}) Iterator,
+	newElem func(Keyer) Iterator,
 	deleteElem func(Iterator)) *MultiMap {
 	return &MultiMap{Map{*NewCustomRBTree(
 		false,
 		(*MapNode)(nil),
-		func(a, b Iterator) int {
-			return compare(a.(*MapNode), b.(*MapNode))
-		},
 		newElem,
 		deleteElem,
+		func(a Iterator, b Iterator) bool {
+			return a.(*MapNode) == b.(*MapNode)
+		},
 	)}}
 }
 
-func (ms *MultiMap) EqualRange(elem interface{}) (MapIterator, MapIterator) {
+func (ms *MultiMap) EqualRange(elem KeyValuer) (MapIterator, MapIterator) {
 	return ms.LowerBound(elem), ms.UpperBound(elem)
 }
 
-func (ms *MultiMap) Count(elem interface{}) (c int) {
+func (ms *MultiMap) Count(elem KeyValuer) (c int) {
 	var beg, end Iterator = ms.LowerBound(elem), ms.UpperBound(elem)
 	for ; beg != end; beg = beg.Next(beg) {
 		c++

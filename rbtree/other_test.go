@@ -3,9 +3,13 @@ package rbtree_test
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/cdongyang/library/rbtree"
 )
 
 func ExampleInterface() {
+	type node = rbtree.SetNode
+	type Iterator = rbtree.Iterator
 	var null Iterator
 	var root *node
 	var iter Iterator = root
