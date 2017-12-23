@@ -223,3 +223,45 @@ func memStats() {
 }
 
 var benchRand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
+
+//BenchmarkNewSetNode-4   	300000000	         4.46 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkNewSetNode(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = NewSetNode(2)
+	}
+}
+
+//BenchmarkNewElem-4   	10000000	       116 ns/op	      80 B/op	       1 allocs/o
+func BenchmarkNewElem(b *testing.B) {
+	var set = NewSet(func(a SetIterator, b SetIterator) int {
+		return a.GetKey().(int) - b.GetKey().(int)
+	})
+	for i := 0; i < b.N; i++ {
+		_ = set.newElem(0)
+	}
+}
+
+//BenchmarkNewPoiterElem-4   	20000000	        98.3 ns/op	      80 B/op	       1 allocs/op
+func BenchmarkNewPoiterElem(b *testing.B) {
+	var set = NewSet(func(a SetIterator, b SetIterator) int {
+		return *a.GetKey().(*int) - *b.GetKey().(*int)
+	})
+	var a = 0
+	var c = &a
+	for i := 0; i < b.N; i++ {
+		_ = set.newElem(c)
+	}
+}
+
+//BenchmarkCompare-4   	100000000	        14.6 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkCompare(b *testing.B) {
+	var set = NewSet(func(a SetIterator, b SetIterator) int {
+		return a.GetKey().(int) - b.GetKey().(int)
+	})
+	var a, c = NewSetNode(0), NewSetNode(1)
+	for i := 0; i < b.N; i++ {
+		_ = set.compare(a, c)
+	}
+}
+
+//BenchmarkSetInsert  100000	      2262 ns/op	      88 B/op	       2 allocs/op
