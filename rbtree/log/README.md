@@ -59,3 +59,14 @@ type Seter interface {
 	Clear()
 }
 ```
+Set的所有方法
+```go
+type IntSetNode struct {
+	RBTreeNode
+	key int
+}
+```
+具体类型key的SetNode实现,比泛化的key快,因为节省了一些interface{}断言的时间
+
+key
+value
