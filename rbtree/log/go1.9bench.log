@@ -1,0 +1,26 @@
+goos: linux
+goarch: amd64
+pkg: github.com/cdongyang/library/rbtree
+BenchmarkNewSetNode-16                            	200000000	         5.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNewElem-16                               	10000000	       158 ns/op	      80 B/op	       1 allocs/op
+BenchmarkCompare-16                               	2000000000	         1.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIteratorCompare-16                       	30000000	        54.6 ns/op	       8 B/op	       1 allocs/op
+BenchmarkIteratorKeyCompare-16                    	30000000	        56.3 ns/op	       8 B/op	       1 allocs/op
+BenchmarkIteratorKeyerCompare-16                  	200000000	         7.84 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIteratorInterfaceKeyCompare-16           	100000000	        11.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIteratorInterfaceKeyerCompare-16         	100000000	        15.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSort1E5-16                               	  100000	       325 ns/op	       8 B/op	       0 allocs/op
+BenchmarkSetInsert1E5-16                          	  100000	      2051 ns/op	      88 B/op	       2 allocs/op
+BenchmarkSetErase1E5-16                           	  100000	      1223 ns/op	      16 B/op	       1 allocs/op
+BenchmarkSetInsertAndErase1E5-16                  	  100000	      1470 ns/op	      56 B/op	       1 allocs/op
+BenchmarkSetInsertAndEraseWithPool1E5-16          	  100000	      1545 ns/op	      32 B/op	       1 allocs/op
+BenchmarkSetInsertPoiter1E5-16                    	  100000	      2025 ns/op	      88 B/op	       2 allocs/op
+BenchmarkSetErasePoiter1E5-16                     	  100000	      1203 ns/op	       8 B/op	       0 allocs/op
+BenchmarkSetInsertAndErasePoiter1E5-16            	  100000	      1409 ns/op	      48 B/op	       0 allocs/op
+BenchmarkSetInsertAndErasePoiterWithPool1E5-16    	  100000	      1470 ns/op	      24 B/op	       0 allocs/op
+BenchmarkSysHashMapInsert1E5-16                   	  100000	       278 ns/op	      36 B/op	       0 allocs/op
+BenchmarkSysHashMapErase1E5-16                    	  100000	       112 ns/op	       8 B/op	       0 allocs/op
+BenchmarkSysHashMapInsertAndErase1E5-16           	  100000	       132 ns/op	       5 B/op	       0 allocs/op
+BenchmarkSysHashMapInsertAndEraseWithBuf1E5-16    	  100000	       108 ns/op	      16 B/op	       0 allocs/op
+PASS
+ok  	github.com/cdongyang/library/rbtree	42.269s

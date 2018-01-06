@@ -38,17 +38,13 @@ type Iterator interface {
 
 type Keyer interface {
 	Compare(Keyer) int
-	GetKey() Keyer
 }
 
-type Valuer interface {
-	GetValue() Valuer
-}
-
-type KeyValuer interface {
-	Keyer
-	Valuer
-}
+//set can be map
+//type KeyValuer interface {
+//	Keyer
+//	GetValue() interface{}
+//}
 
 // RBTreeNode is the node of RBTree,you can inherit RBTreeNode to build you own tree node like
 //	type mytreeNode struct {
@@ -171,7 +167,7 @@ type RBTree struct {
 	newElem    func(Keyer) Iterator
 	deleteElem func(Iterator)
 
-	// sameIter judge wheater to Iterator is equal,but the judge between interface is so slow.
+	// sameIter judge wheater two Iterator is equal,but the judge between interface is so slow.
 	// just rewrite this func like:
 	// return a.(*RBTreeNode) == b.(*RBTreeNode)
 	sameIter func(Iterator, Iterator) bool
@@ -184,15 +180,21 @@ func NewCustomRBTree(
 	newElem func(Keyer) Iterator,
 	deleteElem func(Iterator),
 	sameIter func(Iterator, Iterator) bool) *RBTree {
+	var header = &RBTreeNode{}
+	header.parent = root
+	header.left = header
+	header.right = header
 	var tree = &RBTree{
 		unique:     unique,
 		size:       0,
 		null:       root,
 		root:       root,
+		header:     header,
 		newElem:    newElem,
 		deleteElem: deleteElem,
 		sameIter:   sameIter,
 	}
+	header.tree = tree
 	tree.newElem = func(elem Keyer) Iterator {
 		var iter = newElem(elem)
 		iter.init(tree)
@@ -460,11 +462,13 @@ func (t *RBTree) eraseAdjust(node, parent Iterator) {
 	} else {
 		brother = parent.leftChild()
 	}
+	var brotherLeftChild = brother.leftChild()
+	var brotherRightChild = brother.rightChild()
 	//parent is red
 	if parent.getColor() == red {
 		//parent is red,then brother must be black
-		if (same(brother.leftChild(), t.null) || brother.leftChild().getColor() == black) &&
-			(same(brother.rightChild(), t.null) || brother.rightChild().getColor() == black) {
+		if (same(brotherLeftChild, t.null) || brotherLeftChild.getColor() == black) &&
+			(same(brotherRightChild, t.null) || brotherRightChild.getColor() == black) {
 			//brother's children both are black
 			//swap brother.color parent.color
 			var tmp = brother.getColor()
@@ -473,10 +477,10 @@ func (t *RBTree) eraseAdjust(node, parent Iterator) {
 			return
 		}
 		if same(parent.leftChild(), node) {
-			if !same(brother, t.null) && !same(brother.leftChild(), t.null) && brother.leftChild().getColor() == red {
+			if !same(brother, t.null) && !same(brotherLeftChild, t.null) && brotherLeftChild.getColor() == red {
 				//brother's children are red and ?
 				parent.setColor(black)
-				t.rightRoate(brother.leftChild())
+				t.rightRoate(brotherLeftChild)
 				t.leftRoate(parent.rightChild())
 				return
 			}
@@ -484,10 +488,10 @@ func (t *RBTree) eraseAdjust(node, parent Iterator) {
 			t.leftRoate(brother)
 			return
 		} else {
-			if !same(brother, t.null) && !same(brother.rightChild(), t.null) && brother.rightChild().getColor() == red {
+			if !same(brother, t.null) && !same(brotherRightChild, t.null) && brotherRightChild.getColor() == red {
 				//brother's children are ? and red
 				parent.setColor(black)
-				t.leftRoate(brother.rightChild())
+				t.leftRoate(brotherRightChild)
 				t.rightRoate(parent.leftChild())
 				return
 			}
@@ -513,35 +517,35 @@ func (t *RBTree) eraseAdjust(node, parent Iterator) {
 		return
 	}
 	//brother is black
-	if (same(brother.leftChild(), t.null) || brother.leftChild().getColor() == black) &&
-		(same(brother.rightChild(), t.null) || brother.rightChild().getColor() == black) {
+	if (same(brotherLeftChild, t.null) || brotherLeftChild.getColor() == black) &&
+		(same(brotherRightChild, t.null) || brotherRightChild.getColor() == black) {
 		//brother's children both are black
 		brother.setColor(red)
 		t.eraseAdjust(parent, parent.getParent())
 		return
 	}
 	if same(parent.leftChild(), node) {
-		if !same(brother.leftChild(), t.null) && brother.leftChild().getColor() == red {
+		if !same(brotherLeftChild, t.null) && brotherLeftChild.getColor() == red {
 			//brother's children are red and ?
-			brother.leftChild().setColor(black)
-			t.rightRoate(brother.leftChild())
+			brotherLeftChild.setColor(black)
+			t.rightRoate(brotherLeftChild)
 			t.leftRoate(parent.rightChild())
 			return
 		}
 		//brother's children and black and red
-		brother.rightChild().setColor(black)
+		brotherRightChild.setColor(black)
 		t.leftRoate(brother)
 		return
 	} else {
-		if !same(brother.rightChild(), t.null) && brother.rightChild().getColor() == red {
-			brother.rightChild().setColor(black)
+		if !same(brotherRightChild, t.null) && brotherRightChild.getColor() == red {
+			brotherRightChild.setColor(black)
 			//brother's children are ? and red
-			t.leftRoate(brother.rightChild())
+			t.leftRoate(brotherRightChild)
 			t.rightRoate(parent.leftChild())
 			return
 		}
 		//brother's children are red and black
-		brother.leftChild().setColor(black)
+		brotherLeftChild.setColor(black)
 		t.rightRoate(brother)
 		return
 	}

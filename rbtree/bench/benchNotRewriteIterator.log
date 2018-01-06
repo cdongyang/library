@@ -1,0 +1,6 @@
+goos: linux
+goarch: amd64
+pkg: github.com/cdongyang/library/rbtree/bench
+BenchmarkSort1E5-4                                    	  100000	       492 ns/op	       8 B/op	       0 allocs/op
+BenchmarkSetInsert1E5-4                               	signal: interrupt
+FAIL	github.com/cdongyang/library/rbtree/bench	4.659s

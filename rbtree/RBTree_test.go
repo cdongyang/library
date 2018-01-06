@@ -186,10 +186,10 @@ func testRBTree(t *testing.T, length int) {
 }
 
 func TestRBtree(t *testing.T) {
-	/*var rand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
+	var rand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
 	for i := 0; i < 100; i++ {
 		testRBTree(t, rand.Int()%1000+1)
-	}*/
+	}
 }
 
 var mem runtime.MemStats
@@ -265,5 +265,12 @@ func BenchmarkIteratorInterfaceKeyerCompare(b *testing.B) {
 	var c Keyer = IntKey(1)
 	for i := 0; i < b.N; i++ {
 		_ = a.Compare(c)
+	}
+}
+
+func BenchmarkInterfaceAssertTointerface(b *testing.B) {
+	var a Keyer = IntKey(1)
+	for i := 0; i < b.N; i++ {
+		_ = a.(interface{})
 	}
 }

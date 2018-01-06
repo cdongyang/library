@@ -17,14 +17,11 @@ type Maper interface {
 
 type MapIterator interface {
 	Iterator
-	GetValue() Valuer
-	SetValue(Valuer)
 }
 
 type MapNode struct {
 	RBTreeNode
 	Keyer
-	Valuer
 }
 
 func (node *MapNode) GetKey() Keyer {
@@ -35,17 +32,8 @@ func (node *MapNode) SetKey(key Keyer) {
 	node.Keyer = key
 }
 
-func (node *MapNode) GetValue() Valuer {
-	return node.Valuer
-}
-
-func (node *MapNode) SetValue(value Valuer) {
-	node.Valuer = value
-}
-
 func (node *MapNode) Copy(iter Iterator) {
 	node.Keyer = iter.(*MapNode).Keyer
-	node.Valuer = iter.(*MapNode).Valuer
 }
 
 type Map struct {
@@ -57,7 +45,7 @@ func NewMap() *Map {
 		true,
 		(*MapNode)(nil),
 		func(key Keyer) Iterator {
-			return &MapNode{RBTreeNode{}, key.GetKey(), key.(KeyValuer).GetValue()}
+			return &MapNode{RBTreeNode{}, key}
 		},
 		func(Iterator) {
 		},
