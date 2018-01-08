@@ -411,6 +411,9 @@ func BenchmarkAssignIntPoiterToInterfaceNOGC(b *testing.B) {
 
 /*
 
+http://legendtkl.com/2017/07/01/golang-interface-implement/
+两个iface的比较会比较慢
+
 goos: linux
 goarch: amd64
 pkg: github.com/cdongyang/library/test/interfaceConvert
