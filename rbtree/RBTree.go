@@ -116,6 +116,10 @@ func (node *RBTreeNode) SetKey(Keyer) {
 
 }
 
+func (node *RBTreeNode) Compare(Keyer) int {
+	return 0
+}
+
 // Copy copy the key and val from src to des Iterator.
 // inherit RBTreeNode must rewrite this func,otherwise it will copy nothing
 func (node *RBTreeNode) Copy(src Iterator) {

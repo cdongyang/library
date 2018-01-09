@@ -36,6 +36,10 @@ func (node *SetNode) Copy(src Iterator) {
 	node.Keyer = src.(*SetNode).Keyer
 }
 
+func (node *SetNode) Compare(key Keyer) int {
+	return node.Keyer.Compare(key)
+}
+
 type Set struct {
 	RBTree
 }
