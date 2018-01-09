@@ -1,6 +1,7 @@
 package rbtree_test
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/cdongyang/library/randint"
@@ -132,5 +133,43 @@ func BenchmarkSysHashMapFind(t *testing.B) {
 	t.StartTimer()
 	for i := 0; i < t.N; i++ {
 		_, _ = mp[keys[i]]
+	}
+}
+
+func BenchmarkSyncMapInsert(t *testing.B) {
+	var mp = &sync.Map{}
+	var rand = benchRand
+	for i := 0; i < t.N; i++ {
+		mp.Store(rand.Int(), true)
+	}
+}
+
+func BenchmarkSyncMapErase(t *testing.B) {
+	var mp = &sync.Map{}
+	t.StopTimer()
+	var keys = make([]int, t.N)
+	var rand = benchRand
+	for i := 0; i < t.N; i++ {
+		keys[i] = rand.Int()
+		mp.Store(rand.Int(), true)
+	}
+	t.StartTimer()
+	for i := 0; i < t.N; i++ {
+		mp.Delete(keys[i])
+	}
+}
+
+func BenchmarkSyncMapFind(t *testing.B) {
+	var mp = &sync.Map{}
+	t.StopTimer()
+	var keys = make([]int, t.N)
+	var rand = benchRand
+	for i := 0; i < t.N; i++ {
+		keys[i] = rand.Int()
+		mp.Store(rand.Int(), true)
+	}
+	t.StartTimer()
+	for i := 0; i < t.N; i++ {
+		_, _ = mp.Load(keys[i])
 	}
 }

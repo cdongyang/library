@@ -1,6 +1,8 @@
 package rbtree
 
 import (
+	"fmt"
+	"reflect"
 	"sort"
 	"testing"
 
@@ -471,4 +473,25 @@ func BenchmarkCompare(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = set.compare(a.GetData(), c.GetData())
 	}
+}
+
+//一个interface{}大小为16B
+//type eface struct {
+//	_type *_type
+//	data  unsafe.Pointer
+//}
+//
+//type iface struct {
+//	tab  *itab
+//	data unsafe.Pointer
+//}
+
+func ExampleSetNodeSize() {
+	fmt.Println(reflect.TypeOf(RBTreeNode{}).Size())
+	fmt.Println(reflect.TypeOf(SetNode{}).Size())
+	fmt.Println(reflect.TypeOf(MapNode{}).Size())
+	//Output:
+	//72
+	//88
+	//88
 }
