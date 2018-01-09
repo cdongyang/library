@@ -27,6 +27,13 @@ int main() {
 			}
 			clock_t end = clock();
 			allInsert += end-start;
+			
+			//set<int>ts;
+			//ts.insert(0);
+			//s.erase(s.end());
+			//set<int>::iterator it;
+			//s.erase(it);
+			//s.erase(ts.begin());
 
 			start=clock();
 			for(int j=0;j<i;j++) {

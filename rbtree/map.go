@@ -53,11 +53,6 @@ type Map struct {
 	RBTree
 }
 
-func (m *Map) NewNode(data interface{}) Iterator {
-	_ = data.(*Pair)
-	return m.RBTree.NewNode(data)
-}
-
 func (m *Map) Insert(data interface{}) (Iterator, bool) {
 	return m.RBTree.insert(data, func(key interface{}) int {
 		return m.compare(data.(*Pair).GetKey(), key)

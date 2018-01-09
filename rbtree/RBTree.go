@@ -7,11 +7,12 @@ package rbtree
 type Iterator interface {
 	Next() Iterator
 	Last() Iterator
-	GetData() interface{}
-	GetKey() interface{}
-	GetValue() interface{}
-	SetValue(interface{})
-	CopyData(Iterator)
+	GetData() (data interface{})
+	GetKey() (key interface{})
+	GetValue() (value interface{})
+	SetValue(value interface{})
+	CopyData(src Iterator)
+	GetTree() RBTreer
 
 	getChild(int) Iterator
 	setChild(int, Iterator)
@@ -21,7 +22,6 @@ type Iterator interface {
 	getParentPoiter() *Iterator
 	getColor() colorType
 	setColor(colorType)
-	getTree() RBTreer
 	setTree(RBTreer)
 }
 
@@ -42,13 +42,15 @@ type RBTreeNode struct {
 // Next return next Iterator of this
 // inherit RBTreeNode must rewrite this method
 func (node *RBTreeNode) Next() Iterator {
-	return node.getTree().Next(node)
+	panic("use base Next()")
+	//return node.GetTree().Next(node)
 }
 
 // Last return last Iterator of this
 // inherit RBTreeNode must rewrite this method
 func (node *RBTreeNode) Last() Iterator {
-	return node.getTree().Last(node)
+	panic("use base Last()")
+	//return node.GetTree().Last(node)
 }
 
 // GetData get the data of this
@@ -105,7 +107,7 @@ func (node *RBTreeNode) setColor(color colorType) {
 	node.color = color
 }
 
-func (node *RBTreeNode) getTree() RBTreer {
+func (node *RBTreeNode) GetTree() RBTreer {
 	return node.tree
 }
 
@@ -114,30 +116,26 @@ func (node *RBTreeNode) setTree(tree RBTreer) {
 }
 
 type RBTreer interface {
-	NewNode(interface{}) Iterator
-	DeleteNode(Iterator)
-	SameIterator(Iterator, Iterator) bool
-	Compare(interface{}, interface{}) int
+	DeleteNode(node Iterator)
+	SameIterator(a, b Iterator) bool
+	Compare(key1, key2 interface{}) int
 	Clear()
+	Unique() bool
 	Size() int
 	Empty() bool
 	Begin() Iterator
 	End() Iterator
-	Last(Iterator) Iterator
-	Next(Iterator) Iterator
-	Count(interface{}) int
-	EqualRange(interface{}) (Iterator, Iterator)
-	Find(interface{}) Iterator
-	Insert(interface{}) (Iterator, bool)
-	Erase(interface{}) int
-	EraseIterator(Iterator)
-	EraseIteratorRange(Iterator, Iterator) int
-	LowerBound(interface{}) Iterator
-	UpperBound(interface{}) Iterator
-
-	rotate(int, Iterator)
-	root() Iterator
-	rootPoiter() *Iterator
+	Last(node Iterator) Iterator
+	Next(node Iterator) Iterator
+	Count(key interface{}) int
+	EqualRange(key interface{}) (beg Iterator, end Iterator)
+	Find(key interface{}) Iterator
+	Insert(data interface{}) (Iterator, bool)
+	Erase(key interface{}) int
+	EraseIterator(node Iterator)
+	EraseIteratorRange(beg Iterator, end Iterator) int
+	LowerBound(key interface{}) Iterator
+	UpperBound(key interface{}) Iterator
 }
 
 type RBTree struct {
@@ -172,15 +170,17 @@ func NewRBTree(newNode func(interface{}) Iterator,
 		it.setColor(red)
 		return it
 	}
-	t.deleteNode = deleteNode
+	t.deleteNode = func(node Iterator) {
+		node.setChild(0, nil)
+		node.setChild(1, nil)
+		node.setParent(nil)
+		node.setTree(nil)
+		deleteNode(node)
+	}
 	t.compare = compare
 	t.sameIterator = sameIterator
 	t.unique = unique
 	return t
-}
-
-func (t *RBTree) NewNode(data interface{}) Iterator {
-	return t.newNode(data)
 }
 
 func (t *RBTree) DeleteNode(node Iterator) {
@@ -196,24 +196,24 @@ func (t *RBTree) Compare(key1, key2 interface{}) int {
 }
 
 func (t *RBTree) Clear() {
-	t.destroy(t.root())
+	t.clear(t.root())
 	*t.mostPoiter(0) = t.End()
 	*t.mostPoiter(1) = t.End()
 	*t.rootPoiter() = t.End()
 	t.size = 0
 }
 
-func (t *RBTree) destroy(root Iterator) {
+func (t *RBTree) clear(root Iterator) {
 	if t.sameIterator(root, t.End()) {
 		return
 	}
-	t.destroy(root.getChild(0))
-	t.destroy(root.getChild(1))
-	root.setChild(0, nil)
-	root.setChild(1, nil)
-	root.setParent(nil)
-	root.setTree(nil)
+	t.clear(root.getChild(0))
+	t.clear(root.getChild(1))
 	t.DeleteNode(root)
+}
+
+func (t *RBTree) Unique() bool {
+	return t.unique
 }
 
 func (t *RBTree) Size() int {
@@ -225,7 +225,7 @@ func (t *RBTree) Empty() bool {
 }
 
 func (t *RBTree) Begin() Iterator {
-	return t.header.getChild(0)
+	return t.most(0)
 }
 
 func (t *RBTree) End() Iterator {
@@ -419,7 +419,7 @@ func (t *RBTree) Erase(key interface{}) (count int) {
 
 func (t *RBTree) EraseIterator(node Iterator) {
 	if t.sameIterator(node, t.End()) {
-		return
+		panic("can't erase empty node")
 	}
 	t.size--
 	if !t.sameIterator(node.getChild(0), t.End()) && !t.sameIterator(node.getChild(1), t.End()) {
@@ -449,10 +449,6 @@ func (t *RBTree) EraseIterator(node Iterator) {
 		child.setParent(parent)
 	}
 	if t.sameIterator(parent, t.End()) {
-		if t.sameIterator(node, t.root()) {
-			*t.mostPoiter(0) = t.End()
-			*t.mostPoiter(1) = t.End()
-		}
 		*t.rootPoiter() = child
 	} else if t.sameIterator(parent.getChild(0), node) {
 		parent.setChild(0, child)
