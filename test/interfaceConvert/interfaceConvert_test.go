@@ -436,6 +436,8 @@ BenchmarkAssignIntToInterfaceNOGC-4             50000000                24.7 ns/
 BenchmarkAssignIntPoiterToInterfaceNOGC-4       1000000000               2.29 ns/op            0 B/op          0 allocs/op
 PASS
 
+	interface{} 有一个element为unsafe.Pointer类型,持有对象的指针,值赋值给interface时易引起堆内存分配,
+	指针赋值时也易引起栈变量逃逸到堆
 推论:
 	由值类型赋值给interface{}会导致 1 allocs/op,比直接指针赋值给interface{}慢几十倍,直接指针赋值跟普通int赋值差不多
 	由interface{}断言为原本的类型跟普通int赋值差不多,但断言为其它interface{}时慢几十倍

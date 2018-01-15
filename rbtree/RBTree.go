@@ -42,15 +42,13 @@ type RBTreeNode struct {
 // Next return next Iterator of this
 // inherit RBTreeNode must rewrite this method
 func (node *RBTreeNode) Next() Iterator {
-	panic("use base Next()")
-	//return node.GetTree().Next(node)
+	return node.GetTree().Next(node)
 }
 
 // Last return last Iterator of this
 // inherit RBTreeNode must rewrite this method
 func (node *RBTreeNode) Last() Iterator {
-	panic("use base Last()")
-	//return node.GetTree().Last(node)
+	return node.GetTree().Last(node)
 }
 
 // GetData get the data of this
@@ -59,14 +57,20 @@ func (node *RBTreeNode) GetData() interface{} {
 	return nil
 }
 
+// GetKey get the compare key of this
+// inherit RBTreeNode must rewrite this method
 func (node *RBTreeNode) GetKey() interface{} {
 	return nil
 }
 
+// GetValue get the value of this
+// map node should rewrite this method
 func (node *RBTreeNode) GetValue() interface{} {
 	return nil
 }
 
+// SetValue set the value of this
+// map node should rewrite this method
 func (node *RBTreeNode) SetValue(interface{}) {
 }
 
@@ -107,6 +111,8 @@ func (node *RBTreeNode) setColor(color colorType) {
 	node.color = color
 }
 
+// GetTree get the RBTreer of this
+// but you should set the tree when create new node
 func (node *RBTreeNode) GetTree() RBTreer {
 	return node.tree
 }
@@ -136,6 +142,16 @@ type RBTreer interface {
 	EraseIteratorRange(beg Iterator, end Iterator) int
 	LowerBound(key interface{}) Iterator
 	UpperBound(key interface{}) Iterator
+
+	init(
+		tree RBTreer,
+		header Iterator,
+		newNode func(interface{}) Iterator,
+		deleteNode func(Iterator),
+		compare func(interface{}, interface{}) int,
+		sameIterator func(Iterator, Iterator) bool,
+		unique bool,
+	)
 }
 
 type RBTree struct {
@@ -148,14 +164,28 @@ type RBTree struct {
 	unique       bool
 }
 
-func NewRBTree(newNode func(interface{}) Iterator,
+func NewRBTreer(
+	t RBTreer,
+	header Iterator,
+	newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int,
 	sameIterator func(Iterator, Iterator) bool,
-	unique bool) *RBTree {
-	var t = new(RBTree)
-	t.header = newNode(nil)
-	t.header.setTree(t)
+	unique bool) RBTreer {
+	t.init(t, header, newNode, deleteNode, compare, sameIterator, unique)
+	return t
+}
+
+func (t *RBTree) init(
+	tree RBTreer,
+	header Iterator,
+	newNode func(interface{}) Iterator,
+	deleteNode func(Iterator),
+	compare func(interface{}, interface{}) int,
+	sameIterator func(Iterator, Iterator) bool,
+	unique bool) {
+	t.header = header
+	t.header.setTree(tree)
 	*t.mostPoiter(0) = t.End()
 	*t.mostPoiter(1) = t.End()
 	*t.rootPoiter() = t.End()
@@ -166,7 +196,7 @@ func NewRBTree(newNode func(interface{}) Iterator,
 		it.setChild(0, t.End())
 		it.setChild(1, t.End())
 		it.setParent(t.End())
-		it.setTree(t)
+		it.setTree(tree)
 		it.setColor(red)
 		return it
 	}
@@ -180,7 +210,6 @@ func NewRBTree(newNode func(interface{}) Iterator,
 	t.compare = compare
 	t.sameIterator = sameIterator
 	t.unique = unique
-	return t
 }
 
 func (t *RBTree) DeleteNode(node Iterator) {

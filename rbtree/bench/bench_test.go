@@ -1,7 +1,7 @@
 package rbtree_test
 
 import (
-	"sync"
+	"strconv"
 	"testing"
 
 	"github.com/cdongyang/library/randint"
@@ -10,166 +10,174 @@ import (
 
 var benchRand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
 
-func BenchmarkSetInsert(t *testing.B) {
-	var set = rbtree.NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	var rand = benchRand
-	for i := 0; i < t.N; i++ {
-		_, _ = set.Insert(rand.Int())
+func BenchmarkAll(b *testing.B) {
+	var ns = []int{1e3, 1e4, 1e5, 1e6, 1e7}
+	b.Run("setInsert", runWith(benchmarkSetInsert, ns...))
+	b.Run("setErase", runWith(benchmarkSetErase, ns...))
+	b.Run("setFind", runWith(benchmarkSetFind, ns...))
+	b.Run("mapInsert", runWith(benchmarkMapInsert, ns...))
+	b.Run("mapErase", runWith(benchmarkSetErase, ns...))
+	b.Run("mapFind", runWith(benchmarkMapFind, ns...))
+	b.Run("hashMapInsert", runWith(benchmarkHashMapInsert, ns...))
+	b.Run("hashMapErase", runWith(benchmarkHashMapErase, ns...))
+	b.Run("hashMapFind", runWith(benchmarkHashMapFind, ns...))
+}
+
+func runWith(f func(*testing.B, int), v ...int) func(*testing.B) {
+	return func(b *testing.B) {
+		for _, n := range v {
+			b.Run(strconv.Itoa(n), func(b *testing.B) { f(b, n) })
+		}
 	}
 }
 
-func BenchmarkSetErase(t *testing.B) {
+func benchmarkSetInsert(b *testing.B, n int) {
+	b.N = n
 	var set = rbtree.NewSet(func(a, b interface{}) int {
 		return a.(int) - b.(int)
 	})
-	t.StopTimer()
-	var keys = make([]int, t.N)
 	var rand = benchRand
-	for i := 0; i < t.N; i++ {
+	b.ResetTimer()
+	var key int
+	for i := 0; i < b.N; i++ {
+		key = rand.Int()
+		_, _ = set.Insert(key)
+	}
+}
+
+func benchmarkSetErase(b *testing.B, n int) {
+	b.N = n
+	var set = rbtree.NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var keys = make([]int, b.N)
+	var rand = benchRand
+	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
 		_, _ = set.Insert(keys[i])
 	}
-	t.StartTimer()
-	for i := 0; i < t.N; i++ {
-		_ = set.Erase(keys[i])
+	b.ResetTimer()
+	var key int
+	for i := 0; i < b.N; i++ {
+		key = keys[i]
+		_ = set.Erase(key)
 	}
 }
 
-func BenchmarkSetFind(t *testing.B) {
+func benchmarkSetFind(b *testing.B, n int) {
+	b.N = n
 	var set = rbtree.NewSet(func(a, b interface{}) int {
 		return a.(int) - b.(int)
 	})
-	t.StopTimer()
-	var keys = make([]int, t.N)
+	var keys = make([]int, b.N)
 	var rand = benchRand
-	for i := 0; i < t.N; i++ {
+	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
 		_, _ = set.Insert(keys[i])
 	}
-	t.StartTimer()
-	for i := 0; i < t.N; i++ {
-		_ = set.Find(keys[i])
+	b.ResetTimer()
+	var key int
+	for i := 0; i < b.N; i++ {
+		key = keys[i]
+		_ = set.Find(key)
 	}
 }
 
-func BenchmarkMapInsert(t *testing.B) {
+func benchmarkMapInsert(b *testing.B, n int) {
+	b.N = n
 	var mp = rbtree.NewMap(func(a, b interface{}) int {
 		return a.(int) - b.(int)
 	})
 	var rand = benchRand
-	for i := 0; i < t.N; i++ {
-		_, _ = mp.Insert(rbtree.NewPair(rand.Int(), true))
+	b.ResetTimer()
+	var key int
+	for i := 0; i < b.N; i++ {
+		key = rand.Int()
+		_, _ = mp.Insert(rbtree.NewPair(key, true))
 	}
 }
 
-func BenchmarkMapErase(t *testing.B) {
+func benchmarkMapErase(b *testing.B, n int) {
+	b.N = n
 	var mp = rbtree.NewMap(func(a, b interface{}) int {
 		return a.(int) - b.(int)
 	})
-	t.StopTimer()
-	var keys = make([]int, t.N)
+	var keys = make([]int, b.N)
 	var rand = benchRand
-	for i := 0; i < t.N; i++ {
+	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
 		_, _ = mp.Insert(rbtree.NewPair(keys[i], true))
 	}
-	t.StartTimer()
-	for i := 0; i < t.N; i++ {
-		_ = mp.Erase(keys[i])
+	b.ResetTimer()
+	var key int
+	for i := 0; i < b.N; i++ {
+		key = keys[i]
+		_ = mp.Erase(key)
 	}
 }
 
-func BenchmarkMapFind(t *testing.B) {
+func benchmarkMapFind(b *testing.B, n int) {
+	b.N = n
 	var mp = rbtree.NewMap(func(a, b interface{}) int {
 		return a.(int) - b.(int)
 	})
-	t.StopTimer()
-	var keys = make([]int, t.N)
+	var keys = make([]int, b.N)
 	var rand = benchRand
-	for i := 0; i < t.N; i++ {
+	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
 		_, _ = mp.Insert(rbtree.NewPair(keys[i], true))
 	}
-	t.StartTimer()
-	for i := 0; i < t.N; i++ {
-		_ = mp.Find(keys[i])
+	b.ResetTimer()
+	var key int
+	for i := 0; i < b.N; i++ {
+		key = keys[i]
+		_ = mp.Find(key)
 	}
 }
 
-func BenchmarkSysHashMapInsert(t *testing.B) {
+func benchmarkHashMapInsert(b *testing.B, n int) {
+	b.N = n
 	var mp = make(map[int]bool)
 	var rand = benchRand
-	for i := 0; i < t.N; i++ {
-		mp[rand.Int()] = true
+	b.ResetTimer()
+	var key int
+	for i := 0; i < b.N; i++ {
+		key = rand.Int()
+		mp[key] = true
 	}
 }
 
-func BenchmarkSysHashMapErase(t *testing.B) {
+func benchmarkHashMapErase(b *testing.B, n int) {
+	b.N = n
 	var mp = make(map[int]bool)
-	t.StopTimer()
-	var keys = make([]int, t.N)
+	var keys = make([]int, b.N)
 	var rand = benchRand
-	for i := 0; i < t.N; i++ {
+	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
 		mp[keys[i]] = true
 	}
-	t.StartTimer()
-	for i := 0; i < t.N; i++ {
-		delete(mp, keys[i])
+	b.ResetTimer()
+	var key int
+	for i := 0; i < b.N; i++ {
+		key = keys[i]
+		delete(mp, key)
 	}
 }
 
-func BenchmarkSysHashMapFind(t *testing.B) {
+func benchmarkHashMapFind(b *testing.B, n int) {
+	b.N = n
 	var mp = make(map[int]bool)
-	t.StopTimer()
-	var keys = make([]int, t.N)
+	var keys = make([]int, b.N)
 	var rand = benchRand
-	for i := 0; i < t.N; i++ {
+	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
 		mp[keys[i]] = true
 	}
-	t.StartTimer()
-	for i := 0; i < t.N; i++ {
-		_, _ = mp[keys[i]]
+	b.ResetTimer()
+	var key int
+	for i := 0; i < b.N; i++ {
+		key = keys[i]
+		_, _ = mp[key]
 	}
 }
 
-func BenchmarkSyncMapInsert(t *testing.B) {
-	var mp = &sync.Map{}
-	var rand = benchRand
-	for i := 0; i < t.N; i++ {
-		mp.Store(rand.Int(), true)
-	}
-}
-
-func BenchmarkSyncMapErase(t *testing.B) {
-	var mp = &sync.Map{}
-	t.StopTimer()
-	var keys = make([]int, t.N)
-	var rand = benchRand
-	for i := 0; i < t.N; i++ {
-		keys[i] = rand.Int()
-		mp.Store(rand.Int(), true)
-	}
-	t.StartTimer()
-	for i := 0; i < t.N; i++ {
-		mp.Delete(keys[i])
-	}
-}
-
-func BenchmarkSyncMapFind(t *testing.B) {
-	var mp = &sync.Map{}
-	t.StopTimer()
-	var keys = make([]int, t.N)
-	var rand = benchRand
-	for i := 0; i < t.N; i++ {
-		keys[i] = rand.Int()
-		mp.Store(rand.Int(), true)
-	}
-	t.StartTimer()
-	for i := 0; i < t.N; i++ {
-		_, _ = mp.Load(keys[i])
-	}
-}

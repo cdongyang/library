@@ -25,7 +25,7 @@ func (node *SetNode) CopyData(src Iterator) {
 	node.data = src.(*SetNode).data
 }
 
-func sameSetNode(a, b Iterator) bool {
+func SameSetNode(a, b Iterator) bool {
 	aa, aok := a.(*SetNode)
 	bb, bok := a.(*SetNode)
 	if aok && bok {
@@ -39,39 +39,47 @@ type Set struct {
 }
 
 func NewSet(compare func(interface{}, interface{}) int) *Set {
-	return &Set{*NewRBTree(
+	var set = &Set{}
+	return NewRBTreer(
+		set,
+		&SetNode{},
 		func(data interface{}) Iterator {
 			return &SetNode{data: data}
 		},
 		func(Iterator) {
 		},
 		compare,
-		sameSetNode,
+		SameSetNode,
 		true,
-	)}
+	).(*Set)
 }
 
 func NewCustomSet(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int) *Set {
-	return &Set{*NewRBTree(newNode, deleteNode, compare, sameSetNode, true)}
+	var set = &Set{}
+	return NewRBTreer(set, &SetNode{}, newNode, deleteNode, compare, SameSetNode, true).(*Set)
 }
 
 func NewMultiSet(compare func(interface{}, interface{}) int) *Set {
-	return &Set{*NewRBTree(
+	var set = &Set{}
+	return NewRBTreer(
+		set,
+		&SetNode{},
 		func(data interface{}) Iterator {
 			return &SetNode{data: data}
 		},
 		func(Iterator) {
 		},
 		compare,
-		sameSetNode,
+		SameSetNode,
 		false,
-	)}
+	).(*Set)
 }
 
 func NewCustomMultiSet(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int) *Set {
-	return &Set{*NewRBTree(newNode, deleteNode, compare, sameSetNode, false)}
+	var set = &Set{}
+	return NewRBTreer(set, &SetNode{}, newNode, deleteNode, compare, SameSetNode, false).(*Set)
 }

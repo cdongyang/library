@@ -59,7 +59,7 @@ func (m *Map) Insert(data interface{}) (Iterator, bool) {
 	})
 }
 
-func sameMapNode(a Iterator, b Iterator) bool {
+func SameMapNode(a Iterator, b Iterator) bool {
 	aa, aok := a.(*MapNode)
 	bb, bok := a.(*MapNode)
 	if aok && bok {
@@ -69,39 +69,47 @@ func sameMapNode(a Iterator, b Iterator) bool {
 }
 
 func NewMap(compare func(interface{}, interface{}) int) *Map {
-	return &Map{*NewRBTree(
+	var mp = &Map{}
+	return NewRBTreer(
+		mp,
+		&MapNode{},
 		func(data interface{}) Iterator {
 			return &MapNode{SetNode{data: data}}
 		},
 		func(Iterator) {
 		},
 		compare,
-		sameMapNode,
+		SameMapNode,
 		true,
-	)}
+	).(*Map)
 }
 
 func NewCustomMap(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int) *Map {
-	return &Map{*NewRBTree(newNode, deleteNode, compare, sameMapNode, true)}
+	var mp = &Map{}
+	return NewRBTreer(mp, &MapNode{}, newNode, deleteNode, compare, SameMapNode, true).(*Map)
 }
 
 func NewMultiMap(compare func(interface{}, interface{}) int) *Map {
-	return &Map{*NewRBTree(
+	var mp = &Map{}
+	return NewRBTreer(
+		mp,
+		&MapNode{},
 		func(data interface{}) Iterator {
 			return &MapNode{SetNode{data: data}}
 		},
 		func(Iterator) {
 		},
 		compare,
-		sameMapNode,
+		SameMapNode,
 		false,
-	)}
+	).(*Map)
 }
 
 func NewCustomMultiMap(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int) *Map {
-	return &Map{*NewRBTree(newNode, deleteNode, compare, sameMapNode, false)}
+	var mp = &Map{}
+	return NewRBTreer(mp, &MapNode{}, newNode, deleteNode, compare, SameMapNode, false).(*Map)
 }
