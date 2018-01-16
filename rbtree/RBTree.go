@@ -4,6 +4,8 @@ learn about red-black tree
 */
 package rbtree
 
+import "unsafe"
+
 type Iterator interface {
 	Next() Iterator
 	Last() Iterator
@@ -209,7 +211,21 @@ func (t *RBTree) init(
 	}
 	t.compare = compare
 	t.sameIterator = sameIterator
+	if sameIterator == nil {
+		t.sameIterator = unsafeSameIterator
+	}
+	//t.sameIterator = sameInterface
 	t.unique = unique
+}
+
+func unsafeSameIterator(a, b Iterator) bool {
+	ap := (*[2]uintptr)(unsafe.Pointer(&a))
+	bp := (*[2]uintptr)(unsafe.Pointer(&b))
+	return ap[1] == bp[1]
+}
+
+func sameInterface(a, b interface{}) bool {
+	return a == b
 }
 
 func (t *RBTree) DeleteNode(node Iterator) {

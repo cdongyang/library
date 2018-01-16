@@ -119,12 +119,9 @@ func testRBTree(t *testing.T, length int, unique bool) {
 		}
 		deleteNode = func(node Iterator) {
 		}
-		sameNode = func(a Iterator, b Iterator) bool {
-			return a.(*node) == b.(*node)
-		}
 	)
 	var tree = &RBTree{}
-	tree = NewRBTreer(tree, &node{}, newNode, deleteNode, compare, sameNode, unique).(*RBTree)
+	tree = NewRBTreer(tree, &node{}, newNode, deleteNode, compare, nil, unique).(*RBTree)
 	var count = make(map[int]int, len(intSlice1K))
 	// test empty tree and empty tree Begin and End
 	if !tree.Empty() {
@@ -475,6 +472,17 @@ func BenchmarkSetNewPoiterNode(b *testing.B) {
 	}
 }
 
+// BenchmarkRBTreeCompare-4                200000000                8.67 ns/op            0 B/op          0 allocs/op
+func BenchmarkRBTreeCompare(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
+	for i := 0; i < b.N; i++ {
+		_ = set.RBTree.compare(a.GetKey(), c.GetKey())
+	}
+}
+
 // BenchmarkCompare-4   	200000000	         6.75 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkCompare(b *testing.B) {
 	var set = NewSet(func(a, b interface{}) int {
@@ -505,6 +513,25 @@ func BenchmarkSameSetNode(b *testing.B) {
 	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
 	for i := 0; i < b.N; i++ {
 		_ = SameSetNode(a, c)
+	}
+}
+
+// BenchmarkSameInterface-4        100000000               10.3 ns/op             0 B/op          0 allocs/op
+func BenchmarkSameInterface(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a, c Iterator = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
+	for i := 0; i < b.N; i++ {
+		_ = sameInterface(a, c)
+	}
+}
+
+// BenchmarkUnsafeSameNode-4       1000000000               2.32 ns/op            0 B/op          0 allocs/op
+func BenchmarkUnsafeSameNode(b *testing.B) {
+	var a, c Iterator = &SetNode{}, &SetNode{data: 1}
+	for i := 0; i < b.N; i++ {
+		_ = unsafeSameIterator(a, c)
 	}
 }
 
