@@ -192,3 +192,52 @@ func benchmarkHashMapFind(b *testing.B, n int) {
 		_, _ = mp[key]
 	}
 }
+
+// BenchmarkAll/setInsert/1000-4               1000              1041 ns/op             104 B/op          2 allocs/op
+// BenchmarkAll/setInsert/10000-4             10000              1084 ns/op             104 B/op          2 allocs/op
+// BenchmarkAll/setInsert/100000-4           100000              1312 ns/op             104 B/op          2 allocs/op
+// BenchmarkAll/setInsert/1000000-4         1000000              1357 ns/op             104 B/op          2 allocs/op
+// BenchmarkAll/setInsert/10000000-4               10000000              1563 ns/op             104 B/op          2 allocs/op
+// BenchmarkAll/setErase/1000-4                        1000               627 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/setErase/10000-4                      10000               709 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/setErase/100000-4                    100000               695 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/setErase/1000000-4                  1000000              1332 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/setErase/10000000-4                10000000              1087 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/setFind/1000-4                         1000               288 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/setFind/10000-4                       10000               382 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/setFind/100000-4                     100000               448 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/setFind/1000000-4                   1000000              1190 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/setFind/10000000-4                 10000000               753 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapInsert/1000-4                       1000              1088 ns/op             152 B/op          3 allocs/op
+// BenchmarkAll/mapInsert/10000-4                     10000              1244 ns/op             152 B/op          3 allocs/op
+// BenchmarkAll/mapInsert/100000-4                   100000              1546 ns/op             152 B/op          3 allocs/op
+// BenchmarkAll/mapInsert/1000000-4                 1000000              1378 ns/op             152 B/op          3 allocs/op
+// BenchmarkAll/mapInsert/10000000-4               10000000              1509 ns/op             152 B/op          3 allocs/op
+// BenchmarkAll/mapErase/1000-4                        1000               634 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapErase/10000-4                      10000               647 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapErase/100000-4                    100000               885 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapErase/1000000-4                  1000000              1022 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapErase/10000000-4                10000000              1181 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapFind/1000-4                         1000               465 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapFind/10000-4                       10000               506 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapFind/100000-4                     100000               631 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapFind/1000000-4                   1000000              1085 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/mapFind/10000000-4                 10000000              1751 ns/op               8 B/op          1 allocs/op
+// BenchmarkAll/hashMapInsert/1000-4                   1000               345 ns/op              53 B/op          0 allocs/op
+// BenchmarkAll/hashMapInsert/10000-4                 10000               265 ns/op              43 B/op          0 allocs/op
+// BenchmarkAll/hashMapInsert/100000-4               100000               261 ns/op              36 B/op          0 allocs/op
+// BenchmarkAll/hashMapInsert/1000000-4             1000000               352 ns/op              54 B/op          0 allocs/op
+// BenchmarkAll/hashMapInsert/10000000-4           10000000               332 ns/op              44 B/op          0 allocs/op
+// BenchmarkAll/hashMapErase/1000-4                    1000                57.4 ns/op             0 B/op          0 allocs/op
+// BenchmarkAll/hashMapErase/10000-4                  10000                57.9 ns/op             0 B/op          0 allocs/op
+// BenchmarkAll/hashMapErase/100000-4                100000                80.0 ns/op             0 B/op          0 allocs/op
+// BenchmarkAll/hashMapErase/1000000-4              1000000               148 ns/op               0 B/op          0 allocs/op
+// BenchmarkAll/hashMapErase/10000000-4            10000000               173 ns/op               0 B/op          0 allocs/op
+// BenchmarkAll/hashMapFind/1000-4                     1000                43.9 ns/op             0 B/op          0 allocs/op
+// BenchmarkAll/hashMapFind/10000-4                   10000                60.4 ns/op             0 B/op          0 allocs/op
+// BenchmarkAll/hashMapFind/100000-4                 100000                77.9 ns/op             0 B/op          0 allocs/op
+// BenchmarkAll/hashMapFind/1000000-4               1000000                95.2 ns/op             0 B/op          0 allocs/op
+// BenchmarkAll/hashMapFind/10000000-4             10000000               119 ns/op               0 B/op          0 allocs/op
+// BenchmarkSetInsert/setInsert/100000-4             100000              1494 ns/op             104 B/op          2 allocs/op
+// BenchmarkSetErase/setErase/100000-4               100000               774 ns/op               8 B/op          1 allocs/op
+// BenchmarkSetFind/setFind/100000-4                 100000               469 ns/op               8 B/op          1 allocs/op
