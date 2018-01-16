@@ -23,6 +23,18 @@ func BenchmarkAll(b *testing.B) {
 	b.Run("hashMapFind", runWith(benchmarkHashMapFind, ns...))
 }
 
+func BenchmarkSetInsert(b *testing.B) {
+	b.Run("setInsert", runWith(benchmarkSetInsert, 1e5))
+}
+
+func BenchmarkSetErase(b *testing.B) {
+	b.Run("setErase", runWith(benchmarkSetErase, 1e5))
+}
+
+func BenchmarkSetFind(b *testing.B) {
+	b.Run("setFind", runWith(benchmarkSetFind, 1e5))
+}
+
 func runWith(f func(*testing.B, int), v ...int) func(*testing.B) {
 	return func(b *testing.B) {
 		for _, n := range v {
@@ -93,7 +105,7 @@ func benchmarkMapInsert(b *testing.B, n int) {
 	var key int
 	for i := 0; i < b.N; i++ {
 		key = rand.Int()
-		_, _ = mp.Insert(rbtree.NewPair(key, true))
+		_, _ = mp.Insert(rbtree.Pair{Key: key, Value: true})
 	}
 }
 
@@ -106,7 +118,7 @@ func benchmarkMapErase(b *testing.B, n int) {
 	var rand = benchRand
 	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
-		_, _ = mp.Insert(rbtree.NewPair(keys[i], true))
+		_, _ = mp.Insert(rbtree.Pair{Key: keys[i], Value: true})
 	}
 	b.ResetTimer()
 	var key int
@@ -125,7 +137,7 @@ func benchmarkMapFind(b *testing.B, n int) {
 	var rand = benchRand
 	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
-		_, _ = mp.Insert(rbtree.NewPair(keys[i], true))
+		_, _ = mp.Insert(rbtree.Pair{Key: keys[i], Value: true})
 	}
 	b.ResetTimer()
 	var key int
@@ -180,4 +192,3 @@ func benchmarkHashMapFind(b *testing.B, n int) {
 		_, _ = mp[key]
 	}
 }
-

@@ -475,8 +475,19 @@ func BenchmarkSetNewPoiterNode(b *testing.B) {
 	}
 }
 
-//BenchmarkCompare-4   	100000000	        14.6 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkCompare-4   	200000000	         6.75 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkCompare(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
+	for i := 0; i < b.N; i++ {
+		_ = set.compare(a.GetKey(), c.GetKey())
+	}
+}
+
+// BenchmarkCompareIteratorGetKey-4   	100000000	        12.3 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkCompareIteratorGetKey(b *testing.B) {
 	var set = NewSet(func(a, b interface{}) int {
 		return a.(int) - b.(int)
 	})
@@ -486,7 +497,18 @@ func BenchmarkCompare(b *testing.B) {
 	}
 }
 
-// the size of interface{} is 16B
+// BenchmarkSameSetNode-4   	2000000000	         0.39 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSameSetNode(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
+	for i := 0; i < b.N; i++ {
+		_ = SameSetNode(a, c)
+	}
+}
+
+// the size to store interface{} is 16B
 // type eface struct {
 // 	_type *_type
 // 	data  unsafe.Pointer
@@ -497,12 +519,25 @@ func BenchmarkCompare(b *testing.B) {
 // 	data unsafe.Pointer
 // }
 
-func ExampleSetNodeSize() {
+func ExampleNodeSize() {
 	fmt.Println(reflect.TypeOf(RBTreeNode{}).Size())
 	fmt.Println(reflect.TypeOf(SetNode{}).Size())
 	fmt.Println(reflect.TypeOf(MapNode{}).Size())
 	//Output:
 	//72
 	//88
-	//88
+	//104
+}
+
+func ExampleSameSetNode() {
+	var a Iterator = &SetNode{data: 1}
+	var b Iterator = &SetNode{data: 2}
+	var c Iterator = &SetNode{data: 1}
+	fmt.Println(SameSetNode(a, b))
+	fmt.Println(SameSetNode(a, a))
+	fmt.Println(SameSetNode(a, c))
+	// Output:
+	//false
+	//true
+	//false
 }

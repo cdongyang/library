@@ -1,52 +1,45 @@
 package rbtree
 
 type Pair struct {
-	key, value interface{}
+	Key, Value interface{}
 }
 
-func (p *Pair) GetKey() interface{} {
-	return p.key
-}
-
-func (p *Pair) GetValue() interface{} {
-	return p.value
-}
-
-func (p *Pair) SetValue(value interface{}) {
-	p.value = value
-}
-
-func NewPair(key, value interface{}) *Pair {
-	return &Pair{key: key, value: value}
+func NewPair(key, value interface{}) Pair {
+	return Pair{Key: key, Value: value}
 }
 
 //type of MapNode.data must be *Pair
 type MapNode struct {
-	SetNode
+	RBTreeNode
+	Pair
 }
 
 func (node *MapNode) Next() Iterator {
-	return node.tree.Next(node)
+	return node.GetTree().(*Map).Next(node)
 }
 
 func (node *MapNode) Last() Iterator {
-	return node.tree.Next(node)
+	return node.GetTree().(*Map).Last(node)
 }
 
 func (node *MapNode) CopyData(src Iterator) {
-	node.data = src.(*MapNode).data
+	node.Pair = src.(*MapNode).Pair
+}
+
+func (node *MapNode) GetData() interface{} {
+	return node.Pair
 }
 
 func (node *MapNode) GetKey() interface{} {
-	return node.data.(*Pair).GetKey()
+	return node.Pair.Key
 }
 
 func (node *MapNode) GetValue() interface{} {
-	return node.data.(*Pair).GetValue()
+	return node.Pair.Value
 }
 
 func (node *MapNode) SetValue(value interface{}) {
-	node.data.(*Pair).SetValue(value)
+	node.Pair.Value = value
 }
 
 type Map struct {
@@ -54,14 +47,15 @@ type Map struct {
 }
 
 func (m *Map) Insert(data interface{}) (Iterator, bool) {
+	_ = data.(Pair)
 	return m.RBTree.insert(data, func(key interface{}) int {
-		return m.compare(data.(*Pair).GetKey(), key)
+		return m.compare(data.(Pair).Key, key)
 	})
 }
 
 func SameMapNode(a Iterator, b Iterator) bool {
 	aa, aok := a.(*MapNode)
-	bb, bok := a.(*MapNode)
+	bb, bok := b.(*MapNode)
 	if aok && bok {
 		return aa == bb
 	}
@@ -74,7 +68,7 @@ func NewMap(compare func(interface{}, interface{}) int) *Map {
 		mp,
 		&MapNode{},
 		func(data interface{}) Iterator {
-			return &MapNode{SetNode{data: data}}
+			return &MapNode{Pair: data.(Pair)}
 		},
 		func(Iterator) {
 		},
@@ -97,7 +91,7 @@ func NewMultiMap(compare func(interface{}, interface{}) int) *Map {
 		mp,
 		&MapNode{},
 		func(data interface{}) Iterator {
-			return &MapNode{SetNode{data: data}}
+			return &MapNode{Pair: data.(Pair)}
 		},
 		func(Iterator) {
 		},
