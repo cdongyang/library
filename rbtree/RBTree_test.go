@@ -1,8 +1,6 @@
 package rbtree
 
 import (
-	"fmt"
-	"reflect"
 	"sort"
 	"testing"
 
@@ -352,6 +350,7 @@ func TestRBTree(t *testing.T) {
 
 var benchRand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
 
+// BenchmarkRBTreeInsert-4   	 1000000	      2072 ns/op	     247 B/op	      21 allocs/op
 func BenchmarkRBTreeInsert(t *testing.B) {
 	var (
 		compare = func(a, b interface{}) int {
@@ -374,6 +373,7 @@ func BenchmarkRBTreeInsert(t *testing.B) {
 	}
 }
 
+// BenchmarkRBTreeErase-4   	 1000000	      1415 ns/op	     156 B/op	      19 allocs/op
 func BenchmarkRBTreeErase(t *testing.B) {
 	var (
 		compare = func(a, b interface{}) int {
@@ -403,6 +403,7 @@ func BenchmarkRBTreeErase(t *testing.B) {
 	}
 }
 
+// BenchmarkRBTreeFind-4   	 1000000	      1238 ns/op	     164 B/op	      20 allocs/op
 func BenchmarkRBTreeFind(t *testing.B) {
 	var (
 		compare = func(a, b interface{}) int {
@@ -533,38 +534,4 @@ func BenchmarkUnsafeSameNode(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = unsafeSameIterator(a, c)
 	}
-}
-
-// the size to store interface{} is 16B
-// type eface struct {
-// 	_type *_type
-// 	data  unsafe.Pointer
-// }
-//
-// type iface struct {
-// 	tab  *itab
-// 	data unsafe.Pointer
-// }
-
-func ExampleNodeSize() {
-	fmt.Println(reflect.TypeOf(RBTreeNode{}).Size())
-	fmt.Println(reflect.TypeOf(SetNode{}).Size())
-	fmt.Println(reflect.TypeOf(MapNode{}).Size())
-	//Output:
-	//72
-	//88
-	//104
-}
-
-func ExampleSameSetNode() {
-	var a Iterator = &SetNode{data: 1}
-	var b Iterator = &SetNode{data: 2}
-	var c Iterator = &SetNode{data: 1}
-	fmt.Println(SameSetNode(a, b))
-	fmt.Println(SameSetNode(a, a))
-	fmt.Println(SameSetNode(a, c))
-	// Output:
-	//false
-	//true
-	//false
 }
