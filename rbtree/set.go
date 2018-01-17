@@ -1,5 +1,7 @@
 package rbtree
 
+import "unsafe"
+
 type SetNode struct {
 	RBTreeNode
 	data interface{}
@@ -48,9 +50,11 @@ type Set struct {
 // the compare func return negative int when a < b, return 0 when a == b and return positive int when a > b
 func NewSet(compare func(a, b interface{}) int) *Set {
 	var set = &Set{}
+	var header = &SetNode{}
 	return NewRBTreer(
 		set,
-		&SetNode{},
+		header,
+		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		func(data interface{}) Iterator {
 			return &SetNode{data: data}
 		},
@@ -69,16 +73,21 @@ func NewCustomSet(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int) *Set {
 	var set = &Set{}
-	return NewRBTreer(set, &SetNode{}, newNode, deleteNode, compare, SameSetNode, true).(*Set)
+	var header = &SetNode{}
+	return NewRBTreer(set, header,
+		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
+		newNode, deleteNode, compare, SameSetNode, true).(*Set)
 }
 
 // NewMultiSet create a new not unique Set with compare func
 // the compare func return negative int when a < b, return 0 when a == b and return positive int when a > b
 func NewMultiSet(compare func(interface{}, interface{}) int) *Set {
 	var set = &Set{}
+	var header = &SetNode{}
 	return NewRBTreer(
 		set,
-		&SetNode{},
+		header,
+		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		func(data interface{}) Iterator {
 			return &SetNode{data: data}
 		},
@@ -97,5 +106,8 @@ func NewCustomMultiSet(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int) *Set {
 	var set = &Set{}
-	return NewRBTreer(set, &SetNode{}, newNode, deleteNode, compare, SameSetNode, false).(*Set)
+	var header = &SetNode{}
+	return NewRBTreer(set, header,
+		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
+		newNode, deleteNode, compare, SameSetNode, false).(*Set)
 }

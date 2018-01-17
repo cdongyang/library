@@ -1,5 +1,7 @@
 package rbtree
 
+import "unsafe"
+
 type Pair struct {
 	Key, Value interface{}
 }
@@ -64,9 +66,11 @@ func SameMapNode(a Iterator, b Iterator) bool {
 
 func NewMap(compare func(interface{}, interface{}) int) *Map {
 	var mp = &Map{}
+	var header = &MapNode{}
 	return NewRBTreer(
 		mp,
-		&MapNode{},
+		header,
+		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		func(data interface{}) Iterator {
 			return &MapNode{Pair: data.(Pair)}
 		},
@@ -82,14 +86,19 @@ func NewCustomMap(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int) *Map {
 	var mp = &Map{}
-	return NewRBTreer(mp, &MapNode{}, newNode, deleteNode, compare, SameMapNode, true).(*Map)
+	var header = &MapNode{}
+	return NewRBTreer(mp, header,
+		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
+		newNode, deleteNode, compare, SameMapNode, true).(*Map)
 }
 
 func NewMultiMap(compare func(interface{}, interface{}) int) *Map {
 	var mp = &Map{}
+	var header = &MapNode{}
 	return NewRBTreer(
 		mp,
-		&MapNode{},
+		header,
+		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		func(data interface{}) Iterator {
 			return &MapNode{Pair: data.(Pair)}
 		},
@@ -105,5 +114,8 @@ func NewCustomMultiMap(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int) *Map {
 	var mp = &Map{}
-	return NewRBTreer(mp, &MapNode{}, newNode, deleteNode, compare, SameMapNode, false).(*Map)
+	var header = &MapNode{}
+	return NewRBTreer(mp, header,
+		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
+		newNode, deleteNode, compare, SameMapNode, false).(*Map)
 }

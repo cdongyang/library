@@ -3,6 +3,7 @@ package rbtree
 import (
 	"sort"
 	"testing"
+	"unsafe"
 
 	"github.com/cdongyang/library/algorithm"
 	"github.com/cdongyang/library/randint"
@@ -13,6 +14,14 @@ func (t colorType) String() string {
 		return "red"
 	}
 	return "black"
+}
+
+var offsetNode uintptr
+
+func init() {
+	var header = &node{}
+	offsetNode = uintptr(unsafe.Pointer(&header.RBTreeNode)) - uintptr(unsafe.Pointer(header))
+	//fmt.Println("offsetNode:", offsetNode)
 }
 
 type node struct {
@@ -45,8 +54,8 @@ func (t *RBTree) leftmost() Iterator {
 	if t.sameIterator(root, t.End()) {
 		return root
 	}
-	for !t.sameIterator(root.getChild(0), t.End()) {
-		root = root.getChild(0)
+	for !t.sameIterator(t.getChild(root, 0), t.End()) {
+		root = t.getChild(root, 0)
 	}
 	return root
 }
@@ -56,8 +65,8 @@ func (t *RBTree) rightmost() Iterator {
 	if t.sameIterator(root, t.End()) {
 		return root
 	}
-	for !t.sameIterator(root.getChild(1), t.End()) {
-		root = root.getChild(1)
+	for !t.sameIterator(t.getChild(root, 1), t.End()) {
+		root = t.getChild(root, 1)
 	}
 	return root
 }
@@ -75,22 +84,22 @@ func (t *RBTree) check(root Iterator) (l int, size int) {
 	}
 	//fmt.Printf("l:%p r:%p p:%p s:%p c:%s v:%d\n", root.getChild(0), root.getChild(1), root.getParent(), root, root.getColor().String(), root.GetKey())
 	for i := 0; i < 2; i++ {
-		if !t.sameIterator(root.getChild(i), t.End()) {
-			if root.getColor() == red && root.getChild(i).getColor() == red {
+		if !t.sameIterator(t.getChild(root, i), t.End()) {
+			if root.getColor() == red && t.getChild(root, i).getColor() == red {
 				panic("linked red node")
-			} else if !t.sameIterator(root.getChild(i).getParent(), root) {
+			} else if !t.sameIterator(t.getParent(t.getChild(root, i)), root) {
 				panic("tree error")
-			} else if i == 0 && t.compare(root.getChild(i).GetKey(), root.GetKey()) > 0 {
+			} else if i == 0 && t.compare(t.getChild(root, i).GetKey(), root.GetKey()) > 0 {
 				panic("order error")
-			} else if i == 1 && t.compare(root.getChild(i).GetKey(), root.GetKey()) < 0 {
+			} else if i == 1 && t.compare(t.getChild(root, i).GetKey(), root.GetKey()) < 0 {
 				panic("order error")
-			} else if t.compare(root.getChild(i).GetKey(), root.GetKey()) == 0 && t.unique { //unique set can't equal
+			} else if t.compare(t.getChild(root, i).GetKey(), root.GetKey()) == 0 && t.unique { //unique set can't equal
 				panic("order equal error")
 			}
 		}
 	}
-	var a, s1 = t.check(root.getChild(0))
-	var b, s2 = t.check(root.getChild(1))
+	var a, s1 = t.check(t.getChild(root, 0))
+	var b, s2 = t.check(t.getChild(root, 1))
 	if a != b {
 		panic("path length of black not equal")
 	}
@@ -119,7 +128,8 @@ func testRBTree(t *testing.T, length int, unique bool) {
 		}
 	)
 	var tree = &RBTree{}
-	tree = NewRBTreer(tree, &node{}, newNode, deleteNode, compare, nil, unique).(*RBTree)
+	//fmt.Println("offsetNode:", offsetNode)
+	tree = NewRBTreer(tree, &node{}, offsetNode, newNode, deleteNode, compare, nil, unique).(*RBTree)
 	var count = make(map[int]int, len(intSlice1K))
 	// test empty tree and empty tree Begin and End
 	if !tree.Empty() {
@@ -366,7 +376,7 @@ func BenchmarkRBTreeInsert(t *testing.B) {
 		}
 	)
 	var set = &RBTree{}
-	set = NewRBTreer(set, &node{}, newNode, deleteNode, compare, sameNode, true).(*RBTree)
+	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, sameNode, true).(*RBTree)
 	var rand = benchRand
 	for i := 0; i < t.N; i++ {
 		_, _ = set.Insert(rand.Int())
@@ -389,7 +399,7 @@ func BenchmarkRBTreeErase(t *testing.B) {
 		}
 	)
 	var set = &RBTree{}
-	set = NewRBTreer(set, &node{}, newNode, deleteNode, compare, sameNode, true).(*RBTree)
+	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, sameNode, true).(*RBTree)
 	t.StopTimer()
 	var keys = make([]int, t.N)
 	var rand = benchRand
@@ -419,7 +429,7 @@ func BenchmarkRBTreeFind(t *testing.B) {
 		}
 	)
 	var set = &RBTree{}
-	set = NewRBTreer(set, &node{}, newNode, deleteNode, compare, sameNode, true).(*RBTree)
+	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, sameNode, true).(*RBTree)
 	t.StopTimer()
 	var keys = make([]int, t.N)
 	var rand = benchRand

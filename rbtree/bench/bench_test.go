@@ -23,16 +23,26 @@ func BenchmarkAll(b *testing.B) {
 	b.Run("hashMapFind", runWith(benchmarkHashMapFind, ns...))
 }
 
+func BenchmarkSet(b *testing.B) {
+	b.Run("setInsert", runWith(benchmarkSetInsert, 1e5))
+	b.Run("setErase", runWith(benchmarkSetErase, 1e5))
+	b.Run("setFind", runWith(benchmarkSetFind, 1e5))
+}
+
+func BenchmarkHashMap(b *testing.B) {
+	b.Run("hashMapInsert", runWith(benchmarkHashMapInsert, 1e5))
+	b.Run("hashMapErase", runWith(benchmarkHashMapErase, 1e5))
+	b.Run("hashMapFind", runWith(benchmarkHashMapFind, 1e5))
+}
+
+func BenchmarkMap(b *testing.B) {
+	b.Run("mapInsert", runWith(benchmarkMapInsert, 1e5))
+	b.Run("mapErase", runWith(benchmarkSetErase, 1e5))
+	b.Run("mapFind", runWith(benchmarkMapFind, 1e5))
+}
+
 func BenchmarkSetInsert(b *testing.B) {
 	b.Run("setInsert", runWith(benchmarkSetInsert, 1e5))
-}
-
-func BenchmarkSetErase(b *testing.B) {
-	b.Run("setErase", runWith(benchmarkSetErase, 1e5))
-}
-
-func BenchmarkSetFind(b *testing.B) {
-	b.Run("setFind", runWith(benchmarkSetFind, 1e5))
 }
 
 func runWith(f func(*testing.B, int), v ...int) func(*testing.B) {

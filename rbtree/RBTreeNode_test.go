@@ -39,7 +39,7 @@ func ExampleGetChild() {
 	var node Iterator = &SetNode{}
 	var leftChild Iterator = &SetNode{}
 	var offset = uintptr(unsafe.Pointer(node.(*SetNode))) - uintptr(unsafe.Pointer(&node.(*SetNode).child[0]))
-	node.setChild(0, leftChild)
+	*getIteratorPointer(node, offsetChild[0]) = leftChild
 	var tmp = getChild(node, 0, offset)
 	fmt.Println(SameSetNode(tmp, leftChild))
 	// Output:
@@ -50,7 +50,7 @@ func BenchmarkUnsafeGetChild(b *testing.B) {
 	var node Iterator = &SetNode{}
 	var leftChild Iterator = &SetNode{}
 	var offset = uintptr(unsafe.Pointer(node.(*SetNode))) - uintptr(unsafe.Pointer(&node.(*SetNode).child[0]))
-	node.setChild(0, leftChild)
+	*getIteratorPointer(node, offsetChild[0]) = leftChild
 	for i := 0; i < b.N; i++ {
 		var tmp = getChild(node, 0, offset)
 		if !SameSetNode(tmp, leftChild) {
@@ -62,9 +62,9 @@ func BenchmarkUnsafeGetChild(b *testing.B) {
 func BenchmarkGetChild(b *testing.B) {
 	var node Iterator = &SetNode{}
 	var leftChild Iterator = &SetNode{}
-	node.setChild(0, leftChild)
+	*getIteratorPointer(node, offsetChild[0]) = leftChild
 	for i := 0; i < b.N; i++ {
-		var tmp = node.getChild(0)
+		var tmp = *getIteratorPointer(node, offsetChild[0])
 		if !SameSetNode(tmp, leftChild) {
 			b.Fatal("not same set node")
 		}
