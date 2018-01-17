@@ -30,6 +30,22 @@ type node struct {
 	RBTreeNode
 }
 
+func NewTree(unique bool) *RBTree {
+	var (
+		newNode = func(data interface{}) Iterator {
+			return &node{data: data.(int)}
+		}
+		deleteNode = func(node Iterator) {
+		}
+	)
+	var tree = &RBTree{}
+	return NewRBTreer(tree, &node{}, offsetNode, newNode, deleteNode, CompareInt,
+		func(p unsafe.Pointer) unsafe.Pointer {
+			return unsafe.Pointer(&(*node)(p).data)
+		},
+		unique).(*RBTree)
+}
+
 func ExampleNodeOffset() {
 	var it = &node{}
 	var base = uintptr(unsafe.Pointer(it))
@@ -118,11 +134,11 @@ func (t *RBTree) check(root iface) (l int, size int) {
 				panic("linked red node")
 			} else if !sameIface(t.getParent(t.getChild(root, i)), root) {
 				panic("tree error")
-			} else if i == 0 && t.compare(t.getChild(root, i).GetKey(), root.GetKey()) > 0 {
+			} else if i == 0 && t.compare(t.getKey(t.getChild(root, i).pointer), t.getKey(root.pointer)) > 0 {
 				panic("order error")
-			} else if i == 1 && t.compare(t.getChild(root, i).GetKey(), root.GetKey()) < 0 {
+			} else if i == 1 && t.compare(t.getKey(t.getChild(root, i).pointer), t.getKey(root.pointer)) < 0 {
 				panic("order error")
-			} else if t.compare(t.getChild(root, i).GetKey(), root.GetKey()) == 0 && t.unique { //unique set can't equal
+			} else if t.compare(t.getKey(t.getChild(root, i).pointer), t.getKey(root.pointer)) == 0 && t.unique { //unique set can't equal
 				panic("order equal error")
 			}
 		}
@@ -146,19 +162,8 @@ func testRBTree(t *testing.T, length int, unique bool) {
 	for i := range intSlice1K {
 		intSlice1K[i] = rand.Int() % max
 	}
-	var (
-		compare = func(a, b interface{}) int {
-			return a.(int) - b.(int)
-		}
-		newNode = func(data interface{}) Iterator {
-			return &node{data: data.(int)}
-		}
-		deleteNode = func(node Iterator) {
-		}
-	)
-	var tree = &RBTree{}
 	//fmt.Println("offsetNode:", offsetNode)
-	tree = NewRBTreer(tree, &node{}, offsetNode, newNode, deleteNode, compare, unique).(*RBTree)
+	var tree = NewTree(unique)
 	var count = make(map[int]int, len(intSlice1K))
 	// test empty tree and empty tree Begin and End
 	if !tree.Empty() {
@@ -220,7 +225,7 @@ func testRBTree(t *testing.T, length int, unique bool) {
 	}
 
 	// test Compare
-	if tree.Compare(tree.Begin().GetKey(), minVal) != 0 {
+	if tree.Begin().GetKey() != minVal {
 		t.Fatal("Compare error")
 	}
 	var sortSlice = make([]int, len(intSlice1K))
@@ -392,18 +397,7 @@ var benchRand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
 
 // BenchmarkRBTreeInsert-4   	 1000000	      2072 ns/op	     247 B/op	      21 allocs/op
 func BenchmarkRBTreeInsert(t *testing.B) {
-	var (
-		compare = func(a, b interface{}) int {
-			return a.(int) - b.(int)
-		}
-		newNode = func(data interface{}) Iterator {
-			return &node{data: data.(int)}
-		}
-		deleteNode = func(node Iterator) {
-		}
-	)
-	var set = &RBTree{}
-	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, true).(*RBTree)
+	var set = NewTree(true)
 	var rand = benchRand
 	for i := 0; i < t.N; i++ {
 		_, _ = set.Insert(rand.Int())
@@ -412,18 +406,7 @@ func BenchmarkRBTreeInsert(t *testing.B) {
 
 // BenchmarkRBTreeErase-4   	 1000000	      1415 ns/op	     156 B/op	      19 allocs/op
 func BenchmarkRBTreeErase(t *testing.B) {
-	var (
-		compare = func(a, b interface{}) int {
-			return a.(int) - b.(int)
-		}
-		newNode = func(data interface{}) Iterator {
-			return &node{data: data.(int)}
-		}
-		deleteNode = func(node Iterator) {
-		}
-	)
-	var set = &RBTree{}
-	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, true).(*RBTree)
+	var set = NewTree(true)
 	t.StopTimer()
 	var keys = make([]int, t.N)
 	var rand = benchRand
@@ -439,18 +422,7 @@ func BenchmarkRBTreeErase(t *testing.B) {
 
 // BenchmarkRBTreeFind-4   	 1000000	      1238 ns/op	     164 B/op	      20 allocs/op
 func BenchmarkRBTreeFind(t *testing.B) {
-	var (
-		compare = func(a, b interface{}) int {
-			return a.(int) - b.(int)
-		}
-		newNode = func(data interface{}) Iterator {
-			return &node{data: data.(int)}
-		}
-		deleteNode = func(node Iterator) {
-		}
-	)
-	var set = &RBTree{}
-	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, true).(*RBTree)
+	var set = NewTree(true)
 	t.StopTimer()
 	var keys = make([]int, t.N)
 	var rand = benchRand

@@ -27,17 +27,6 @@ func (node *SetNode) CopyData(src Iterator) {
 	node.data = src.(*SetNode).data
 }
 
-// SameSetNode judge wheather two Iterator is the same node, but not equal node
-// type assert to *SetNode to speed up
-func SameSetNode(a, b Iterator) bool {
-	aa, aok := a.(*SetNode)
-	bb, bok := b.(*SetNode)
-	if aok && bok {
-		return aa == bb
-	}
-	return a == b
-}
-
 // Set is a set of element
 // you can use the Unique method to get wheather the Set element is unique
 // you can use NewSet or NewCustomSet to create a unique Set
@@ -46,9 +35,13 @@ type Set struct {
 	RBTree
 }
 
+func getSetNodeKey(p unsafe.Pointer) unsafe.Pointer {
+	return (*iface)(unsafe.Pointer(&(*SetNode)(p).data)).pointer
+}
+
 // NewSet create a new unique Set with compare func
 // the compare func return negative int when a < b, return 0 when a == b and return positive int when a > b
-func NewSet(compare func(a, b interface{}) int) *Set {
+func NewSet(compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
 	var header = &SetNode{}
 	return NewRBTreer(
@@ -62,6 +55,7 @@ func NewSet(compare func(a, b interface{}) int) *Set {
 		},
 		compare,
 		//SameSetNode,
+		getSetNodeKey,
 		true,
 	).(*Set)
 }
@@ -71,19 +65,20 @@ func NewSet(compare func(a, b interface{}) int) *Set {
 // such as with a sync.Pool to reduce the pressure of GC
 func NewCustomSet(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
-	compare func(interface{}, interface{}) int) *Set {
+	compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
 	var header = &SetNode{}
 	return NewRBTreer(set, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		//SameSetNode,
+		getSetNodeKey,
 		true).(*Set)
 }
 
 // NewMultiSet create a new not unique Set with compare func
 // the compare func return negative int when a < b, return 0 when a == b and return positive int when a > b
-func NewMultiSet(compare func(interface{}, interface{}) int) *Set {
+func NewMultiSet(compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
 	var header = &SetNode{}
 	return NewRBTreer(
@@ -97,6 +92,7 @@ func NewMultiSet(compare func(interface{}, interface{}) int) *Set {
 		},
 		compare,
 		//SameSetNode,
+		getSetNodeKey,
 		false,
 	).(*Set)
 }
@@ -106,12 +102,13 @@ func NewMultiSet(compare func(interface{}, interface{}) int) *Set {
 // such as with a sync.Pool to reduce the pressure of GC
 func NewCustomMultiSet(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
-	compare func(interface{}, interface{}) int) *Set {
+	compare func(a,b unsafe.Pointer) int) *Set {
 	var set = &Set{}
 	var header = &SetNode{}
 	return NewRBTreer(set, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		//SameSetNode,
+		getSetNodeKey,
 		false).(*Set)
 }

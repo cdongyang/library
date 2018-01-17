@@ -55,9 +55,7 @@ func runWith(f func(*testing.B, int), v ...int) func(*testing.B) {
 
 func benchmarkSetInsert(b *testing.B, n int) {
 	b.N = n
-	var set = rbtree.NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = rbtree.NewSet(rbtree.CompareInt)
 	var rand = benchRand
 	b.ResetTimer()
 	var key int
@@ -69,9 +67,7 @@ func benchmarkSetInsert(b *testing.B, n int) {
 
 func benchmarkSetErase(b *testing.B, n int) {
 	b.N = n
-	var set = rbtree.NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = rbtree.NewSet(rbtree.CompareInt)
 	var keys = make([]int, b.N)
 	var rand = benchRand
 	for i := 0; i < b.N; i++ {
@@ -88,9 +84,7 @@ func benchmarkSetErase(b *testing.B, n int) {
 
 func benchmarkSetFind(b *testing.B, n int) {
 	b.N = n
-	var set = rbtree.NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = rbtree.NewSet(rbtree.CompareInt)
 	var keys = make([]int, b.N)
 	var rand = benchRand
 	for i := 0; i < b.N; i++ {
@@ -107,9 +101,7 @@ func benchmarkSetFind(b *testing.B, n int) {
 
 func benchmarkMapInsert(b *testing.B, n int) {
 	b.N = n
-	var mp = rbtree.NewMap(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var mp = rbtree.NewMap(rbtree.CompareInt)
 	var rand = benchRand
 	b.ResetTimer()
 	var key int
@@ -121,9 +113,7 @@ func benchmarkMapInsert(b *testing.B, n int) {
 
 func benchmarkMapErase(b *testing.B, n int) {
 	b.N = n
-	var mp = rbtree.NewMap(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var mp = rbtree.NewMap(rbtree.CompareInt)
 	var keys = make([]int, b.N)
 	var rand = benchRand
 	for i := 0; i < b.N; i++ {
@@ -140,9 +130,7 @@ func benchmarkMapErase(b *testing.B, n int) {
 
 func benchmarkMapFind(b *testing.B, n int) {
 	b.N = n
-	var mp = rbtree.NewMap(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var mp = rbtree.NewMap(rbtree.CompareInt)
 	var keys = make([]int, b.N)
 	var rand = benchRand
 	for i := 0; i < b.N; i++ {

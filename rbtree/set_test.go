@@ -17,12 +17,7 @@ func testSet(t *testing.T, length int, unique bool) {
 	for i := range intSlice1K {
 		intSlice1K[i] = rand.Int() % max
 	}
-	var (
-		compare = func(a, b interface{}) int {
-			return a.(int) - b.(int)
-		}
-	)
-	var set = rbtree.NewSet(compare)
+	var set = rbtree.NewSet(rbtree.CompareInt)
 	var count = make(map[int]int, len(intSlice1K))
 	// test empty set and empty set Begin and End
 	if !set.Empty() {
@@ -83,7 +78,7 @@ func testSet(t *testing.T, length int, unique bool) {
 	}
 
 	// test Compare
-	if set.Compare(set.Begin().GetKey(), minVal) != 0 {
+	if set.Begin().GetKey() != minVal {
 		t.Fatal("Compare error")
 	}
 	var sortSlice = make([]int, len(intSlice1K))

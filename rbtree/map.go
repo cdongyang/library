@@ -50,22 +50,17 @@ type Map struct {
 
 func (m *Map) Insert(data interface{}) (Iterator, bool) {
 	_ = data.(Pair)
-	iter, ok := m.RBTree.insert(data, func(key interface{}) int {
-		return m.compare(data.(Pair).Key, key)
+	iter, ok := m.RBTree.insert(data, func(key unsafe.Pointer) int {
+		return m.compare(interface2pointer(data.(Pair).Key), key)
 	})
 	return iface2iterator(iter), ok
 }
 
-func SameMapNode(a Iterator, b Iterator) bool {
-	aa, aok := a.(*MapNode)
-	bb, bok := b.(*MapNode)
-	if aok && bok {
-		return aa == bb
-	}
-	return a == b
+func getMapNodeKey(p unsafe.Pointer) unsafe.Pointer {
+	return (*iface)(unsafe.Pointer(&(*MapNode)(p).Key)).pointer
 }
 
-func NewMap(compare func(interface{}, interface{}) int) *Map {
+func NewMap(compare func(a, b unsafe.Pointer) int) *Map {
 	var mp = &Map{}
 	var header = &MapNode{}
 	return NewRBTreer(
@@ -79,23 +74,25 @@ func NewMap(compare func(interface{}, interface{}) int) *Map {
 		},
 		compare,
 		//SameMapNode,
+		getMapNodeKey,
 		true,
 	).(*Map)
 }
 
 func NewCustomMap(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
-	compare func(interface{}, interface{}) int) *Map {
+	compare func(a, b unsafe.Pointer) int) *Map {
 	var mp = &Map{}
 	var header = &MapNode{}
 	return NewRBTreer(mp, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		//SameMapNode,
+		getMapNodeKey,
 		true).(*Map)
 }
 
-func NewMultiMap(compare func(interface{}, interface{}) int) *Map {
+func NewMultiMap(compare func(a, b unsafe.Pointer) int) *Map {
 	var mp = &Map{}
 	var header = &MapNode{}
 	return NewRBTreer(
@@ -109,18 +106,20 @@ func NewMultiMap(compare func(interface{}, interface{}) int) *Map {
 		},
 		compare,
 		//SameMapNode,
+		getMapNodeKey,
 		false,
 	).(*Map)
 }
 
 func NewCustomMultiMap(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
-	compare func(interface{}, interface{}) int) *Map {
+	compare func(a, b unsafe.Pointer) int) *Map {
 	var mp = &Map{}
 	var header = &MapNode{}
 	return NewRBTreer(mp, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		//SameMapNode,
+		getMapNodeKey,
 		false).(*Map)
 }

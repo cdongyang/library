@@ -32,10 +32,6 @@ type iface struct {
 	itype, pointer unsafe.Pointer
 }
 
-func (node iface) GetKey() interface{} {
-	return iface2iterator(node).GetKey()
-}
-
 // embed RBTreeNode should not use pointer, because the operation of RBTree treate is as value
 type RBTreeNode struct {
 	child  [2]iface
@@ -105,7 +101,7 @@ func (node *RBTreeNode) setTree(tree RBTreer) {
 type RBTreer interface {
 	DeleteNode(node Iterator)
 	SameIterator(a, b Iterator) bool
-	Compare(key1, key2 interface{}) int
+	Compare(key1, key2 unsafe.Pointer) int
 	Clear()
 	Unique() bool
 	Size() int
@@ -130,8 +126,8 @@ type RBTreer interface {
 		nodeOffset uintptr,
 		newNode func(interface{}) Iterator,
 		deleteNode func(Iterator),
-		compare func(interface{}, interface{}) int,
-		//sameIterator func(Iterator, Iterator) bool,
+		compare func(unsafe.Pointer, unsafe.Pointer) int,
+		getKey func(unsafe.Pointer) unsafe.Pointer,
 		unique bool,
 	)
 }
@@ -141,8 +137,9 @@ type RBTree struct {
 	size       int
 	newNode    func(interface{}) Iterator
 	deleteNode func(Iterator)
-	compare    func(interface{}, interface{}) int
-	//sameIterator func(Iterator, Iterator) bool
+	compare    func(unsafe.Pointer, unsafe.Pointer) int
+	//compareFun unsafe.Pointer
+	getKey     func(unsafe.Pointer) unsafe.Pointer
 	nodeOffset uintptr
 	unique     bool
 }
@@ -153,11 +150,11 @@ func NewRBTreer(
 	nodeOffset uintptr,
 	newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
-	compare func(interface{}, interface{}) int,
-	//sameIterator func(Iterator, Iterator) bool,
+	compare func(unsafe.Pointer, unsafe.Pointer) int,
+	getKey func(unsafe.Pointer) unsafe.Pointer,
 	unique bool) RBTreer {
 	t.init(t, header, nodeOffset, newNode, deleteNode, compare,
-		//sameIterator,
+		getKey,
 		unique)
 	return t
 }
@@ -168,8 +165,8 @@ func (t *RBTree) init(
 	nodeOffset uintptr,
 	newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
-	compare func(interface{}, interface{}) int,
-	//sameIterator func(Iterator, Iterator) bool,
+	compare func(unsafe.Pointer, unsafe.Pointer) int,
+	getKey func(unsafe.Pointer) unsafe.Pointer,
 	unique bool) {
 	t.nodeOffset = nodeOffset
 	header.setTree(tree)
@@ -198,30 +195,18 @@ func (t *RBTree) init(
 		deleteNode(node)
 	}
 	t.compare = compare
-	//sameIface = sameIterator
-	//if sameIterator == nil {
-	//sameIface = unsafeSameIterator
-	//}
+	//t.compareFun = unsafe.Pointer(&compare)
+	t.getKey = getKey
 	t.unique = unique
 }
 
 func unsafeSameIterator(a, b Iterator) bool {
-	ap := (*[2]uintptr)(unsafe.Pointer(&a))
-	bp := (*[2]uintptr)(unsafe.Pointer(&b))
-	return ap[1] == bp[1]
+	return (*iface)(unsafe.Pointer(&a)).pointer == (*iface)(unsafe.Pointer(&b)).pointer
 }
 
 func sameIface(a, b iface) bool {
 	return a.pointer == b.pointer
 }
-
-/*
-func unsafeSameIterator(a, b Iterator) bool {
-	ap := *(*uintptr)(unsafe.Pointer(uintptr(unsafe.Pointer(&a)) + uintptr(8)))
-	bp := *(*uintptr)(unsafe.Pointer(uintptr(unsafe.Pointer(&b)) + uintptr(8)))
-	return ap == bp
-}
-*/
 
 func (t *RBTree) DeleteNode(node Iterator) {
 	t.deleteNode(node)
@@ -232,7 +217,7 @@ func (t *RBTree) SameIterator(a, b Iterator) bool {
 	//return sameIface(a, b)
 }
 
-func (t *RBTree) Compare(key1, key2 interface{}) int {
+func (t *RBTree) Compare(key1, key2 unsafe.Pointer) int {
 	return t.compare(key1, key2)
 }
 
@@ -329,7 +314,8 @@ func (t *RBTree) Count(key interface{}) (count int) {
 		return 1
 	}
 	var beg = t.lowerBound(key)
-	for !sameIface(beg, t.end()) && t.compare(beg.GetKey(), key) == 0 {
+	var keyPointer = interface2pointer(key)
+	for !sameIface(beg, t.end()) && t.compare(t.getKey(beg.pointer), keyPointer) == 0 {
 		beg = t.next(beg)
 		count++
 	}
@@ -337,7 +323,8 @@ func (t *RBTree) Count(key interface{}) (count int) {
 }
 
 func (t *RBTree) EqualRange(key interface{}) (Iterator, Iterator) {
-	return t.LowerBound(key), t.UpperBound(key)
+	var keyPointer = interface2pointer(key)
+	return t.LowerBound(keyPointer), t.UpperBound(keyPointer)
 }
 
 func (t *RBTree) Find(key interface{}) Iterator {
@@ -345,11 +332,12 @@ func (t *RBTree) Find(key interface{}) Iterator {
 }
 func (t *RBTree) find(key interface{}) iface {
 	var root = t.root()
+	var keyPointer = interface2pointer(key)
 	for {
 		if sameIface(root, t.end()) {
 			return root
 		}
-		switch cmp := t.compare(key, root.GetKey()); {
+		switch cmp := t.compare(keyPointer, t.getKey(root.pointer)); {
 		case cmp == 0:
 			return root
 		case cmp < 0:
@@ -361,12 +349,12 @@ func (t *RBTree) find(key interface{}) iface {
 }
 
 func (t *RBTree) Insert(data interface{}) (Iterator, bool) {
-	iter, ok := t.insert(data, func(key interface{}) int {
-		return t.compare(data, key)
+	iter, ok := t.insert(data, func(key unsafe.Pointer) int {
+		return t.compare(interface2pointer(data), key)
 	})
 	return iface2iterator(iter), ok
 }
-func (t *RBTree) insert(data interface{}, compare func(interface{}) int) (iface, bool) {
+func (t *RBTree) insert(data interface{}, compare func(unsafe.Pointer) int) (iface, bool) {
 	var root = t.root()
 	var rootPoiter = t.rootPoiter()
 	if sameIface(root, t.end()) {
@@ -380,7 +368,7 @@ func (t *RBTree) insert(data interface{}, compare func(interface{}) int) (iface,
 	var parent = t.getParent(root)
 	for !sameIface(root, t.end()) {
 		parent = root
-		switch cmp := compare(root.GetKey()); {
+		switch cmp := compare(t.getKey(root.pointer)); {
 		case cmp == 0:
 			if t.unique {
 				return t.end(), false
@@ -467,7 +455,8 @@ func (t *RBTree) Erase(key interface{}) (count int) {
 		return 1
 	}
 	var beg = t.lowerBound(key)
-	for !sameIface(beg, t.end()) && t.compare(key, beg.GetKey()) == 0 {
+	var keyPointer = interface2pointer(key)
+	for !sameIface(beg, t.end()) && t.compare(keyPointer, t.getKey(beg.pointer)) == 0 {
 		var tmp = t.next(beg)
 		t.eraseIterator(beg)
 		beg = tmp
@@ -613,17 +602,18 @@ func (t *RBTree) LowerBound(key interface{}) Iterator {
 func (t *RBTree) lowerBound(key interface{}) iface {
 	var root = t.root()
 	var parent = t.end()
+	var keyPointer = interface2pointer(key)
 	for {
 		if root == t.end() {
 			if sameIface(parent, t.end()) {
 				return parent
-			} else if t.compare(key, parent.GetKey()) <= 0 {
+			} else if t.compare(keyPointer, t.getKey(parent.pointer)) <= 0 {
 				return parent
 			}
 			return t.next(parent)
 		}
 		parent = root
-		if t.compare(key, root.GetKey()) > 0 {
+		if t.compare(keyPointer, t.getKey(root.pointer)) > 0 {
 			root = t.getChild(root, 1)
 		} else {
 			root = t.getChild(root, 0)
@@ -637,17 +627,18 @@ func (t *RBTree) UpperBound(key interface{}) Iterator {
 func (t *RBTree) upperBound(key interface{}) iface {
 	var root = t.root()
 	var parent = t.end()
+	var keyPointer = interface2pointer(key)
 	for {
 		if root == t.end() {
 			if sameIface(parent, t.end()) {
 				return parent
-			} else if t.compare(key, parent.GetKey()) < 0 {
+			} else if t.compare(keyPointer, t.getKey(parent.pointer)) < 0 {
 				return parent
 			}
 			return t.next(parent)
 		}
 		parent = root
-		if t.compare(key, root.GetKey()) >= 0 {
+		if t.compare(keyPointer, t.getKey(root.pointer)) >= 0 {
 			root = t.getChild(root, 1)
 		} else {
 			root = t.getChild(root, 0)
@@ -739,9 +730,10 @@ func (t *RBTree) setColor(node iface, color colorType) {
 	*getColorPointer(node, t.nodeOffset+offsetColor) = color
 }
 
-func getChild(t *RBTree, node iface, ch int) iface {
-	return *getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
-}
+/*func (t *RBTree) compare(a, b unsafe.Pointer) int {
+	fun := (*func(a, b unsafe.Pointer) int)(t.compareFun)
+	return (*fun)(a, b)
+}*/
 
 var (
 	offsetChild [2]uintptr
@@ -774,4 +766,12 @@ func iterator2iface(node Iterator) iface {
 
 func iface2iterator(node iface) Iterator {
 	return *(*Iterator)(unsafe.Pointer(&node))
+}
+
+func interface2pointer(a interface{}) unsafe.Pointer {
+	return (*iface)(unsafe.Pointer(&a)).pointer
+}
+
+func CompareInt(a, b unsafe.Pointer) int {
+	return *(*int)(a) - *(*int)(b)
 }

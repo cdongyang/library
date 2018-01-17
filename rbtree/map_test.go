@@ -17,12 +17,7 @@ func testMap(t *testing.T, length int, unique bool) {
 	for i := range intSlice1K {
 		intSlice1K[i] = rand.Int() % max
 	}
-	var (
-		compare = func(a, b interface{}) int {
-			return a.(int) - b.(int)
-		}
-	)
-	var mp = rbtree.NewMap(compare)
+	var mp = rbtree.NewMap(rbtree.CompareInt)
 	var count = make(map[int]int, len(intSlice1K))
 	// test empty mp and empty mp Begin and End
 	if !mp.Empty() {
@@ -83,7 +78,7 @@ func testMap(t *testing.T, length int, unique bool) {
 	}
 
 	// test Compare
-	if mp.Compare(mp.Begin().GetKey(), minVal) != 0 {
+	if mp.Begin().GetKey() != minVal {
 		t.Fatal("Compare error")
 	}
 	var sortSlice = make([]int, len(intSlice1K))

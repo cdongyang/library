@@ -7,7 +7,7 @@ import (
 	"unsafe"
 )
 
-func ExampleRBTreeNode() {
+func TestRBTreeNode(t *testing.T) {
 	var setNode Iterator = &SetNode{}
 	fmt.Printf("setNode: %p, RBTreeNode: %p, data: %p\n", setNode.(*SetNode), &setNode.(*SetNode).RBTreeNode, &setNode.(*SetNode).data)
 	fmt.Printf("RBTreeNode.child: %p,RBTreeNode.parent: %p\n", &setNode.(*SetNode).RBTreeNode.child, &setNode.(*SetNode).RBTreeNode.parent)
@@ -74,6 +74,10 @@ func BenchmarkGetUintPtr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = getIfaceUintPtr(iface)
 	}
+}
+
+func getChild(t *RBTree, node iface, ch int) iface {
+	return *getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
 }
 
 /*
@@ -150,9 +154,7 @@ func BenchmarkNewHeapSetNode(b *testing.B) {
 
 //BenchmarkNewNode-4   	20000000	       125 ns/op	      96 B/op	       1 allocs/op
 func BenchmarkSetNewNode(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = NewSet(CompareInt)
 	for i := 0; i < b.N; i++ {
 		_ = set.newNode(0)
 	}
@@ -160,9 +162,7 @@ func BenchmarkSetNewNode(b *testing.B) {
 
 //BenchmarkNewPoiterNode-4   	20000000	       123 ns/op	      96 B/op	       1 allocs/op
 func BenchmarkSetNewPoiterNode(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = NewSet(CompareInt)
 	var a = 0
 	var c = &a
 	for i := 0; i < b.N; i++ {
@@ -170,14 +170,13 @@ func BenchmarkSetNewPoiterNode(b *testing.B) {
 	}
 }
 
+/*
 // BenchmarkRBTreeCompare-4                200000000                8.67 ns/op            0 B/op          0 allocs/op
 func BenchmarkRBTreeCompare(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = NewSet(CompareInt)
 	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
 	for i := 0; i < b.N; i++ {
-		_ = set.RBTree.compare(a.GetKey(), c.GetKey())
+		_ = set.RBTree.compare(set.getKey(a), set.getKey(c))
 	}
 }
 
@@ -188,7 +187,7 @@ func BenchmarkGetKey(b *testing.B) {
 	})
 	var a = set.newNode(1).(*SetNode)
 	for i := 0; i < b.N; i++ {
-		_ = a.GetKey()
+		_ = set.getKey(a)
 	}
 }
 
@@ -199,7 +198,7 @@ func BenchmarkIteratorGetKey(b *testing.B) {
 	})
 	var a = set.newNode(1)
 	for i := 0; i < b.N; i++ {
-		_ = a.GetKey()
+		_ = set.getKey(a)
 	}
 }
 
@@ -233,14 +232,23 @@ func BenchmarkCompare(b *testing.B) {
 	}
 }
 
-// BenchmarkCompareInt-4   	300000000	         4.60 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkCompareInt(b *testing.B) {
-	var compare = func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	}
+// BenchmarkUnsafeCompareInt-4   	500000000	         3.82 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkUnsafeCompareInt(b *testing.B) {
+	var set = NewSet(CompareInt)
 	var a, c interface{} = 1, 2
 	for i := 0; i < b.N; i++ {
-		_ = compare(a, c)
+		_ = set.compare(a, c)
+	}
+}
+
+// BenchmarkCompareInt-4   	300000000	         5.07 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkCompareInt(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a, c interface{} = 1, 2
+	for i := 0; i < b.N; i++ {
+		_ = set.compare(a, c)
 	}
 }
 
@@ -253,6 +261,55 @@ func BenchmarkCompareIteratorGetKey(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = set.compare(a.GetKey(), c.GetKey())
 	}
+}
+*/
+
+// BenchmarkSetCompareInt-4   	500000000	         3.61 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSetCompareInt(b *testing.B) {
+	var set = NewSet(CompareInt)
+	var a, c = 1, 2
+	for i := 0; i < b.N; i++ {
+		_ = set.compare(unsafe.Pointer(&a), unsafe.Pointer(&c))
+	}
+}
+
+// BenchmarkRBTreeCompareInt-4   	500000000	         3.89 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkRBTreeCompareInt(b *testing.B) {
+	var set = NewSet(CompareInt)
+	var tree = &set.RBTree
+	var a, c = 1, 2
+	for i := 0; i < b.N; i++ {
+		_ = tree.compare(unsafe.Pointer(&a), unsafe.Pointer(&c))
+	}
+}
+
+// BenchmarkCompareInt-4   	2000000000	         0.38 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkCompareInt(b *testing.B) {
+	var a, c = 1, 2
+	for i := 0; i < b.N; i++ {
+		_ = CompareInt(unsafe.Pointer(&a), unsafe.Pointer(&c))
+	}
+}
+
+// BenchmarkGetKey-4   	500000000	         3.34 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkGetKey(b *testing.B) {
+	var set = NewSet(CompareInt)
+	var setNode = set.newNode(0)
+	var pointer = iterator2iface(setNode).pointer
+	for i := 0; i < b.N; i++ {
+		_ = set.getKey(pointer)
+	}
+}
+
+// SameSetNode judge wheather two Iterator is the same node, but not equal node
+// type assert to *SetNode to speed up
+func SameSetNode(a, b Iterator) bool {
+	aa, aok := a.(*SetNode)
+	bb, bok := b.(*SetNode)
+	if aok && bok {
+		return aa == bb
+	}
+	return a == b
 }
 
 // BenchmarkSameSetNode-4   	2000000000	         0.39 ns/op	       0 B/op	       0 allocs/op
@@ -305,3 +362,19 @@ func BenchmarkIterator2Iface(b *testing.B) {
 		_ = iface2iterator(a)
 	}
 }
+
+func ExampleGetKey() {
+	var a, b Iterator = &SetNode{data: 1}, &SetNode{data: 2}
+	_, _ = a, b
+	method, ok := reflect.TypeOf(a).MethodByName("GetKey")
+	if !ok {
+		panic("no method GetKey")
+	}
+	value := method.Func.Call([]reflect.Value{reflect.ValueOf(a)})
+	fmt.Println(value[0].Interface())
+	// Output:
+	// 1
+}
+
+// 有时候interface{}断言很慢,用(*type)unsafe.Pointer优化
+// 结构体调用method很快,但调用"函数成员"很慢
