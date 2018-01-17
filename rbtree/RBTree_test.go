@@ -68,23 +68,33 @@ func (n *node) CopyData(src Iterator) {
 	n.data = src.GetKey().(int)
 }
 
-func (t *RBTree) leftmost() Iterator {
+func (t *RBTree) Most(ch int) Iterator {
+	return iface2iterator(t.most(ch))
+}
+
+func (t *RBTree) Leftmost() Iterator {
+	return iface2iterator(t.leftmost())
+}
+func (t *RBTree) leftmost() iface {
 	var root = t.root()
-	if t.sameIterator(root, t.End()) {
+	if sameIface(root, t.end()) {
 		return root
 	}
-	for !t.sameIterator(t.getChild(root, 0), t.End()) {
+	for !sameIface(t.getChild(root, 0), t.end()) {
 		root = t.getChild(root, 0)
 	}
 	return root
 }
 
-func (t *RBTree) rightmost() Iterator {
+func (t *RBTree) Rightmost() Iterator {
+	return iface2iterator(t.rightmost())
+}
+func (t *RBTree) rightmost() iface {
 	var root = t.root()
-	if t.sameIterator(root, t.End()) {
+	if sameIface(root, t.end()) {
 		return root
 	}
-	for !t.sameIterator(t.getChild(root, 1), t.End()) {
+	for !sameIface(t.getChild(root, 1), t.end()) {
 		root = t.getChild(root, 1)
 	}
 	return root
@@ -92,21 +102,21 @@ func (t *RBTree) rightmost() Iterator {
 
 //check wheather the tree satisfy the rule of red-black tree
 func (t *RBTree) Check() (int, int) {
-	if !t.sameIterator(t.root(), t.End()) && t.root().getColor() != black {
+	if !sameIface(t.root(), t.end()) && t.getColor(t.root()) != black {
 		panic("not black root")
 	}
 	return t.check(t.root())
 }
-func (t *RBTree) check(root Iterator) (l int, size int) {
-	if t.sameIterator(root, t.End()) {
+func (t *RBTree) check(root iface) (l int, size int) {
+	if sameIface(root, t.end()) {
 		return 0, 0
 	}
 	//fmt.Printf("l:%p r:%p p:%p s:%p c:%s v:%d\n", root.getChild(0), root.getChild(1), root.getParent(), root, root.getColor().String(), root.GetKey())
 	for i := 0; i < 2; i++ {
-		if !t.sameIterator(t.getChild(root, i), t.End()) {
-			if root.getColor() == red && t.getChild(root, i).getColor() == red {
+		if !sameIface(t.getChild(root, i), t.end()) {
+			if t.getColor(root) == red && t.getColor(t.getChild(root, i)) == red {
 				panic("linked red node")
-			} else if !t.sameIterator(t.getParent(t.getChild(root, i)), root) {
+			} else if !sameIface(t.getParent(t.getChild(root, i)), root) {
 				panic("tree error")
 			} else if i == 0 && t.compare(t.getChild(root, i).GetKey(), root.GetKey()) > 0 {
 				panic("order error")
@@ -122,7 +132,7 @@ func (t *RBTree) check(root Iterator) (l int, size int) {
 	if a != b {
 		panic("path length of black not equal")
 	}
-	if root.getColor() == black {
+	if t.getColor(root) == black {
 		return a + 1, s1 + s2 + 1
 	}
 	return a, s1 + s2 + 1
@@ -148,7 +158,7 @@ func testRBTree(t *testing.T, length int, unique bool) {
 	)
 	var tree = &RBTree{}
 	//fmt.Println("offsetNode:", offsetNode)
-	tree = NewRBTreer(tree, &node{}, offsetNode, newNode, deleteNode, compare, nil, unique).(*RBTree)
+	tree = NewRBTreer(tree, &node{}, offsetNode, newNode, deleteNode, compare, unique).(*RBTree)
 	var count = make(map[int]int, len(intSlice1K))
 	// test empty tree and empty tree Begin and End
 	if !tree.Empty() {
@@ -189,10 +199,10 @@ func testRBTree(t *testing.T, length int, unique bool) {
 		if !tree.Unique() && !ok || tree.Unique() && ok == (count[val] != 0) {
 			t.Fatal("insert error", ok, count[val], val)
 		}
-		if tree.Begin().GetKey() != minVal || tree.most(0) != tree.leftmost() {
+		if tree.Begin().GetKey() != minVal || tree.Most(0) != tree.Leftmost() {
 			t.Fatal("leftmost error")
 		}
-		if tree.End().Last().GetKey() != maxVal || tree.most(1) != tree.rightmost() {
+		if tree.End().Last().GetKey() != maxVal || tree.Most(1) != tree.Rightmost() {
 			t.Fatal("rightmost error")
 		}
 		if tree.Unique() {
@@ -307,11 +317,11 @@ func testRBTree(t *testing.T, length int, unique bool) {
 		if size != tree.Size() {
 			t.Fatal("size error")
 		}
-		if tree.most(0) != tree.leftmost() {
-			t.Fatalf("tree most error,%p %p %p %d\n", tree.most(0), tree.leftmost(), tree.End(), tree.Size())
+		if tree.Most(0) != tree.Leftmost() {
+			t.Fatalf("tree most error,%p %p %p %d\n", tree.Most(0), tree.Leftmost(), tree.End(), tree.Size())
 		}
-		if tree.most(1) != tree.rightmost() {
-			t.Fatalf("tree most error,%p %p %p %d\n", tree.most(1), tree.rightmost(), tree.End(), tree.Size())
+		if tree.Most(1) != tree.Rightmost() {
+			t.Fatalf("tree most error,%p %p %p %d\n", tree.Most(1), tree.Rightmost(), tree.End(), tree.Size())
 		}
 	}
 	//test Empty method
@@ -353,11 +363,11 @@ func testRBTree(t *testing.T, length int, unique bool) {
 		if size != tree.Size() {
 			t.Fatal("size error")
 		}
-		if tree.most(0) != tree.leftmost() {
-			t.Fatalf("tree most error,%p %p %p %d\n", tree.most(0), tree.leftmost(), tree.End(), tree.Size())
+		if tree.Most(0) != tree.Leftmost() {
+			t.Fatalf("tree most error,%p %p %p %d\n", tree.Most(0), tree.Leftmost(), tree.End(), tree.Size())
 		}
-		if tree.most(1) != tree.rightmost() {
-			t.Fatalf("tree most error,%p %p %p %d\n", tree.most(1), tree.rightmost(), tree.End(), tree.Size())
+		if tree.Most(1) != tree.Rightmost() {
+			t.Fatalf("tree most error,%p %p %p %d\n", tree.Most(1), tree.Rightmost(), tree.End(), tree.Size())
 		}
 	}
 	if tree.Size() != 0 || !tree.Empty() {
@@ -391,12 +401,9 @@ func BenchmarkRBTreeInsert(t *testing.B) {
 		}
 		deleteNode = func(node Iterator) {
 		}
-		sameNode = func(a Iterator, b Iterator) bool {
-			return a.(*node) == b.(*node)
-		}
 	)
 	var set = &RBTree{}
-	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, sameNode, true).(*RBTree)
+	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, true).(*RBTree)
 	var rand = benchRand
 	for i := 0; i < t.N; i++ {
 		_, _ = set.Insert(rand.Int())
@@ -414,12 +421,9 @@ func BenchmarkRBTreeErase(t *testing.B) {
 		}
 		deleteNode = func(node Iterator) {
 		}
-		sameNode = func(a Iterator, b Iterator) bool {
-			return a.(*node) == b.(*node)
-		}
 	)
 	var set = &RBTree{}
-	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, sameNode, true).(*RBTree)
+	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, true).(*RBTree)
 	t.StopTimer()
 	var keys = make([]int, t.N)
 	var rand = benchRand
@@ -444,12 +448,9 @@ func BenchmarkRBTreeFind(t *testing.B) {
 		}
 		deleteNode = func(node Iterator) {
 		}
-		sameNode = func(a Iterator, b Iterator) bool {
-			return a.(*node) == b.(*node)
-		}
 	)
 	var set = &RBTree{}
-	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, sameNode, true).(*RBTree)
+	set = NewRBTreer(set, &node{}, offsetNode, newNode, deleteNode, compare, true).(*RBTree)
 	t.StopTimer()
 	var keys = make([]int, t.N)
 	var rand = benchRand

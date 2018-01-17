@@ -61,7 +61,7 @@ func NewSet(compare func(a, b interface{}) int) *Set {
 		func(Iterator) {
 		},
 		compare,
-		SameSetNode,
+		//SameSetNode,
 		true,
 	).(*Set)
 }
@@ -76,7 +76,9 @@ func NewCustomSet(newNode func(interface{}) Iterator,
 	var header = &SetNode{}
 	return NewRBTreer(set, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
-		newNode, deleteNode, compare, SameSetNode, true).(*Set)
+		newNode, deleteNode, compare,
+		//SameSetNode,
+		true).(*Set)
 }
 
 // NewMultiSet create a new not unique Set with compare func
@@ -94,7 +96,7 @@ func NewMultiSet(compare func(interface{}, interface{}) int) *Set {
 		func(Iterator) {
 		},
 		compare,
-		SameSetNode,
+		//SameSetNode,
 		false,
 	).(*Set)
 }
@@ -109,5 +111,7 @@ func NewCustomMultiSet(newNode func(interface{}) Iterator,
 	var header = &SetNode{}
 	return NewRBTreer(set, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
-		newNode, deleteNode, compare, SameSetNode, false).(*Set)
+		newNode, deleteNode, compare,
+		//SameSetNode,
+		false).(*Set)
 }

@@ -50,9 +50,10 @@ type Map struct {
 
 func (m *Map) Insert(data interface{}) (Iterator, bool) {
 	_ = data.(Pair)
-	return m.RBTree.insert(data, func(key interface{}) int {
+	iter, ok := m.RBTree.insert(data, func(key interface{}) int {
 		return m.compare(data.(Pair).Key, key)
 	})
+	return iface2iterator(iter), ok
 }
 
 func SameMapNode(a Iterator, b Iterator) bool {
@@ -77,7 +78,7 @@ func NewMap(compare func(interface{}, interface{}) int) *Map {
 		func(Iterator) {
 		},
 		compare,
-		SameMapNode,
+		//SameMapNode,
 		true,
 	).(*Map)
 }
@@ -89,7 +90,9 @@ func NewCustomMap(newNode func(interface{}) Iterator,
 	var header = &MapNode{}
 	return NewRBTreer(mp, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
-		newNode, deleteNode, compare, SameMapNode, true).(*Map)
+		newNode, deleteNode, compare,
+		//SameMapNode,
+		true).(*Map)
 }
 
 func NewMultiMap(compare func(interface{}, interface{}) int) *Map {
@@ -105,7 +108,7 @@ func NewMultiMap(compare func(interface{}, interface{}) int) *Map {
 		func(Iterator) {
 		},
 		compare,
-		SameMapNode,
+		//SameMapNode,
 		false,
 	).(*Map)
 }
@@ -117,5 +120,7 @@ func NewCustomMultiMap(newNode func(interface{}) Iterator,
 	var header = &MapNode{}
 	return NewRBTreer(mp, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
-		newNode, deleteNode, compare, SameMapNode, false).(*Map)
+		newNode, deleteNode, compare,
+		//SameMapNode,
+		false).(*Map)
 }

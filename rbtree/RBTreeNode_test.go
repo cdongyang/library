@@ -32,6 +32,7 @@ func ExampleNode() {
 	//false
 }
 
+/*
 func ExampleGetChild() {
 	var set = NewSet(nil)
 	var node Iterator = &SetNode{}
@@ -52,9 +53,9 @@ func BenchmarkUnsafeGetChild(b *testing.B) {
 		_ = getChild(&set.RBTree, node, 0)
 	}
 }
-
+*/
 func getIfaceUnsafePointer(iface interface{}) unsafe.Pointer {
-	return unsafe.Pointer(((*[2]uintptr)(unsafe.Pointer(&iface)))[1])
+	return ((*[2]unsafe.Pointer)(unsafe.Pointer(&iface)))[1]
 }
 
 func getIfaceUintPtr(iface interface{}) uintptr {
@@ -75,6 +76,7 @@ func BenchmarkGetUintPtr(b *testing.B) {
 	}
 }
 
+/*
 func BenchmarkSetGetChild(b *testing.B) {
 	var set = NewSet(nil)
 	var node Iterator = &SetNode{}
@@ -93,7 +95,7 @@ func BenchmarkGetIteratorPointer(b *testing.B) {
 		_ = *getIteratorPointer(node, offsetChild[0])
 	}
 }
-
+*/
 // the size to store interface{} is 16B
 // type eface struct {
 // 	_type *_type
@@ -282,12 +284,24 @@ func BenchmarkUnsafeSameNode(b *testing.B) {
 
 // BenchmarkSetSameNode-4   	300000000	         5.44 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkSetSameNode(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	var a, c = set.newNode(0), set.newNode(1)
-	var tree = &set.RBTree
+	var a, c = iterator2iface(&SetNode{data: 1}), iterator2iface(&SetNode{data: 2})
 	for i := 0; i < b.N; i++ {
-		_ = tree.sameIterator(a, c)
+		_ = sameIface(a, c)
+	}
+}
+
+// BenchmarkIface2Iterator-4   	2000000000	         0.82 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkIface2Iterator(b *testing.B) {
+	var a Iterator = &SetNode{}
+	for i := 0; i < b.N; i++ {
+		_ = iterator2iface(a)
+	}
+}
+
+// BenchmarkIterator2Iface-4   	2000000000	         0.93 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkIterator2Iface(b *testing.B) {
+	var a = iterator2iface(Iterator(&SetNode{}))
+	for i := 0; i < b.N; i++ {
+		_ = iface2iterator(a)
 	}
 }

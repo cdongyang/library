@@ -19,8 +19,6 @@ type Iterator interface {
 	GetTree() RBTreer
 
 	setTree(RBTreer)
-	getColor() colorType
-	setColor(colorType)
 }
 
 type colorType bool
@@ -30,10 +28,18 @@ const (
 	black = true
 )
 
+type iface struct {
+	itype, pointer unsafe.Pointer
+}
+
+func (node iface) GetKey() interface{} {
+	return iface2iterator(node).GetKey()
+}
+
 // embed RBTreeNode should not use pointer, because the operation of RBTree treate is as value
 type RBTreeNode struct {
-	child  [2]Iterator
-	parent Iterator
+	child  [2]iface
+	parent iface
 	tree   RBTreer
 	color  colorType
 }
@@ -96,28 +102,6 @@ func (node *RBTreeNode) setTree(tree RBTreer) {
 	node.tree = tree
 }
 
-var (
-	offsetChild [2]uintptr
-	offsetParent,
-	offsetTree,
-	offsetColor uintptr
-)
-
-func init() {
-	var node = &RBTreeNode{}
-	offsetChild[0] = uintptr(unsafe.Pointer(&node.child[0])) - uintptr(unsafe.Pointer(node))
-	offsetChild[1] = uintptr(unsafe.Pointer(&node.child[1])) - uintptr(unsafe.Pointer(node))
-	offsetParent = uintptr(unsafe.Pointer(&node.parent)) - uintptr(unsafe.Pointer(node))
-	offsetTree = uintptr(unsafe.Pointer(&node.tree)) - uintptr(unsafe.Pointer(node))
-	offsetColor = uintptr(unsafe.Pointer(&node.color)) - uintptr(unsafe.Pointer(node))
-	//fmt.Println(offsetChild[0], offsetChild[1], offsetParent, offsetTree, offsetColor)
-}
-
-func getIteratorPointer(node Iterator, offset uintptr) *Iterator {
-	p := (*[2]uintptr)(unsafe.Pointer(&node))
-	return (*Iterator)(unsafe.Pointer(p[1] + offset))
-}
-
 type RBTreer interface {
 	DeleteNode(node Iterator)
 	SameIterator(a, b Iterator) bool
@@ -147,24 +131,20 @@ type RBTreer interface {
 		newNode func(interface{}) Iterator,
 		deleteNode func(Iterator),
 		compare func(interface{}, interface{}) int,
-		sameIterator func(Iterator, Iterator) bool,
+		//sameIterator func(Iterator, Iterator) bool,
 		unique bool,
 	)
-	getChild(Iterator, int) Iterator
-	setChild(Iterator, int, Iterator)
-	getParent(Iterator) Iterator
-	setParent(Iterator, Iterator)
 }
 
 type RBTree struct {
-	header       Iterator
-	size         int
-	newNode      func(interface{}) Iterator
-	deleteNode   func(Iterator)
-	compare      func(interface{}, interface{}) int
-	sameIterator func(Iterator, Iterator) bool
-	nodeOffset   uintptr
-	unique       bool
+	header     iface
+	size       int
+	newNode    func(interface{}) Iterator
+	deleteNode func(Iterator)
+	compare    func(interface{}, interface{}) int
+	//sameIterator func(Iterator, Iterator) bool
+	nodeOffset uintptr
+	unique     bool
 }
 
 func NewRBTreer(
@@ -174,9 +154,11 @@ func NewRBTreer(
 	newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int,
-	sameIterator func(Iterator, Iterator) bool,
+	//sameIterator func(Iterator, Iterator) bool,
 	unique bool) RBTreer {
-	t.init(t, header, nodeOffset, newNode, deleteNode, compare, sameIterator, unique)
+	t.init(t, header, nodeOffset, newNode, deleteNode, compare,
+		//sameIterator,
+		unique)
 	return t
 }
 
@@ -187,37 +169,39 @@ func (t *RBTree) init(
 	newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(interface{}, interface{}) int,
-	sameIterator func(Iterator, Iterator) bool,
+	//sameIterator func(Iterator, Iterator) bool,
 	unique bool) {
 	t.nodeOffset = nodeOffset
-	t.header = header
-	t.header.setTree(tree)
-	*t.mostPoiter(0) = t.End()
-	*t.mostPoiter(1) = t.End()
-	*t.rootPoiter() = t.End()
-	t.header.setColor(red)
+	header.setTree(tree)
+	t.header = iterator2iface(header)
+	t.setColor(t.header, red)
+	*t.mostPoiter(0) = t.end()
+	*t.mostPoiter(1) = t.end()
+	*t.rootPoiter() = t.end()
 	t.size = 0
 	t.newNode = func(data interface{}) Iterator {
 		var node = newNode(data)
-		t.setChild(node, 0, t.End())
-		t.setChild(node, 1, t.End())
-		t.setParent(node, t.End())
+		var nodeIface = iterator2iface(node)
+		t.setChild(nodeIface, 0, t.end())
+		t.setChild(nodeIface, 1, t.end())
+		t.setParent(nodeIface, t.end())
 		node.setTree(tree)
-		node.setColor(red)
+		t.setColor(nodeIface, red)
 		return node
 	}
 	t.deleteNode = func(node Iterator) {
-		t.setChild(node, 0, nil)
-		t.setChild(node, 1, nil)
-		t.setParent(node, nil)
+		var nodeIface = iterator2iface(node)
+		t.setChild(nodeIface, 0, iface{nil, nil})
+		t.setChild(nodeIface, 1, iface{nil, nil})
+		t.setParent(nodeIface, iface{nil, nil})
 		node.setTree(nil)
 		deleteNode(node)
 	}
 	t.compare = compare
-	t.sameIterator = sameIterator
-	if sameIterator == nil {
-		t.sameIterator = unsafeSameIterator
-	}
+	//sameIface = sameIterator
+	//if sameIterator == nil {
+	//sameIface = unsafeSameIterator
+	//}
 	t.unique = unique
 }
 
@@ -225,6 +209,10 @@ func unsafeSameIterator(a, b Iterator) bool {
 	ap := (*[2]uintptr)(unsafe.Pointer(&a))
 	bp := (*[2]uintptr)(unsafe.Pointer(&b))
 	return ap[1] == bp[1]
+}
+
+func sameIface(a, b iface) bool {
+	return a.pointer == b.pointer
 }
 
 /*
@@ -240,7 +228,8 @@ func (t *RBTree) DeleteNode(node Iterator) {
 }
 
 func (t *RBTree) SameIterator(a, b Iterator) bool {
-	return t.sameIterator(a, b)
+	return unsafeSameIterator(a, b)
+	//return sameIface(a, b)
 }
 
 func (t *RBTree) Compare(key1, key2 interface{}) int {
@@ -249,19 +238,19 @@ func (t *RBTree) Compare(key1, key2 interface{}) int {
 
 func (t *RBTree) Clear() {
 	t.clear(t.root())
-	*t.mostPoiter(0) = t.End()
-	*t.mostPoiter(1) = t.End()
-	*t.rootPoiter() = t.End()
+	*t.mostPoiter(0) = t.end()
+	*t.mostPoiter(1) = t.end()
+	*t.rootPoiter() = t.end()
 	t.size = 0
 }
 
-func (t *RBTree) clear(root Iterator) {
-	if t.sameIterator(root, t.End()) {
+func (t *RBTree) clear(root iface) {
+	if sameIface(root, t.end()) {
 		return
 	}
 	t.clear(t.getChild(root, 0))
 	t.clear(t.getChild(root, 1))
-	t.DeleteNode(root)
+	t.DeleteNode(iface2iterator(root))
 }
 
 func (t *RBTree) Unique() bool {
@@ -277,42 +266,56 @@ func (t *RBTree) Empty() bool {
 }
 
 func (t *RBTree) Begin() Iterator {
+	return iface2iterator(t.begin())
+}
+
+func (t *RBTree) begin() iface {
 	return t.most(0)
 }
 
 func (t *RBTree) End() Iterator {
+	return iface2iterator(t.end())
+}
+
+func (t *RBTree) end() iface {
 	return t.header
 }
 
 func (t *RBTree) Next(node Iterator) Iterator {
-	if t.sameIterator(node, t.End()) {
+	return iface2iterator(t.next(iterator2iface(node)))
+}
+func (t *RBTree) next(node iface) iface {
+	if sameIface(node, t.end()) {
 		panic("end of tree has no Next()")
 	}
-	if t.sameIterator(node, t.most(1)) {
-		return t.End()
+	if sameIface(node, t.most(1)) {
+		return t.end()
 	}
-	return t.next(1, node)
+	return t.gothrough(1, node)
 }
 
 func (t *RBTree) Last(node Iterator) Iterator {
-	if t.sameIterator(node, t.Begin()) {
+	return iface2iterator(t.last(iterator2iface(node)))
+}
+func (t *RBTree) last(node iface) iface {
+	if sameIface(node, t.begin()) {
 		panic("begin of tree has no Last()")
 	}
-	if t.sameIterator(node, t.End()) {
+	if sameIface(node, t.end()) {
 		return t.most(1)
 	}
-	return t.next(0, node)
+	return t.gothrough(0, node)
 }
 
-func (t *RBTree) next(ch int, node Iterator) Iterator {
-	if !t.sameIterator(t.getChild(node, ch), t.End()) {
+func (t *RBTree) gothrough(ch int, node iface) iface {
+	if !sameIface(t.getChild(node, ch), t.end()) {
 		node = t.getChild(node, ch)
-		for !t.sameIterator(t.getChild(node, ch^1), t.End()) {
+		for !sameIface(t.getChild(node, ch^1), t.end()) {
 			node = t.getChild(node, ch^1)
 		}
 		return node
 	}
-	for !t.sameIterator(t.getParent(node), t.End()) && t.sameIterator(t.getChild(t.getParent(node), ch), node) {
+	for !sameIface(t.getParent(node), t.end()) && sameIface(t.getChild(t.getParent(node), ch), node) {
 		node = t.getParent(node)
 	}
 	return t.getParent(node)
@@ -320,14 +323,14 @@ func (t *RBTree) next(ch int, node Iterator) Iterator {
 
 func (t *RBTree) Count(key interface{}) (count int) {
 	if t.unique {
-		if t.sameIterator(t.Find(key), t.End()) {
+		if sameIface(t.find(key), t.end()) {
 			return 0
 		}
 		return 1
 	}
-	var beg = t.LowerBound(key)
-	for !t.sameIterator(beg, t.End()) && t.compare(beg.GetKey(), key) == 0 {
-		beg = beg.Next()
+	var beg = t.lowerBound(key)
+	for !sameIface(beg, t.end()) && t.compare(beg.GetKey(), key) == 0 {
+		beg = t.next(beg)
 		count++
 	}
 	return count
@@ -338,9 +341,12 @@ func (t *RBTree) EqualRange(key interface{}) (Iterator, Iterator) {
 }
 
 func (t *RBTree) Find(key interface{}) Iterator {
+	return iface2iterator(t.find(key))
+}
+func (t *RBTree) find(key interface{}) iface {
 	var root = t.root()
 	for {
-		if t.sameIterator(root, t.End()) {
+		if sameIface(root, t.end()) {
 			return root
 		}
 		switch cmp := t.compare(key, root.GetKey()); {
@@ -355,28 +361,29 @@ func (t *RBTree) Find(key interface{}) Iterator {
 }
 
 func (t *RBTree) Insert(data interface{}) (Iterator, bool) {
-	return t.insert(data, func(key interface{}) int {
+	iter, ok := t.insert(data, func(key interface{}) int {
 		return t.compare(data, key)
 	})
+	return iface2iterator(iter), ok
 }
-func (t *RBTree) insert(data interface{}, compare func(interface{}) int) (Iterator, bool) {
+func (t *RBTree) insert(data interface{}, compare func(interface{}) int) (iface, bool) {
 	var root = t.root()
 	var rootPoiter = t.rootPoiter()
-	if t.sameIterator(root, t.End()) {
+	if sameIface(root, t.end()) {
 		t.size++
-		*rootPoiter = t.newNode(data)
+		*rootPoiter = iterator2iface(t.newNode(data))
 		t.insertAdjust(*rootPoiter)
 		*t.mostPoiter(0) = *rootPoiter
 		*t.mostPoiter(1) = *rootPoiter
 		return *rootPoiter, true
 	}
 	var parent = t.getParent(root)
-	for !t.sameIterator(root, t.End()) {
+	for !sameIface(root, t.end()) {
 		parent = root
 		switch cmp := compare(root.GetKey()); {
 		case cmp == 0:
 			if t.unique {
-				return t.End(), false
+				return t.end(), false
 			}
 			fallthrough
 		case cmp < 0:
@@ -388,10 +395,10 @@ func (t *RBTree) insert(data interface{}, compare func(interface{}) int) (Iterat
 		}
 	}
 	t.size++
-	*rootPoiter = t.newNode(data)
+	*rootPoiter = iterator2iface(t.newNode(data))
 	t.setParent((*rootPoiter), parent)
 	for ch := 0; ch < 2; ch++ {
-		if t.sameIterator(parent, t.most(ch)) && t.sameIterator(t.getChild(parent, ch), *rootPoiter) {
+		if sameIface(parent, t.most(ch)) && sameIface(t.getChild(parent, ch), *rootPoiter) {
 			*t.mostPoiter(ch) = *rootPoiter
 		}
 	}
@@ -400,15 +407,15 @@ func (t *RBTree) insert(data interface{}, compare func(interface{}) int) (Iterat
 }
 
 //insert node is default red
-func (t *RBTree) insertAdjust(node Iterator) {
+func (t *RBTree) insertAdjust(node iface) {
 	var parent = t.getParent(node)
-	if t.sameIterator(parent, t.End()) {
+	if sameIface(parent, t.end()) {
 		//fmt.Println("case 1: insert")
 		//node is root,set black
-		node.setColor(black)
+		t.setColor(node, black)
 		return
 	}
-	if parent.getColor() == black {
+	if t.getColor(parent) == black {
 		//fmt.Println("case 2: insert")
 		//if parent is black,do nothing
 		return
@@ -417,23 +424,23 @@ func (t *RBTree) insertAdjust(node Iterator) {
 	//parent is red,grandpa can't be empty and color is black
 	var grandpa = t.getParent(parent)
 	var parentCh = 0
-	if t.sameIterator(t.getChild(grandpa, 1), parent) {
+	if sameIface(t.getChild(grandpa, 1), parent) {
 		parentCh = 1
 	}
 
 	var uncle = t.getChild(grandpa, parentCh^1)
-	if !t.sameIterator(uncle, t.End()) && uncle.getColor() == red {
+	if !sameIface(uncle, t.end()) && t.getColor(uncle) == red {
 		//fmt.Println("case 3: insert")
 		//uncle is red
-		parent.setColor(black)
-		grandpa.setColor(red)
-		uncle.setColor(black)
+		t.setColor(parent, black)
+		t.setColor(grandpa, red)
+		t.setColor(uncle, black)
 		t.insertAdjust(grandpa)
 		return
 	}
 
 	var childCh = 0
-	if t.sameIterator(t.getChild(parent, 1), node) {
+	if sameIface(t.getChild(parent, 1), node) {
 		childCh = 1
 	}
 	if childCh != parentCh {
@@ -445,24 +452,24 @@ func (t *RBTree) insertAdjust(node Iterator) {
 	}
 
 	//fmt.Println("case 5: insert")
-	parent.setColor(black)
-	grandpa.setColor(red)
+	t.setColor(parent, black)
+	t.setColor(grandpa, red)
 	t.rotate(parentCh^1, parent)
 }
 
 func (t *RBTree) Erase(key interface{}) (count int) {
 	if t.unique {
-		var iter = t.Find(key)
-		if t.sameIterator(iter, t.End()) {
+		var iter = t.find(key)
+		if sameIface(iter, t.end()) {
 			return 0
 		}
-		t.EraseIterator(iter)
+		t.eraseIterator(iter)
 		return 1
 	}
-	var beg = t.LowerBound(key)
-	for !t.sameIterator(beg, t.End()) && t.compare(key, beg.GetKey()) == 0 {
-		var tmp = beg.Next()
-		t.EraseIterator(beg)
+	var beg = t.lowerBound(key)
+	for !sameIface(beg, t.end()) && t.compare(key, beg.GetKey()) == 0 {
+		var tmp = t.next(beg)
+		t.eraseIterator(beg)
 		beg = tmp
 		count++
 	}
@@ -470,83 +477,86 @@ func (t *RBTree) Erase(key interface{}) (count int) {
 }
 
 func (t *RBTree) EraseIterator(node Iterator) {
-	if t.sameIterator(node, t.End()) {
+	t.eraseIterator(iterator2iface(node))
+}
+func (t *RBTree) eraseIterator(node iface) {
+	if sameIface(node, t.end()) {
 		panic("can't erase empty node")
 	}
 	t.size--
-	if !t.sameIterator(t.getChild(node, 0), t.End()) && !t.sameIterator(t.getChild(node, 1), t.End()) {
+	if !sameIface(t.getChild(node, 0), t.end()) && !sameIface(t.getChild(node, 1), t.end()) {
 		//if node has two child,it's last node must has no more than one child,copy to node and erase last node
-		var tmp = node.Last()
-		node.CopyData(tmp)
+		var tmp = t.last(node)
+		iface2iterator(node).CopyData(iface2iterator(tmp))
 		node = tmp
 	}
 	//adjust leftmost and rightmost
 	for ch := 0; ch < 2; ch++ {
-		if t.sameIterator(t.most(ch), node) {
+		if sameIface(t.most(ch), node) {
 			if ch == 0 {
-				*t.mostPoiter(ch) = node.Next()
+				*t.mostPoiter(ch) = t.next(node)
 			} else {
-				*t.mostPoiter(ch) = node.Last()
+				*t.mostPoiter(ch) = t.last(node)
 			}
 		}
 	}
-	var child = t.End()
-	if !t.sameIterator(t.getChild(node, 0), t.End()) {
+	var child = t.end()
+	if !sameIface(t.getChild(node, 0), t.end()) {
 		child = t.getChild(node, 0)
-	} else if !t.sameIterator(t.getChild(node, 1), t.End()) {
+	} else if !sameIface(t.getChild(node, 1), t.end()) {
 		child = t.getChild(node, 1)
 	}
 	var parent = t.getParent(node)
-	if !t.sameIterator(child, t.End()) {
+	if !sameIface(child, t.end()) {
 		t.setParent(child, parent)
 	}
-	if t.sameIterator(parent, t.End()) {
+	if sameIface(parent, t.end()) {
 		*t.rootPoiter() = child
-	} else if t.sameIterator(t.getChild(parent, 0), node) {
+	} else if sameIface(t.getChild(parent, 0), node) {
 		t.setChild(parent, 0, child)
 	} else {
 		t.setChild(parent, 1, child)
 	}
-	if node.getColor() == black { //if node is red,just erase,otherwise adjust
+	if t.getColor(node) == black { //if node is red,just erase,otherwise adjust
 		t.eraseAdjust(child, parent)
 		//fmt.Println("eraseAdjust:")
 	}
-	t.deleteNode(node)
+	t.deleteNode(iface2iterator(node))
 	return
 }
 
-func (t *RBTree) eraseAdjust(node, parent Iterator) {
-	if t.sameIterator(parent, t.End()) {
+func (t *RBTree) eraseAdjust(node, parent iface) {
+	if sameIface(parent, t.end()) {
 		//node is root
 		//fmt.Println("case 1: erase")
-		if !t.sameIterator(node, t.End()) {
-			node.setColor(black)
+		if !sameIface(node, t.end()) {
+			t.setColor(node, black)
 		}
 		return
 	}
-	if t.getColor(node) == red {
+	if t.mustGetColor(node) == red {
 		//node is red,just set black
 		//fmt.Println("case 2: erase")
-		node.setColor(black)
+		t.setColor(node, black)
 		return
 	}
 	var nodeCh = 0
-	if t.sameIterator(t.getChild(parent, 1), node) {
+	if sameIface(t.getChild(parent, 1), node) {
 		nodeCh = 1
 	}
 	var brother = t.getChild(parent, nodeCh^1)
 	//after case 1 parent must not be empty node and after case 2 node must be black
-	if parent.getColor() == red {
+	if t.getColor(parent) == red {
 		//parent is red,brother must be black but can't be empty node,because the path has a black node more
-		if t.getColor(t.getChild(brother, 0)) == black && t.getColor(t.getChild(brother, 1)) == black {
+		if t.mustGetColor(t.getChild(brother, 0)) == black && t.mustGetColor(t.getChild(brother, 1)) == black {
 			//fmt.Println("case 3: erase")
-			brother.setColor(red)
-			parent.setColor(black)
+			t.setColor(brother, red)
+			t.setColor(parent, black)
 			return
 		}
-		if !t.sameIterator(brother, t.End()) && t.getColor(t.getChild(brother, nodeCh)) == red {
+		if !sameIface(brother, t.end()) && t.mustGetColor(t.getChild(brother, nodeCh)) == red {
 			//fmt.Println("case 4: erase", nodeCh)
-			parent.setColor(black)
+			t.setColor(parent, black)
 			t.rotate(nodeCh^1, t.getChild(brother, nodeCh))
 			t.rotate(nodeCh, t.getChild(parent, nodeCh^1))
 			return
@@ -556,38 +566,41 @@ func (t *RBTree) eraseAdjust(node, parent Iterator) {
 		return
 	}
 	//parent is black
-	if t.getColor(brother) == red {
+	if t.mustGetColor(brother) == red {
 		//brother is red, it's children must be black
 		//fmt.Println("case 6: erase")
-		brother.setColor(black)
-		parent.setColor(red)
+		t.setColor(brother, black)
+		t.setColor(parent, red)
 		t.rotate(nodeCh, brother)
 		t.eraseAdjust(node, parent) //goto redParent then end
 		return
 	}
 	//brother is black
-	if t.getColor(t.getChild(brother, 0)) == black && t.getColor(t.getChild(brother, 1)) == black {
+	if t.mustGetColor(t.getChild(brother, 0)) == black && t.mustGetColor(t.getChild(brother, 1)) == black {
 		//fmt.Println("case 7: erase")
-		brother.setColor(red)
+		t.setColor(brother, red)
 		t.eraseAdjust(parent, t.getParent(parent))
 		return
 	}
-	if t.getColor(t.getChild(brother, nodeCh)) == red {
+	if t.mustGetColor(t.getChild(brother, nodeCh)) == red {
 		//fmt.Println("case 8: erase", nodeCh)
-		t.getChild(brother, nodeCh).setColor(black)
+		t.setColor(t.getChild(brother, nodeCh), black)
 		t.rotate(nodeCh^1, t.getChild(brother, nodeCh))
 		t.rotate(nodeCh, t.getChild(parent, nodeCh^1))
 		return
 	}
 	//fmt.Println("case 9: erase", nodeCh)
-	t.getChild(brother, nodeCh^1).setColor(black)
+	t.setColor(t.getChild(brother, nodeCh^1), black)
 	t.rotate(nodeCh, brother)
 }
 
 func (t *RBTree) EraseIteratorRange(beg, end Iterator) (count int) {
-	for !t.sameIterator(beg, end) {
-		var tmp = beg.Next()
-		t.EraseIterator(beg)
+	return t.eraseIteratorRange(iterator2iface(beg), iterator2iface(end))
+}
+func (t *RBTree) eraseIteratorRange(beg, end iface) (count int) {
+	for !sameIface(beg, end) {
+		var tmp = t.next(beg)
+		t.eraseIterator(beg)
 		beg = tmp
 		count++
 	}
@@ -595,16 +608,19 @@ func (t *RBTree) EraseIteratorRange(beg, end Iterator) (count int) {
 }
 
 func (t *RBTree) LowerBound(key interface{}) Iterator {
+	return iface2iterator(t.lowerBound(key))
+}
+func (t *RBTree) lowerBound(key interface{}) iface {
 	var root = t.root()
-	var parent = t.End()
+	var parent = t.end()
 	for {
-		if root == t.End() {
-			if t.sameIterator(parent, t.End()) {
+		if root == t.end() {
+			if sameIface(parent, t.end()) {
 				return parent
 			} else if t.compare(key, parent.GetKey()) <= 0 {
 				return parent
 			}
-			return parent.Next()
+			return t.next(parent)
 		}
 		parent = root
 		if t.compare(key, root.GetKey()) > 0 {
@@ -616,16 +632,19 @@ func (t *RBTree) LowerBound(key interface{}) Iterator {
 }
 
 func (t *RBTree) UpperBound(key interface{}) Iterator {
+	return iface2iterator(t.upperBound(key))
+}
+func (t *RBTree) upperBound(key interface{}) iface {
 	var root = t.root()
-	var parent = t.End()
+	var parent = t.end()
 	for {
-		if root == t.End() {
-			if t.sameIterator(parent, t.End()) {
+		if root == t.end() {
+			if sameIface(parent, t.end()) {
 				return parent
 			} else if t.compare(key, parent.GetKey()) < 0 {
 				return parent
 			}
-			return parent.Next()
+			return t.next(parent)
 		}
 		parent = root
 		if t.compare(key, root.GetKey()) >= 0 {
@@ -638,7 +657,7 @@ func (t *RBTree) UpperBound(key interface{}) Iterator {
 
 //ch = 0:take node for center,left rotate parent down,node is parent's right child
 //ch = 1:take node for center,right rotate parent down,node is parent's left child
-func (t *RBTree) rotate(ch int, node Iterator) {
+func (t *RBTree) rotate(ch int, node iface) {
 	var (
 		tmp     = t.getChild(node, ch)
 		parent  = t.getParent(node)
@@ -647,71 +666,112 @@ func (t *RBTree) rotate(ch int, node Iterator) {
 	t.setChild(node, ch, parent)
 	t.setChild(parent, ch^1, tmp)
 
-	if !t.sameIterator(tmp, t.End()) {
+	if !sameIface(tmp, t.end()) {
 		t.setParent(tmp, parent)
 	}
 	t.setParent(parent, node)
 	t.setParent(node, grandpa)
-	if t.sameIterator(grandpa, t.End()) {
+	if sameIface(grandpa, t.end()) {
 		*t.rootPoiter() = node
 		return
 	}
-	if t.sameIterator(t.getChild(grandpa, 0), parent) {
+	if sameIface(t.getChild(grandpa, 0), parent) {
 		t.setChild(grandpa, 0, node)
 	} else {
 		t.setChild(grandpa, 1, node)
 	}
 }
 
-func (t *RBTree) root() Iterator {
+func (t *RBTree) root() iface {
 	return t.getParent(t.header)
 }
 
-func (t *RBTree) rootPoiter() *Iterator {
+func (t *RBTree) rootPoiter() *iface {
 	return t.getParentPointer(t.header)
 }
 
 //ch = 0: leftmost; ch = 1: rightmost
-func (t *RBTree) most(ch int) Iterator {
+func (t *RBTree) most(ch int) iface {
 	return t.getChild(t.header, ch)
 }
 
 //ch = 0: leftmostPoiter; ch = 1: rightmostPoiter
-func (t *RBTree) mostPoiter(ch int) *Iterator {
+func (t *RBTree) mostPoiter(ch int) *iface {
 	return t.getChildPointer(t.header, ch)
 }
 
-func (t *RBTree) getColor(node Iterator) colorType {
-	if !t.sameIterator(node, t.End()) {
-		return node.getColor()
+func (t *RBTree) mustGetColor(node iface) colorType {
+	if !sameIface(node, t.end()) {
+		return t.getColor(node)
 	}
 	return black
 }
 
-func (t *RBTree) getChild(node Iterator, ch int) Iterator {
+func (t *RBTree) getChild(node iface, ch int) iface {
 	return *getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
 }
 
-func (t *RBTree) getChildPointer(node Iterator, ch int) *Iterator {
+func (t *RBTree) getChildPointer(node iface, ch int) *iface {
 	return getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
 }
 
-func (t *RBTree) setChild(node Iterator, ch int, child Iterator) {
+func (t *RBTree) setChild(node iface, ch int, child iface) {
 	*getIteratorPointer(node, t.nodeOffset+offsetChild[ch]) = child
 }
 
-func (t *RBTree) getParent(node Iterator) Iterator {
+func (t *RBTree) getParent(node iface) iface {
 	return *getIteratorPointer(node, t.nodeOffset+offsetParent)
 }
 
-func (t *RBTree) getParentPointer(node Iterator) *Iterator {
+func (t *RBTree) getParentPointer(node iface) *iface {
 	return getIteratorPointer(node, t.nodeOffset+offsetParent)
 }
 
-func (t *RBTree) setParent(node Iterator, parent Iterator) {
+func (t *RBTree) setParent(node iface, parent iface) {
 	*getIteratorPointer(node, t.nodeOffset+offsetParent) = parent
 }
 
-func getChild(t *RBTree, node Iterator, ch int) Iterator {
+func (t *RBTree) getColor(node iface) colorType {
+	return *getColorPointer(node, t.nodeOffset+offsetColor)
+}
+
+func (t *RBTree) setColor(node iface, color colorType) {
+	*getColorPointer(node, t.nodeOffset+offsetColor) = color
+}
+
+func getChild(t *RBTree, node iface, ch int) iface {
 	return *getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
+}
+
+var (
+	offsetChild [2]uintptr
+	offsetParent,
+	offsetTree,
+	offsetColor uintptr
+)
+
+func init() {
+	var node = &RBTreeNode{}
+	offsetChild[0] = uintptr(unsafe.Pointer(&node.child[0])) - uintptr(unsafe.Pointer(node))
+	offsetChild[1] = uintptr(unsafe.Pointer(&node.child[1])) - uintptr(unsafe.Pointer(node))
+	offsetParent = uintptr(unsafe.Pointer(&node.parent)) - uintptr(unsafe.Pointer(node))
+	offsetTree = uintptr(unsafe.Pointer(&node.tree)) - uintptr(unsafe.Pointer(node))
+	offsetColor = uintptr(unsafe.Pointer(&node.color)) - uintptr(unsafe.Pointer(node))
+	//fmt.Println(offsetChild[0], offsetChild[1], offsetParent, offsetTree, offsetColor)
+}
+
+func getIteratorPointer(node iface, offset uintptr) *iface {
+	return (*iface)(unsafe.Pointer(uintptr(node.pointer) + offset))
+}
+
+func getColorPointer(node iface, offset uintptr) *colorType {
+	return (*colorType)(unsafe.Pointer(uintptr(node.pointer) + offset))
+}
+
+func iterator2iface(node Iterator) iface {
+	return *(*iface)(unsafe.Pointer(&node))
+}
+
+func iface2iterator(node iface) Iterator {
+	return *(*Iterator)(unsafe.Pointer(&node))
 }
