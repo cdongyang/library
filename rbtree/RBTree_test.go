@@ -1,6 +1,7 @@
 package rbtree
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 	"unsafe"
@@ -25,8 +26,26 @@ func init() {
 }
 
 type node struct {
-	RBTreeNode
 	data int
+	RBTreeNode
+}
+
+func ExampleNodeOffset() {
+	var it = &node{}
+	var base = uintptr(unsafe.Pointer(it))
+	fmt.Println(uintptr(unsafe.Pointer(&it.RBTreeNode)) - base)
+	fmt.Println(uintptr(unsafe.Pointer(&it.child[0])) - base)
+	fmt.Println(uintptr(unsafe.Pointer(&it.child[1])) - base)
+	fmt.Println(uintptr(unsafe.Pointer(&it.parent)) - base)
+	fmt.Println(uintptr(unsafe.Pointer(&it.tree)) - base)
+	fmt.Println(uintptr(unsafe.Pointer(&it.color)) - base)
+	// Output:
+	//8
+	//8
+	//24
+	//40
+	//56
+	//72
 }
 
 func (n *node) Next() Iterator {
@@ -135,6 +154,7 @@ func testRBTree(t *testing.T, length int, unique bool) {
 	if !tree.Empty() {
 		t.Fatal("empty")
 	}
+	//fmt.Println(tree.Begin(), tree.End())
 	if tree.Begin() != tree.End() {
 		t.Fatal("empty tree begin and end error")
 	}
@@ -440,108 +460,5 @@ func BenchmarkRBTreeFind(t *testing.B) {
 	t.StartTimer()
 	for i := 0; i < t.N; i++ {
 		_ = set.Find(keys[i])
-	}
-}
-
-//BenchmarkNewSetNode-4   	300000000	         4.90 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkNewSetNode(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_ = &SetNode{data: 1}
-	}
-}
-
-//BenchmarkNewHeapSetNode-4   	20000000	        85.1 ns/op	      96 B/op	       1 allocs/op
-func BenchmarkNewHeapSetNode(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		var node *SetNode
-		func() {
-			node = new(SetNode)
-		}()
-		node.data = 1
-	}
-}
-
-//BenchmarkNewNode-4   	20000000	       125 ns/op	      96 B/op	       1 allocs/op
-func BenchmarkSetNewNode(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	for i := 0; i < b.N; i++ {
-		_ = set.newNode(0)
-	}
-}
-
-//BenchmarkNewPoiterNode-4   	20000000	       123 ns/op	      96 B/op	       1 allocs/op
-func BenchmarkSetNewPoiterNode(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	var a = 0
-	var c = &a
-	for i := 0; i < b.N; i++ {
-		_ = set.newNode(c)
-	}
-}
-
-// BenchmarkRBTreeCompare-4                200000000                8.67 ns/op            0 B/op          0 allocs/op
-func BenchmarkRBTreeCompare(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
-	for i := 0; i < b.N; i++ {
-		_ = set.RBTree.compare(a.GetKey(), c.GetKey())
-	}
-}
-
-// BenchmarkCompare-4   	200000000	         6.75 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkCompare(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
-	for i := 0; i < b.N; i++ {
-		_ = set.compare(a.GetKey(), c.GetKey())
-	}
-}
-
-// BenchmarkCompareIteratorGetKey-4   	100000000	        12.3 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkCompareIteratorGetKey(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	var a, c = set.newNode(0), set.newNode(1)
-	for i := 0; i < b.N; i++ {
-		_ = set.compare(a.GetKey(), c.GetKey())
-	}
-}
-
-// BenchmarkSameSetNode-4   	2000000000	         0.39 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkSameSetNode(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
-	for i := 0; i < b.N; i++ {
-		_ = SameSetNode(a, c)
-	}
-}
-
-// BenchmarkSameInterface-4        100000000               10.3 ns/op             0 B/op          0 allocs/op
-func BenchmarkSameInterface(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	var a, c Iterator = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
-	for i := 0; i < b.N; i++ {
-		_ = sameInterface(a, c)
-	}
-}
-
-// BenchmarkUnsafeSameNode-4       1000000000               2.32 ns/op            0 B/op          0 allocs/op
-func BenchmarkUnsafeSameNode(b *testing.B) {
-	var a, c Iterator = &SetNode{}, &SetNode{data: 1}
-	for i := 0; i < b.N; i++ {
-		_ = unsafeSameIterator(a, c)
 	}
 }

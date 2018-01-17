@@ -30,6 +30,7 @@ const (
 	black = true
 )
 
+// embed RBTreeNode should not use pointer, because the operation of RBTree treate is as value
 type RBTreeNode struct {
 	child  [2]Iterator
 	parent Iterator
@@ -113,7 +114,8 @@ func init() {
 }
 
 func getIteratorPointer(node Iterator, offset uintptr) *Iterator {
-	return (*Iterator)(unsafe.Pointer((*(*[2]uintptr)(unsafe.Pointer(&node)))[1] + offset))
+	p := (*[2]uintptr)(unsafe.Pointer(&node))
+	return (*Iterator)(unsafe.Pointer(p[1] + offset))
 }
 
 type RBTreer interface {
@@ -187,6 +189,7 @@ func (t *RBTree) init(
 	compare func(interface{}, interface{}) int,
 	sameIterator func(Iterator, Iterator) bool,
 	unique bool) {
+	t.nodeOffset = nodeOffset
 	t.header = header
 	t.header.setTree(tree)
 	*t.mostPoiter(0) = t.End()
@@ -194,7 +197,6 @@ func (t *RBTree) init(
 	*t.rootPoiter() = t.End()
 	t.header.setColor(red)
 	t.size = 0
-	t.nodeOffset = nodeOffset
 	t.newNode = func(data interface{}) Iterator {
 		var node = newNode(data)
 		t.setChild(node, 0, t.End())
@@ -216,7 +218,6 @@ func (t *RBTree) init(
 	if sameIterator == nil {
 		t.sameIterator = unsafeSameIterator
 	}
-	//t.sameIterator = sameInterface
 	t.unique = unique
 }
 
@@ -226,9 +227,13 @@ func unsafeSameIterator(a, b Iterator) bool {
 	return ap[1] == bp[1]
 }
 
-func sameInterface(a, b interface{}) bool {
-	return a == b
+/*
+func unsafeSameIterator(a, b Iterator) bool {
+	ap := *(*uintptr)(unsafe.Pointer(uintptr(unsafe.Pointer(&a)) + uintptr(8)))
+	bp := *(*uintptr)(unsafe.Pointer(uintptr(unsafe.Pointer(&b)) + uintptr(8)))
+	return ap == bp
 }
+*/
 
 func (t *RBTree) DeleteNode(node Iterator) {
 	t.deleteNode(node)
@@ -705,4 +710,8 @@ func (t *RBTree) getParentPointer(node Iterator) *Iterator {
 
 func (t *RBTree) setParent(node Iterator, parent Iterator) {
 	*getIteratorPointer(node, t.nodeOffset+offsetParent) = parent
+}
+
+func getChild(t *RBTree, node Iterator, ch int) Iterator {
+	return *getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
 }

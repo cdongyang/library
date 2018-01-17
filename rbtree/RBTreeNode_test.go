@@ -32,42 +32,65 @@ func ExampleNode() {
 	//false
 }
 
-func getChild(node Iterator, ch int, offset uintptr) Iterator {
-	return *(*Iterator)(unsafe.Pointer((*(*[2]uintptr)(unsafe.Pointer(&node)))[1] + offset + uintptr(ch*16)))
-}
 func ExampleGetChild() {
+	var set = NewSet(nil)
 	var node Iterator = &SetNode{}
 	var leftChild Iterator = &SetNode{}
-	var offset = uintptr(unsafe.Pointer(node.(*SetNode))) - uintptr(unsafe.Pointer(&node.(*SetNode).child[0]))
 	*getIteratorPointer(node, offsetChild[0]) = leftChild
-	var tmp = getChild(node, 0, offset)
+	var tmp = getChild(&set.RBTree, node, 0)
 	fmt.Println(SameSetNode(tmp, leftChild))
 	// Output:
 	//true
 }
 
 func BenchmarkUnsafeGetChild(b *testing.B) {
+	var set = NewSet(nil)
 	var node Iterator = &SetNode{}
 	var leftChild Iterator = &SetNode{}
-	var offset = uintptr(unsafe.Pointer(node.(*SetNode))) - uintptr(unsafe.Pointer(&node.(*SetNode).child[0]))
 	*getIteratorPointer(node, offsetChild[0]) = leftChild
 	for i := 0; i < b.N; i++ {
-		var tmp = getChild(node, 0, offset)
-		if !SameSetNode(tmp, leftChild) {
-			b.Fatal("not same set node")
-		}
+		_ = getChild(&set.RBTree, node, 0)
 	}
 }
 
-func BenchmarkGetChild(b *testing.B) {
+func getIfaceUnsafePointer(iface interface{}) unsafe.Pointer {
+	return unsafe.Pointer(((*[2]uintptr)(unsafe.Pointer(&iface)))[1])
+}
+
+func getIfaceUintPtr(iface interface{}) uintptr {
+	return ((*[2]uintptr)(unsafe.Pointer(&iface)))[1]
+}
+
+func BenchmarkGetUnsafePointer(b *testing.B) {
+	var iface interface{} = 1
+	for i := 0; i < b.N; i++ {
+		_ = getIfaceUnsafePointer(iface)
+	}
+}
+
+func BenchmarkGetUintPtr(b *testing.B) {
+	var iface interface{} = 1
+	for i := 0; i < b.N; i++ {
+		_ = getIfaceUintPtr(iface)
+	}
+}
+
+func BenchmarkSetGetChild(b *testing.B) {
+	var set = NewSet(nil)
 	var node Iterator = &SetNode{}
 	var leftChild Iterator = &SetNode{}
 	*getIteratorPointer(node, offsetChild[0]) = leftChild
 	for i := 0; i < b.N; i++ {
-		var tmp = *getIteratorPointer(node, offsetChild[0])
-		if !SameSetNode(tmp, leftChild) {
-			b.Fatal("not same set node")
-		}
+		_ = set.getChild(node, 0)
+	}
+}
+
+func BenchmarkGetIteratorPointer(b *testing.B) {
+	var node Iterator = &SetNode{}
+	var leftChild Iterator = &SetNode{}
+	*getIteratorPointer(node, offsetChild[0]) = leftChild
+	for i := 0; i < b.N; i++ {
+		_ = *getIteratorPointer(node, offsetChild[0])
 	}
 }
 
@@ -103,4 +126,168 @@ func ExampleSameSetNode() {
 	//false
 	//true
 	//false
+}
+
+//BenchmarkNewSetNode-4   	300000000	         4.90 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkNewSetNode(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = &SetNode{data: 1}
+	}
+}
+
+//BenchmarkNewHeapSetNode-4   	20000000	        85.1 ns/op	      96 B/op	       1 allocs/op
+func BenchmarkNewHeapSetNode(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var node *SetNode
+		func() {
+			node = new(SetNode)
+		}()
+		node.data = 1
+	}
+}
+
+//BenchmarkNewNode-4   	20000000	       125 ns/op	      96 B/op	       1 allocs/op
+func BenchmarkSetNewNode(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	for i := 0; i < b.N; i++ {
+		_ = set.newNode(0)
+	}
+}
+
+//BenchmarkNewPoiterNode-4   	20000000	       123 ns/op	      96 B/op	       1 allocs/op
+func BenchmarkSetNewPoiterNode(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a = 0
+	var c = &a
+	for i := 0; i < b.N; i++ {
+		_ = set.newNode(c)
+	}
+}
+
+// BenchmarkRBTreeCompare-4                200000000                8.67 ns/op            0 B/op          0 allocs/op
+func BenchmarkRBTreeCompare(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
+	for i := 0; i < b.N; i++ {
+		_ = set.RBTree.compare(a.GetKey(), c.GetKey())
+	}
+}
+
+// BenchmarkGetKey-4   	2000000000	         0.46 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkGetKey(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a = set.newNode(1).(*SetNode)
+	for i := 0; i < b.N; i++ {
+		_ = a.GetKey()
+	}
+}
+
+// BenchmarkIteratorGetKey-4   	500000000	         3.49 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkIteratorGetKey(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a = set.newNode(1)
+	for i := 0; i < b.N; i++ {
+		_ = a.GetKey()
+	}
+}
+
+// BenchmarkEfaceTransform-4   	500000000	         3.07 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkEfaceTransform(b *testing.B) {
+	var compare = func(a, b interface{}) {
+	}
+	var a, c interface{} = 1, 2
+	for i := 0; i < b.N; i++ {
+		compare(a, c)
+	}
+}
+
+func BenchmarkIfaceTransform(b *testing.B) {
+	var compare = func(a, b Iterator) {
+	}
+	var a, c Iterator = &SetNode{data: 1}, &SetNode{data: 2}
+	for i := 0; i < b.N; i++ {
+		compare(a, c)
+	}
+}
+
+// BenchmarkCompare-4   	200000000	         6.75 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkCompare(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
+	for i := 0; i < b.N; i++ {
+		_ = set.compare(a.GetKey(), c.GetKey())
+	}
+}
+
+// BenchmarkCompareInt-4   	300000000	         4.60 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkCompareInt(b *testing.B) {
+	var compare = func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	}
+	var a, c interface{} = 1, 2
+	for i := 0; i < b.N; i++ {
+		_ = compare(a, c)
+	}
+}
+
+// BenchmarkCompareIteratorGetKey-4   	100000000	        12.3 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkCompareIteratorGetKey(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a, c = set.newNode(0), set.newNode(1)
+	for i := 0; i < b.N; i++ {
+		_ = set.compare(a.GetKey(), c.GetKey())
+	}
+}
+
+// BenchmarkSameSetNode-4   	2000000000	         0.39 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSameSetNode(b *testing.B) {
+	var a, c Iterator = &SetNode{data: 1}, &SetNode{data: 2}
+	for i := 0; i < b.N; i++ {
+		_ = SameSetNode(a, c)
+	}
+}
+
+// BenchmarkSameInterface-4   	200000000	         7.32 ns/op	       0 B/op	       0 allocs/op
+func sameInterface(a, b interface{}) bool {
+	return a == b
+}
+func BenchmarkSameInterface(b *testing.B) {
+	var a, c Iterator = &SetNode{data: 1}, &SetNode{data: 2}
+	for i := 0; i < b.N; i++ {
+		_ = sameInterface(a, c)
+	}
+}
+
+// BenchmarkUnsafeSameNode-4   	2000000000	         1.57 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkUnsafeSameNode(b *testing.B) {
+	var a, c Iterator = &SetNode{data: 1}, &SetNode{data: 2}
+	for i := 0; i < b.N; i++ {
+		_ = unsafeSameIterator(a, c)
+	}
+}
+
+// BenchmarkSetSameNode-4   	300000000	         5.44 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSetSameNode(b *testing.B) {
+	var set = NewSet(func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	var a, c = set.newNode(0), set.newNode(1)
+	var tree = &set.RBTree
+	for i := 0; i < b.N; i++ {
+		_ = tree.sameIterator(a, c)
+	}
 }
