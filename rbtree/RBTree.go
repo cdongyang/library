@@ -345,7 +345,7 @@ func (t *RBTree) EqualRange(key interface{}) (Iterator, Iterator) {
 }
 
 func (t *RBTree) Find(key interface{}) Iterator {
-	return eface2iterator(t.find(interface2pointer(key)))
+	return eface2iterator(t.find(noescape(interface2pointer(key))))
 }
 func (t *RBTree) find(keyPointer unsafe.Pointer) eface {
 	var root = t.root()
@@ -365,12 +365,10 @@ func (t *RBTree) find(keyPointer unsafe.Pointer) eface {
 }
 
 func (t *RBTree) Insert(data interface{}) (Iterator, bool) {
-	iter, ok := t.insert(data, func(key unsafe.Pointer) int {
-		return t.compare(interface2pointer(data), key)
-	})
+	iter, ok := t.insert(data, interface2pointer(data))
 	return eface2iterator(iter), ok
 }
-func (t *RBTree) insert(data interface{}, compare func(unsafe.Pointer) int) (eface, bool) {
+func (t *RBTree) insert(data interface{}, key unsafe.Pointer) (eface, bool) {
 	var root = t.root()
 	var rootPoiter = t.rootPoiter()
 	if sameIface(root, t.end()) {
@@ -384,7 +382,7 @@ func (t *RBTree) insert(data interface{}, compare func(unsafe.Pointer) int) (efa
 	var parent = t.getParent(root)
 	for !sameIface(root, t.end()) {
 		parent = root
-		switch cmp := compare(t.getKeyPointer(root.pointer)); {
+		switch cmp := t.compare(key, t.getKeyPointer(root.pointer)); {
 		case cmp == 0:
 			if t.unique {
 				return t.end(), false
@@ -462,7 +460,7 @@ func (t *RBTree) insertAdjust(node eface) {
 }
 
 func (t *RBTree) Erase(key interface{}) (count int) {
-	var keyPointer = interface2pointer(key)
+	var keyPointer = noescape(interface2pointer(key))
 	if t.unique {
 		var iter = t.find(keyPointer)
 		if sameIface(iter, t.end()) {
@@ -613,7 +611,7 @@ func (t *RBTree) eraseIteratorRange(beg, end eface) (count int) {
 }
 
 func (t *RBTree) LowerBound(key interface{}) Iterator {
-	return eface2iterator(t.lowerBound(interface2pointer(key)))
+	return eface2iterator(t.lowerBound(noescape(interface2pointer(key))))
 }
 func (t *RBTree) lowerBound(keyPointer unsafe.Pointer) eface {
 	var root = t.root()
@@ -637,7 +635,7 @@ func (t *RBTree) lowerBound(keyPointer unsafe.Pointer) eface {
 }
 
 func (t *RBTree) UpperBound(key interface{}) Iterator {
-	return eface2iterator(t.upperBound(interface2pointer(key)))
+	return eface2iterator(t.upperBound(noescape(interface2pointer(key))))
 }
 func (t *RBTree) upperBound(keyPointer unsafe.Pointer) eface {
 	var root = t.root()
@@ -782,10 +780,30 @@ func eface2iterator(node eface) Iterator {
 	return *(*Iterator)(unsafe.Pointer(&node))
 }
 
+func interface2eface(node interface{}) eface {
+	return *(*eface)(unsafe.Pointer(&node))
+}
+
+func eface2interface(node eface) interface{} {
+	return *(*interface{})(unsafe.Pointer(&node))
+}
+
 func interface2pointer(a interface{}) unsafe.Pointer {
 	return (*eface)(unsafe.Pointer(&a)).pointer
 }
 
 func CompareInt(a, b unsafe.Pointer) int {
 	return *(*int)(a) - *(*int)(b)
+}
+
+// copy from package runtime
+// noescape hides a pointer from escape analysis.  noescape is
+// the identity function but escape analysis doesn't think the
+// output depends on the input.  noescape is inlined and currently
+// compiles down to zero instructions.
+// USE CAREFULLY!
+//go:nosplit
+func noescape(p unsafe.Pointer) unsafe.Pointer {
+	x := uintptr(p)
+	return unsafe.Pointer(x ^ 0)
 }

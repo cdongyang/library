@@ -170,35 +170,30 @@ func BenchmarkSetNewPoiterNode(b *testing.B) {
 	}
 }
 
-/*
 // BenchmarkRBTreeCompare-4                200000000                8.67 ns/op            0 B/op          0 allocs/op
 func BenchmarkRBTreeCompare(b *testing.B) {
 	var set = NewSet(CompareInt)
 	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
 	for i := 0; i < b.N; i++ {
-		_ = set.RBTree.compare(set.getKeyPointer(a), set.getKeyPointer(c))
+		_ = set.RBTree.compare(set.getKeyPointer(unsafe.Pointer(a)), set.getKeyPointer(unsafe.Pointer(c)))
 	}
 }
 
 // BenchmarkGetKey-4   	2000000000	         0.46 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkGetKey(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = NewSet(CompareInt)
 	var a = set.newNode(1).(*SetNode)
 	for i := 0; i < b.N; i++ {
-		_ = set.getKeyPointer(a)
+		_ = set.getKeyPointer(unsafe.Pointer(a))
 	}
 }
 
 // BenchmarkIteratorGetKey-4   	500000000	         3.49 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkIteratorGetKey(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = NewSet(CompareInt)
 	var a = set.newNode(1)
 	for i := 0; i < b.N; i++ {
-		_ = set.getKeyPointer(a)
+		_ = set.getKeyPointer(interface2pointer(a))
 	}
 }
 
@@ -223,12 +218,10 @@ func BenchmarkIfaceTransform(b *testing.B) {
 
 // BenchmarkCompare-4   	200000000	         6.75 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkCompare(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = NewSet(CompareInt)
 	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
 	for i := 0; i < b.N; i++ {
-		_ = set.compare(a.GetKey(), c.GetKey())
+		_ = set.compare(interface2pointer(a.data), interface2pointer(c.data))
 	}
 }
 
@@ -237,32 +230,27 @@ func BenchmarkUnsafeCompareInt(b *testing.B) {
 	var set = NewSet(CompareInt)
 	var a, c interface{} = 1, 2
 	for i := 0; i < b.N; i++ {
-		_ = set.compare(a, c)
+		_ = set.compare(interface2pointer(a), interface2pointer(c))
 	}
 }
 
-// BenchmarkCompareInt-4   	300000000	         5.07 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkCompareInt-4   	300000000	         3.69 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkCompareInt(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
-	var a, c interface{} = 1, 2
+	var set = NewSet(CompareInt)
+	var a, c = 1, 2
 	for i := 0; i < b.N; i++ {
-		_ = set.compare(a, c)
+		_ = set.compare(unsafe.Pointer(&a), unsafe.Pointer(&c))
 	}
 }
 
 // BenchmarkCompareIteratorGetKey-4   	100000000	        12.3 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkCompareIteratorGetKey(b *testing.B) {
-	var set = NewSet(func(a, b interface{}) int {
-		return a.(int) - b.(int)
-	})
+	var set = NewSet(CompareInt)
 	var a, c = set.newNode(0), set.newNode(1)
 	for i := 0; i < b.N; i++ {
-		_ = set.compare(a.GetKey(), c.GetKey())
+		_ = set.compare(interface2pointer(a.GetKey()), interface2pointer(c.GetKey()))
 	}
 }
-*/
 
 // BenchmarkSetCompareInt-4   	500000000	         3.61 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkSetCompareInt(b *testing.B) {
@@ -286,7 +274,7 @@ func BenchmarkRBTreeCompareInt(b *testing.B) {
 // BenchmarkCompareInt-4   	2000000000	         0.38 ns/op	       0 B/op	       0 allocs/op
 // go test -run=^$ -gcflags '-l' -benchmem -v -bench=^BenchmarkCompareInt$
 // BenchmarkCompareInt-4           500000000                3.03 ns/op            0 B/op          0 allocs/op
-func BenchmarkCompareInt(b *testing.B) { //不内联时速度和interface method/struct func element调用差不多
+func BenchmarkRawCompareInt(b *testing.B) { //不内联时速度和interface method/struct func element调用差不多
 	var a, c = 1, 2
 	for i := 0; i < b.N; i++ {
 		_ = CompareInt(unsafe.Pointer(&a), unsafe.Pointer(&c))
@@ -307,8 +295,8 @@ func BenchmarkAssertCompareInt(b *testing.B) { //不内联时类型断言代价�
 	}
 }
 
-// BenchmarkGetKey-4   	500000000	         3.34 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkGetKey(b *testing.B) {
+// BenchmarkGetKeyPointer-4   	500000000	         3.34 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkGetKeyPointer(b *testing.B) {
 	var set = NewSet(CompareInt)
 	var setNode = set.newNode(0)
 	var pointer = iterator2eface(setNode).pointer
@@ -408,3 +396,57 @@ func BenchmarkTypeAssert(b *testing.B) {
 // 函数不被内联时interface{}断言很慢,用unsafe.Pointer强制转换优化
 // 结构体调用method很快,但调用"函数成员"或者interface调用method很慢
 // 小函数容易在编译是被内联,因而并发测试直接调用时会特别快,通过结构体"函数成员"调用会很慢,测试时可以用 -gcflags '-l'禁止内联
+
+func (t *RBTree) escape1(a interface{}) {
+	_ = a
+}
+func (t *RBTree) escape2(a interface{}) {
+	_ = interface2pointer(a)
+}
+func (t *RBTree) escape3(a interface{}) {
+	p := interface2pointer(a)
+	t.compare(p, p)
+}
+func (t *RBTree) escape4(a interface{}) {
+	p := interface2pointer(a)
+	CompareInt(p, p)
+}
+func (t *RBTree) escape5(a interface{}) {
+	p := noescape(interface2pointer(a))
+	CompareInt(p, p)
+}
+func ExampleFindEscape() {
+	var n float64
+	var t = &RBTree{compare: CompareInt}
+	n = testing.AllocsPerRun(1000, func() {
+		var a = 1
+		t.escape1(a)
+	})
+	fmt.Println(n, "allocs/op")
+	n = testing.AllocsPerRun(1000, func() {
+		var a = 1
+		t.escape2(a)
+	})
+	fmt.Println(n, "allocs/op")
+	n = testing.AllocsPerRun(1000, func() {
+		var a = 1
+		t.escape3(a)
+	})
+	fmt.Println(n, "allocs/op")
+	n = testing.AllocsPerRun(1000, func() {
+		var a = 1
+		t.escape4(a)
+	})
+	fmt.Println(n, "allocs/op")
+	n = testing.AllocsPerRun(1000, func() {
+		var a = 1
+		t.escape5(a)
+	})
+	fmt.Println(n, "allocs/op")
+	// Output:
+	//0 allocs/op
+	//0 allocs/op
+	//1 allocs/op
+	//0 allocs/op
+	//0 allocs/op
+}

@@ -102,7 +102,7 @@ func NewMultiSet(compare func(a, b unsafe.Pointer) int) *Set {
 // such as with a sync.Pool to reduce the pressure of GC
 func NewCustomMultiSet(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
-	compare func(a,b unsafe.Pointer) int) *Set {
+	compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
 	var header = &SetNode{}
 	return NewRBTreer(set, header,

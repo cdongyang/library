@@ -49,10 +49,10 @@ type Map struct {
 }
 
 func (m *Map) Insert(data interface{}) (Iterator, bool) {
-	_ = data.(Pair)
-	iter, ok := m.RBTree.insert(data, func(key unsafe.Pointer) int {
-		return m.compare((*eface)((*eface)(unsafe.Pointer(&data)).pointer).pointer, key) //interface2pointer取Pair的第一个interface的pointer
-	})
+	//_ = data.(Pair)
+	var dataEface = (*eface)(unsafe.Pointer(&data))
+	var keyPointer = (*eface)(dataEface.pointer).pointer
+	iter, ok := m.RBTree.insert(data, keyPointer)
 	return eface2iterator(iter), ok
 }
 
