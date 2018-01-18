@@ -52,7 +52,7 @@ type poiterStructer interface {
 }
 
 var mem runtime.MemStats
-var outmem = false
+var outmem = true
 
 func memStats() {
 	if !outmem {
@@ -222,6 +222,20 @@ func BenchmarkStruct32bPoiterInterfaceUsePoiterFun(b *testing.B) {
 	debug.SetGCPercent(100)
 }
 
+//HeapAlloc: 76536 HeapInuse: 368640 HeapObjects: 294 HeapIdle 352256 HeapReleased 0 HeapSys 720896
+//BenchmarkStruct32bPoiterInterfaceUsePoiterCacheFun-4   	200000000	         5.83 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkStruct32bPoiterInterfaceUsePoiterCacheFun(b *testing.B) {
+	debug.SetGCPercent(-1)
+	var s = &struct32b{}
+	var iface structer = s
+	var fun = iface.PoiterFun
+	for i := 0; i < b.N; i++ {
+		fun(0)
+	}
+	memStats()
+	debug.SetGCPercent(100)
+}
+
 //HeapAlloc: 76248 HeapInuse: 352256 HeapObjects: 290 HeapIdle 368640 HeapReleased 0 HeapSys 720896
 //500000000	         3.13 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkStruct40bPoiterInterfaceUsePoiterFun(b *testing.B) {
@@ -262,8 +276,13 @@ func BenchmarkStruct40bValueInterfaceUseValueFun(b *testing.B) {
 }
 
 /*
-	32byte作为small struct 和 large struct 的分界,不超过32byte的结构体会在cache缓存,这个结论来自
+	32byte作为small struct 和 large struct 的分界,不超过32byte的结构体会在cache缓存,参考自
 	https://github.com/qyuhen/book/blob/master/gopher2015/qyuhen.pdf	第10页
+	/usr/local/go/src/runtime/malloc.go runtime.mallocgc源码:
+	// Allocate an object of size bytes.
+	// Small objects are allocated from the per-P cache's free lists.
+	// Large objects (> 32 kB) are allocated straight from the heap.
+	func mallocgc(size uintptr, typ *_type, needzero bool) unsafe.Pointer
 
 	goos: linux
 	goarch: amd64
