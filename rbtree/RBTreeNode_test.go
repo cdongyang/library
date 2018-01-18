@@ -76,7 +76,7 @@ func BenchmarkGetUintPtr(b *testing.B) {
 	}
 }
 
-func getChild(t *RBTree, node iface, ch int) iface {
+func getChild(t *RBTree, node eface, ch int) eface {
 	return *getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
 }
 
@@ -311,7 +311,7 @@ func BenchmarkAssertCompareInt(b *testing.B) { //不内联时类型断言代价�
 func BenchmarkGetKey(b *testing.B) {
 	var set = NewSet(CompareInt)
 	var setNode = set.newNode(0)
-	var pointer = iterator2iface(setNode).pointer
+	var pointer = iterator2eface(setNode).pointer
 	for i := 0; i < b.N; i++ {
 		_ = set.getKeyPointer(pointer)
 	}
@@ -357,7 +357,7 @@ func BenchmarkUnsafeSameNode(b *testing.B) {
 
 // BenchmarkSetSameNode-4   	300000000	         5.44 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkSetSameNode(b *testing.B) {
-	var a, c = iterator2iface(&SetNode{data: 1}), iterator2iface(&SetNode{data: 2})
+	var a, c = iterator2eface(&SetNode{data: 1}), iterator2eface(&SetNode{data: 2})
 	for i := 0; i < b.N; i++ {
 		_ = sameIface(a, c)
 	}
@@ -367,15 +367,15 @@ func BenchmarkSetSameNode(b *testing.B) {
 func BenchmarkIface2Iterator(b *testing.B) {
 	var a Iterator = &SetNode{}
 	for i := 0; i < b.N; i++ {
-		_ = iterator2iface(a)
+		_ = iterator2eface(a)
 	}
 }
 
 // BenchmarkIterator2Iface-4   	2000000000	         0.93 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkIterator2Iface(b *testing.B) {
-	var a = iterator2iface(Iterator(&SetNode{}))
+	var a = iterator2eface(Iterator(&SetNode{}))
 	for i := 0; i < b.N; i++ {
-		_ = iface2iterator(a)
+		_ = eface2iterator(a)
 	}
 }
 

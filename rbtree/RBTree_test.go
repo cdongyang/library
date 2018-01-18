@@ -85,13 +85,13 @@ func (n *node) CopyData(src Iterator) {
 }
 
 func (t *RBTree) Most(ch int) Iterator {
-	return iface2iterator(t.most(ch))
+	return eface2iterator(t.most(ch))
 }
 
 func (t *RBTree) Leftmost() Iterator {
-	return iface2iterator(t.leftmost())
+	return eface2iterator(t.leftmost())
 }
-func (t *RBTree) leftmost() iface {
+func (t *RBTree) leftmost() eface {
 	var root = t.root()
 	if sameIface(root, t.end()) {
 		return root
@@ -103,9 +103,9 @@ func (t *RBTree) leftmost() iface {
 }
 
 func (t *RBTree) Rightmost() Iterator {
-	return iface2iterator(t.rightmost())
+	return eface2iterator(t.rightmost())
 }
-func (t *RBTree) rightmost() iface {
+func (t *RBTree) rightmost() eface {
 	var root = t.root()
 	if sameIface(root, t.end()) {
 		return root
@@ -123,7 +123,7 @@ func (t *RBTree) Check() (int, int) {
 	}
 	return t.check(t.root())
 }
-func (t *RBTree) check(root iface) (l int, size int) {
+func (t *RBTree) check(root eface) (l int, size int) {
 	if sameIface(root, t.end()) {
 		return 0, 0
 	}

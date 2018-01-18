@@ -51,13 +51,13 @@ type Map struct {
 func (m *Map) Insert(data interface{}) (Iterator, bool) {
 	_ = data.(Pair)
 	iter, ok := m.RBTree.insert(data, func(key unsafe.Pointer) int {
-		return m.compare(interface2pointer(data), key) //interface2pointer取Pair的第一个interface的pointer
+		return m.compare((*eface)((*eface)(unsafe.Pointer(&data)).pointer).pointer, key) //interface2pointer取Pair的第一个interface的pointer
 	})
-	return iface2iterator(iter), ok
+	return eface2iterator(iter), ok
 }
 
 func getMapNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
-	return (*iface)(unsafe.Pointer(&(*MapNode)(p).Key)).pointer
+	return (*eface)(unsafe.Pointer(&(*MapNode)(p).Key)).pointer
 }
 
 func NewMap(compare func(a, b unsafe.Pointer) int) *Map {

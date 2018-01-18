@@ -36,7 +36,7 @@ type Set struct {
 }
 
 func getSetNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
-	return (*iface)(unsafe.Pointer(&(*SetNode)(p).data)).pointer
+	return (*eface)(unsafe.Pointer(&(*SetNode)(p).data)).pointer
 }
 
 // NewSet create a new unique Set with compare func
