@@ -134,11 +134,11 @@ func (t *RBTree) check(root iface) (l int, size int) {
 				panic("linked red node")
 			} else if !sameIface(t.getParent(t.getChild(root, i)), root) {
 				panic("tree error")
-			} else if i == 0 && t.compare(t.getKey(t.getChild(root, i).pointer), t.getKey(root.pointer)) > 0 {
+			} else if i == 0 && t.compare(t.getKeyPointer(t.getChild(root, i).pointer), t.getKeyPointer(root.pointer)) > 0 {
 				panic("order error")
-			} else if i == 1 && t.compare(t.getKey(t.getChild(root, i).pointer), t.getKey(root.pointer)) < 0 {
+			} else if i == 1 && t.compare(t.getKeyPointer(t.getChild(root, i).pointer), t.getKeyPointer(root.pointer)) < 0 {
 				panic("order error")
-			} else if t.compare(t.getKey(t.getChild(root, i).pointer), t.getKey(root.pointer)) == 0 && t.unique { //unique set can't equal
+			} else if t.compare(t.getKeyPointer(t.getChild(root, i).pointer), t.getKeyPointer(root.pointer)) == 0 && t.unique { //unique set can't equal
 				panic("order equal error")
 			}
 		}

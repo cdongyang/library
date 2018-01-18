@@ -131,7 +131,7 @@ func BenchmarkDefineHeapVariable(b *testing.B) {
 
 //HeapAlloc: 1213864 HeapInuse: 1490944 HeapObjects: 71433 HeapIdle 4374528 HeapReleased 0 HeapSys 5865472
 //50000000	        32.5 ns/op	       8 B/op	       1 allocs/op
-func BenchmarkInterfaceConvertInt(b *testing.B) {
+func BenchmarkInterfaceConvertInt(b *testing.B) { //1 allocs/op和主要耗时都在iface = i
 	var iface interface{}
 	for i := 0; i < b.N; i++ {
 		iface = i
@@ -170,8 +170,8 @@ func BenchmarkInterfaceConvertIntPoiter(b *testing.B) {
 	var intPoiter = &a
 	for i := 0; i < b.N; i++ {
 		iface = intPoiter
-		_ = iface.(*int)
 	}
+	_ = iface
 	memStats()
 }
 
@@ -409,6 +409,78 @@ func BenchmarkAssignIntPoiterToInterfaceNOGC(b *testing.B) {
 	debug.SetGCPercent(100)
 }
 
+// go test -benchmem -run=^$ -bench=AssertInt
+// BenchmarkAssertInt-4   	2000000000	         0.43 ns/op	       0 B/op	       0 allocs/op
+// go test -benchmem -gcflags '-l' -run=^$ -bench=AssertInt
+// BenchmarkAssertInt-4    500000000                3.47 ns/op            0 B/op          0 allocs/op
+func AssertInt(a interface{}) int {
+	return a.(int)
+}
+func BenchmarkAssertInt(b *testing.B) {
+	var a interface{} = 1
+	for i := 0; i < b.N; i++ {
+		_ = AssertInt(a)
+	}
+}
+
+// go test -benchmem -run=^$ -bench=AssertIntPointer
+// BenchmarkAssertIntPointer-4   	2000000000	         0.41 ns/op	       0 B/op	       0 allocs/op
+// go test -benchmem -gcflags '-l' -run=^$ -bench=AssertIntPointer
+// BenchmarkAssertIntPointer-4     500000000                3.85 ns/op            0 B/op          0 allocs/op
+func AssertIntPointer(a interface{}) *int {
+	return a.(*int)
+}
+func BenchmarkAssertIntPointer(b *testing.B) {
+	var a interface{} = new(int)
+	for i := 0; i < b.N; i++ {
+		_ = AssertIntPointer(a)
+	}
+}
+
+// go test -benchmem -run=^$ -bench=AssertStruct32
+// BenchmarkAssertStruct32b-4      2000000000               0.38 ns/op            0 B/op          0 allocs/op
+// go test -benchmem -gcflags '-l' -run=^$ -bench=AssertStruct32
+// BenchmarkAssertStruct32b-4      300000000                4.32 ns/op            0 B/op          0 allocs/op
+func AssertStruct32b(a interface{}) struct32b {
+	return a.(struct32b)
+}
+func BenchmarkAssertStruct32b(b *testing.B) {
+	var a interface{} = struct32b{}
+	for i := 0; i < b.N; i++ {
+		_ = AssertStruct32b(a)
+	}
+}
+
+// go test -benchmem -run=^$ -bench=AssertStruct40
+// BenchmarkAssertStruct40b-4      200000000                7.84 ns/op            0 B/op          0 allocs/op
+// go test -benchmem -gcflags '-l' -run=^$ -bench=AssertStruct40
+// BenchmarkAssertStruct40b-4      100000000               10.4 ns/op             0 B/op          0 allocs/op
+func AssertStruct40b(a interface{}) struct40b {
+	return a.(struct40b)
+}
+func BenchmarkAssertStruct40b(b *testing.B) {
+	var a interface{} = struct40b{}
+	for i := 0; i < b.N; i++ {
+		_ = AssertStruct40b(a)
+	}
+}
+
+// go test -benchmem -run=^$ -bench=AssertStruct40bPointer
+// BenchmarkAssertStruct40bPointer-4       2000000000               0.38 ns/op            0 B/op          0 allocs/op
+// go test -benchmem -gcflags '-l' -run=^$ -bench=AssertStruct40bPointer
+// BenchmarkAssertStruct40bPointer-4       500000000                3.87 ns/op            0 B/op          0 allocs/op
+func AssertStruct40bPointer(a interface{}) *struct40b {
+	return a.(*struct40b)
+}
+func BenchmarkAssertStruct40bPointer(b *testing.B) {
+	var a interface{} = &struct40b{}
+	for i := 0; i < b.N; i++ {
+		_ = AssertStruct40bPointer(a)
+	}
+}
+
+// 编译器会优化变量在同一个函数的的断言,并且会内联小函数,但加上-gcflags '-l'禁止内联后会调用runtime.memmove复制值,速度变慢,如果结构体较大的话更慢
+
 /*
 
 http://legendtkl.com/2017/07/01/golang-interface-implement/
@@ -436,15 +508,26 @@ BenchmarkAssignIntToInterfaceNOGC-4             50000000                24.7 ns/
 BenchmarkAssignIntPoiterToInterfaceNOGC-4       1000000000               2.29 ns/op            0 B/op          0 allocs/op
 PASS
 
-	interface{} 有一个element为unsafe.Pointer类型,持有对象的指针,值赋值给interface时易引起堆内存分配,
-	指针赋值时也易引起栈变量逃逸到堆
+	interface{} 有一个element为unsafe.Pointer类型,持有对象的指针,值赋值给interface时易引起堆内存分配,指针赋值时也易引起栈变量逃逸到堆
+	结构体源码:/usr/local/go/src/runtime/runtime2.go
+	type iface struct {
+		tab  *itab
+		data unsafe.Pointer
+	}
+
+	type eface struct {
+		_type *_type
+		data  unsafe.Pointer
+	}
+
 推论:
-	由值类型赋值给interface{}会导致 1 allocs/op,比直接指针赋值给interface{}慢几十倍,直接指针赋值跟普通int赋值差不多
-	由interface{}断言为原本的类型跟普通int赋值差不多,但断言为其它interface{}时慢几十倍
-	每个interface{}都会持有一个指针,如果赋值给interface{}的是值而不是指针就会在heap新建一份值并将指针赋给interface{}
-	堆内存动态分配内存速度比直接定义变量慢很多,并且会增大heapObjects数量,直接定义的变量应该是在编译阶段就静态分配了内存到栈空间
-	从一个自定义的interface到另一个自定义interface的转化很慢,无论是类型断言还是直接赋值,但断言为原来的类型进行赋值很快
-	用interface进行操作很多时候会比原来的类型慢,尽可能断言为原来的类型进行操作
-	interface持有的是一个指针,当赋值给interface的不是指针时interface会在heap上复制一份值出来,并持有这个指针,
-	所以值赋给指针都会引起1 allocs/op
+	由值类型赋值给interface{}会导致 1 allocs/op,比直接指针赋值给interface{}慢很多,因为不需要重新在堆上分配空间
+	由interface{}断言为原本的类型被内联并在变量定义的函数内跟普通int赋值差不多,但断言为其它interface{}较慢,不被内联时调用了runtime.memmove也较慢
+	每个interface{}都会持有一个unsafe.Pointer,如果赋值给interface{}的是值而不是指针就会在heap新建一份值并将指针赋给interface{}
+	堆内存动态分配内存速度比直接定义变量慢很多,并且会增大heapObjects数量,直接定义的变量在编译阶段就静态分配了内存到栈空间
+	从一个自定义的interface到另一个自定义interface的转化较慢,无论是类型断言还是直接赋值
+	比较底层且调用较频繁的函数或方法尽可能使用unsafe.Pointer代替interface{}
+
+总结:
+	interface{}虽然能实现泛化,但是以runtime开销作为代价的,在有些效率要求高并且调用频繁的情况下尽量使用具体类型
 */

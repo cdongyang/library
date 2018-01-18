@@ -56,7 +56,7 @@ func (m *Map) Insert(data interface{}) (Iterator, bool) {
 	return iface2iterator(iter), ok
 }
 
-func getMapNodeKey(p unsafe.Pointer) unsafe.Pointer {
+func getMapNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
 	return (*iface)(unsafe.Pointer(&(*MapNode)(p).Key)).pointer
 }
 
@@ -74,7 +74,7 @@ func NewMap(compare func(a, b unsafe.Pointer) int) *Map {
 		},
 		compare,
 		//SameMapNode,
-		getMapNodeKey,
+		getMapNodeKeyPointer,
 		true,
 	).(*Map)
 }
@@ -88,7 +88,7 @@ func NewCustomMap(newNode func(interface{}) Iterator,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		//SameMapNode,
-		getMapNodeKey,
+		getMapNodeKeyPointer,
 		true).(*Map)
 }
 
@@ -106,7 +106,7 @@ func NewMultiMap(compare func(a, b unsafe.Pointer) int) *Map {
 		},
 		compare,
 		//SameMapNode,
-		getMapNodeKey,
+		getMapNodeKeyPointer,
 		false,
 	).(*Map)
 }
@@ -120,6 +120,6 @@ func NewCustomMultiMap(newNode func(interface{}) Iterator,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		//SameMapNode,
-		getMapNodeKey,
+		getMapNodeKeyPointer,
 		false).(*Map)
 }

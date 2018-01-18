@@ -35,7 +35,7 @@ type Set struct {
 	RBTree
 }
 
-func getSetNodeKey(p unsafe.Pointer) unsafe.Pointer {
+func getSetNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
 	return (*iface)(unsafe.Pointer(&(*SetNode)(p).data)).pointer
 }
 
@@ -55,7 +55,7 @@ func NewSet(compare func(a, b unsafe.Pointer) int) *Set {
 		},
 		compare,
 		//SameSetNode,
-		getSetNodeKey,
+		getSetNodeKeyPointer,
 		true,
 	).(*Set)
 }
@@ -72,7 +72,7 @@ func NewCustomSet(newNode func(interface{}) Iterator,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		//SameSetNode,
-		getSetNodeKey,
+		getSetNodeKeyPointer,
 		true).(*Set)
 }
 
@@ -92,7 +92,7 @@ func NewMultiSet(compare func(a, b unsafe.Pointer) int) *Set {
 		},
 		compare,
 		//SameSetNode,
-		getSetNodeKey,
+		getSetNodeKeyPointer,
 		false,
 	).(*Set)
 }
@@ -109,6 +109,6 @@ func NewCustomMultiSet(newNode func(interface{}) Iterator,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		//SameSetNode,
-		getSetNodeKey,
+		getSetNodeKeyPointer,
 		false).(*Set)
 }

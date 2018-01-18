@@ -127,7 +127,7 @@ type RBTreer interface {
 		newNode func(interface{}) Iterator,
 		deleteNode func(Iterator),
 		compare func(unsafe.Pointer, unsafe.Pointer) int,
-		getKey func(unsafe.Pointer) unsafe.Pointer,
+		getKeyPointer func(unsafe.Pointer) unsafe.Pointer,
 		unique bool,
 	)
 }
@@ -139,9 +139,9 @@ type RBTree struct {
 	deleteNode func(Iterator)
 	compare    func(unsafe.Pointer, unsafe.Pointer) int
 	//compareFun unsafe.Pointer
-	getKey     func(unsafe.Pointer) unsafe.Pointer
-	nodeOffset uintptr
-	unique     bool
+	getKeyPointer func(unsafe.Pointer) unsafe.Pointer
+	nodeOffset    uintptr
+	unique        bool
 }
 
 func NewRBTreer(
@@ -151,13 +151,15 @@ func NewRBTreer(
 	newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(unsafe.Pointer, unsafe.Pointer) int,
-	getKey func(unsafe.Pointer) unsafe.Pointer,
+	getKeyPointer func(unsafe.Pointer) unsafe.Pointer,
 	unique bool) RBTreer {
 	t.init(t, header, nodeOffset, newNode, deleteNode, compare,
-		getKey,
+		getKeyPointer,
 		unique)
 	return t
 }
+
+var nilIface = iface{nil, nil}
 
 func (t *RBTree) init(
 	tree RBTreer,
@@ -166,7 +168,7 @@ func (t *RBTree) init(
 	newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(unsafe.Pointer, unsafe.Pointer) int,
-	getKey func(unsafe.Pointer) unsafe.Pointer,
+	getKeyPointer func(unsafe.Pointer) unsafe.Pointer,
 	unique bool) {
 	t.nodeOffset = nodeOffset
 	header.setTree(tree)
@@ -188,15 +190,15 @@ func (t *RBTree) init(
 	}
 	t.deleteNode = func(node Iterator) {
 		var nodeIface = iterator2iface(node)
-		t.setChild(nodeIface, 0, iface{nil, nil})
-		t.setChild(nodeIface, 1, iface{nil, nil})
-		t.setParent(nodeIface, iface{nil, nil})
+		t.setChild(nodeIface, 0, nilIface)
+		t.setChild(nodeIface, 1, nilIface)
+		t.setParent(nodeIface, nilIface)
 		node.setTree(nil)
 		deleteNode(node)
 	}
 	t.compare = compare
 	//t.compareFun = unsafe.Pointer(&compare)
-	t.getKey = getKey
+	t.getKeyPointer = getKeyPointer
 	t.unique = unique
 }
 
@@ -315,7 +317,7 @@ func (t *RBTree) Count(key interface{}) (count int) {
 	}
 	var beg = t.lowerBound(key)
 	var keyPointer = interface2pointer(key)
-	for !sameIface(beg, t.end()) && t.compare(t.getKey(beg.pointer), keyPointer) == 0 {
+	for !sameIface(beg, t.end()) && t.compare(t.getKeyPointer(beg.pointer), keyPointer) == 0 {
 		beg = t.next(beg)
 		count++
 	}
@@ -337,7 +339,7 @@ func (t *RBTree) find(key interface{}) iface {
 		if sameIface(root, t.end()) {
 			return root
 		}
-		switch cmp := t.compare(keyPointer, t.getKey(root.pointer)); {
+		switch cmp := t.compare(keyPointer, t.getKeyPointer(root.pointer)); {
 		case cmp == 0:
 			return root
 		case cmp < 0:
@@ -368,7 +370,7 @@ func (t *RBTree) insert(data interface{}, compare func(unsafe.Pointer) int) (ifa
 	var parent = t.getParent(root)
 	for !sameIface(root, t.end()) {
 		parent = root
-		switch cmp := compare(t.getKey(root.pointer)); {
+		switch cmp := compare(t.getKeyPointer(root.pointer)); {
 		case cmp == 0:
 			if t.unique {
 				return t.end(), false
@@ -456,7 +458,7 @@ func (t *RBTree) Erase(key interface{}) (count int) {
 	}
 	var beg = t.lowerBound(key)
 	var keyPointer = interface2pointer(key)
-	for !sameIface(beg, t.end()) && t.compare(keyPointer, t.getKey(beg.pointer)) == 0 {
+	for !sameIface(beg, t.end()) && t.compare(keyPointer, t.getKeyPointer(beg.pointer)) == 0 {
 		var tmp = t.next(beg)
 		t.eraseIterator(beg)
 		beg = tmp
@@ -607,13 +609,13 @@ func (t *RBTree) lowerBound(key interface{}) iface {
 		if root == t.end() {
 			if sameIface(parent, t.end()) {
 				return parent
-			} else if t.compare(keyPointer, t.getKey(parent.pointer)) <= 0 {
+			} else if t.compare(keyPointer, t.getKeyPointer(parent.pointer)) <= 0 {
 				return parent
 			}
 			return t.next(parent)
 		}
 		parent = root
-		if t.compare(keyPointer, t.getKey(root.pointer)) > 0 {
+		if t.compare(keyPointer, t.getKeyPointer(root.pointer)) > 0 {
 			root = t.getChild(root, 1)
 		} else {
 			root = t.getChild(root, 0)
@@ -632,13 +634,13 @@ func (t *RBTree) upperBound(key interface{}) iface {
 		if root == t.end() {
 			if sameIface(parent, t.end()) {
 				return parent
-			} else if t.compare(keyPointer, t.getKey(parent.pointer)) < 0 {
+			} else if t.compare(keyPointer, t.getKeyPointer(parent.pointer)) < 0 {
 				return parent
 			}
 			return t.next(parent)
 		}
 		parent = root
-		if t.compare(keyPointer, t.getKey(root.pointer)) >= 0 {
+		if t.compare(keyPointer, t.getKeyPointer(root.pointer)) >= 0 {
 			root = t.getChild(root, 1)
 		} else {
 			root = t.getChild(root, 0)

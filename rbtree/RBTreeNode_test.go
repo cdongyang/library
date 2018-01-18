@@ -176,7 +176,7 @@ func BenchmarkRBTreeCompare(b *testing.B) {
 	var set = NewSet(CompareInt)
 	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
 	for i := 0; i < b.N; i++ {
-		_ = set.RBTree.compare(set.getKey(a), set.getKey(c))
+		_ = set.RBTree.compare(set.getKeyPointer(a), set.getKeyPointer(c))
 	}
 }
 
@@ -187,7 +187,7 @@ func BenchmarkGetKey(b *testing.B) {
 	})
 	var a = set.newNode(1).(*SetNode)
 	for i := 0; i < b.N; i++ {
-		_ = set.getKey(a)
+		_ = set.getKeyPointer(a)
 	}
 }
 
@@ -198,7 +198,7 @@ func BenchmarkIteratorGetKey(b *testing.B) {
 	})
 	var a = set.newNode(1)
 	for i := 0; i < b.N; i++ {
-		_ = set.getKey(a)
+		_ = set.getKeyPointer(a)
 	}
 }
 
@@ -284,10 +284,26 @@ func BenchmarkRBTreeCompareInt(b *testing.B) {
 }
 
 // BenchmarkCompareInt-4   	2000000000	         0.38 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkCompareInt(b *testing.B) {
+// go test -run=^$ -gcflags '-l' -benchmem -v -bench=^BenchmarkCompareInt$
+// BenchmarkCompareInt-4           500000000                3.03 ns/op            0 B/op          0 allocs/op
+func BenchmarkCompareInt(b *testing.B) { //不内联时速度和interface method/struct func element调用差不多
 	var a, c = 1, 2
 	for i := 0; i < b.N; i++ {
 		_ = CompareInt(unsafe.Pointer(&a), unsafe.Pointer(&c))
+	}
+}
+
+func compareInt(a, b interface{}) int {
+	return a.(int) - b.(int)
+}
+
+// BenchmarkAssertCompareInt-4   	2000000000	         0.40 ns/op	       0 B/op	       0 allocs/op
+// go test -run=^$ -gcflags '-l' -benchmem -v -bench=^BenchmarkAssertCompareInt$
+// BenchmarkAssertCompareInt-4     50000000                26.3 ns/op             0 B/op          0 allocs/op
+func BenchmarkAssertCompareInt(b *testing.B) { //不内联时类型断言代价明显增高
+	var a, c interface{} = 1, 2
+	for i := 0; i < b.N; i++ {
+		_ = compareInt(a, c)
 	}
 }
 
@@ -297,7 +313,7 @@ func BenchmarkGetKey(b *testing.B) {
 	var setNode = set.newNode(0)
 	var pointer = iterator2iface(setNode).pointer
 	for i := 0; i < b.N; i++ {
-		_ = set.getKey(pointer)
+		_ = set.getKeyPointer(pointer)
 	}
 }
 
@@ -376,5 +392,19 @@ func ExampleGetKey() {
 	// 1
 }
 
-// 有时候interface{}断言很慢,用(*type)unsafe.Pointer优化
-// 结构体调用method很快,但调用"函数成员"很慢
+// BenchmarkTypeAssert-4   	2000000000	         0.39 ns/op	       0 B/op	       0 allocs/op
+// go test -run=^$ -gcflags '-l' -benchmem -v -bench=^BenchmarkTypeAssert$
+// BenchmarkTypeAssert-4           100000000               15.0 ns/op             0 B/op          0 allocs/op
+func AssertInt(a interface{}) int {
+	return a.(int)
+}
+func BenchmarkTypeAssert(b *testing.B) {
+	var a interface{} = 1
+	for i := 0; i < b.N; i++ {
+		_ = AssertInt(a)
+	}
+}
+
+// 函数不被内联时interface{}断言很慢,用unsafe.Pointer强制转换优化
+// 结构体调用method很快,但调用"函数成员"或者interface调用method很慢
+// 小函数容易在编译是被内联,因而并发测试直接调用时会特别快,通过结构体"函数成员"调用会很慢,测试时可以用 -gcflags '-l'禁止内联
