@@ -76,11 +76,11 @@ func BenchmarkGetUintPtr(b *testing.B) {
 	}
 }
 
+/*
 func getChild(t *RBTree, node eface, ch int) eface {
 	return *getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
 }
 
-/*
 func BenchmarkSetGetChild(b *testing.B) {
 	var set = NewSet(nil)
 	var node Iterator = &SetNode{}
@@ -345,9 +345,9 @@ func BenchmarkUnsafeSameNode(b *testing.B) {
 
 // BenchmarkSetSameNode-4   	300000000	         5.44 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkSetSameNode(b *testing.B) {
-	var a, c = iterator2eface(&SetNode{data: 1}), iterator2eface(&SetNode{data: 2})
+	var a, c = iterator2pointer(&SetNode{data: 1}), iterator2pointer(&SetNode{data: 2})
 	for i := 0; i < b.N; i++ {
-		_ = sameIface(a, c)
+		_ = sameNode(a, c)
 	}
 }
 
@@ -482,7 +482,7 @@ func ExampleMapEscape() {
 	//0 allocs/op
 }
 
-func getType(a interface{}) *rtype {
+func getType(a interface{}) unsafe.Pointer {
 	return (*eface)(unsafe.Pointer(&a)).itype
 }
 

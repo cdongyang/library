@@ -53,7 +53,7 @@ type Map struct {
 func (m *Map) Insert(data interface{}) (Iterator, bool) {
 	var pair = *(*Pair)(interface2pointer(data))
 	iter, ok := m.RBTree.insert(data, interface2pointer(pair.Key))
-	return eface2iterator(iter), ok
+	return m.pointer2iterator(iter), ok
 }
 
 func getMapNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {

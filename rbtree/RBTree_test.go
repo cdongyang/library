@@ -39,7 +39,9 @@ func NewTree(unique bool) *RBTree {
 		}
 	)
 	var tree = &RBTree{}
-	return NewRBTreer(tree, &node{}, offsetNode, newNode, deleteNode, CompareInt,
+	var header = &node{}
+	//fmt.Printf("header: %p header: %+v\n", header, header)
+	return NewRBTreer(tree, header, offsetNode, newNode, deleteNode, CompareInt,
 		func(p unsafe.Pointer) unsafe.Pointer {
 			return unsafe.Pointer(&(*node)(p).data)
 		},
@@ -85,32 +87,32 @@ func (n *node) CopyData(src Iterator) {
 }
 
 func (t *RBTree) Most(ch int) Iterator {
-	return eface2iterator(t.most(ch))
+	return t.pointer2iterator(t.most(ch))
 }
 
 func (t *RBTree) Leftmost() Iterator {
-	return eface2iterator(t.leftmost())
+	return t.pointer2iterator(t.leftmost())
 }
-func (t *RBTree) leftmost() eface {
+func (t *RBTree) leftmost() unsafe.Pointer {
 	var root = t.root()
-	if sameIface(root, t.end()) {
+	if sameNode(root, t.end()) {
 		return root
 	}
-	for !sameIface(t.getChild(root, 0), t.end()) {
+	for !sameNode(t.getChild(root, 0), t.end()) {
 		root = t.getChild(root, 0)
 	}
 	return root
 }
 
 func (t *RBTree) Rightmost() Iterator {
-	return eface2iterator(t.rightmost())
+	return t.pointer2iterator(t.rightmost())
 }
-func (t *RBTree) rightmost() eface {
+func (t *RBTree) rightmost() unsafe.Pointer {
 	var root = t.root()
-	if sameIface(root, t.end()) {
+	if sameNode(root, t.end()) {
 		return root
 	}
-	for !sameIface(t.getChild(root, 1), t.end()) {
+	for !sameNode(t.getChild(root, 1), t.end()) {
 		root = t.getChild(root, 1)
 	}
 	return root
@@ -118,27 +120,27 @@ func (t *RBTree) rightmost() eface {
 
 //check wheather the tree satisfy the rule of red-black tree
 func (t *RBTree) Check() (int, int) {
-	if !sameIface(t.root(), t.end()) && t.getColor(t.root()) != black {
+	if !sameNode(t.root(), t.end()) && t.getColor(t.root()) != black {
 		panic("not black root")
 	}
 	return t.check(t.root())
 }
-func (t *RBTree) check(root eface) (l int, size int) {
-	if sameIface(root, t.end()) {
+func (t *RBTree) check(root unsafe.Pointer) (l int, size int) {
+	if sameNode(root, t.end()) {
 		return 0, 0
 	}
 	//fmt.Printf("l:%p r:%p p:%p s:%p c:%s v:%d\n", root.getChild(0), root.getChild(1), root.getParent(), root, root.getColor().String(), root.GetKey())
 	for i := 0; i < 2; i++ {
-		if !sameIface(t.getChild(root, i), t.end()) {
+		if !sameNode(t.getChild(root, i), t.end()) {
 			if t.getColor(root) == red && t.getColor(t.getChild(root, i)) == red {
 				panic("linked red node")
-			} else if !sameIface(t.getParent(t.getChild(root, i)), root) {
+			} else if !sameNode(t.getParent(t.getChild(root, i)), root) {
 				panic("tree error")
-			} else if i == 0 && t.compare(t.getKeyPointer(t.getChild(root, i).pointer), t.getKeyPointer(root.pointer)) > 0 {
+			} else if i == 0 && t.compare(t.getKeyPointer(t.getChild(root, i)), t.getKeyPointer(root)) > 0 {
 				panic("order error")
-			} else if i == 1 && t.compare(t.getKeyPointer(t.getChild(root, i).pointer), t.getKeyPointer(root.pointer)) < 0 {
+			} else if i == 1 && t.compare(t.getKeyPointer(t.getChild(root, i)), t.getKeyPointer(root)) < 0 {
 				panic("order error")
-			} else if t.compare(t.getKeyPointer(t.getChild(root, i).pointer), t.getKeyPointer(root.pointer)) == 0 && t.unique { //unique set can't equal
+			} else if t.compare(t.getKeyPointer(t.getChild(root, i)), t.getKeyPointer(root)) == 0 && t.unique { //unique set can't equal
 				panic("order equal error")
 			}
 		}
