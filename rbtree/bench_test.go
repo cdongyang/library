@@ -1,6 +1,7 @@
 package rbtree_test
 
 import (
+	"runtime/debug"
 	"strconv"
 	"testing"
 
@@ -42,7 +43,21 @@ func BenchmarkMap(b *testing.B) {
 }
 
 func BenchmarkSetInsert(b *testing.B) {
+	debug.SetGCPercent(-1)
 	b.Run("setInsert", runWith(benchmarkSetInsert, 0))
+	debug.SetGCPercent(100)
+}
+
+func BenchmarkSetErase(b *testing.B) {
+	debug.SetGCPercent(-1)
+	b.Run("setErase", runWith(benchmarkSetErase, 0))
+	debug.SetGCPercent(100)
+}
+
+func BenchmarkSetFind(b *testing.B) {
+	debug.SetGCPercent(-1)
+	b.Run("setFind", runWith(benchmarkSetFind, 0))
+	debug.SetGCPercent(100)
 }
 
 func runWith(f func(*testing.B, int), v ...int) func(*testing.B) {
