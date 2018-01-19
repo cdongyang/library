@@ -174,7 +174,7 @@ func NewRBTreer(
 	return t
 }
 
-var nilIface = eface{nil, nil}
+var nilEface = eface{nil, nil}
 
 func (t *RBTree) init(
 	tree RBTreer,
@@ -195,19 +195,19 @@ func (t *RBTree) init(
 	t.size = 0
 	t.newNode = func(data interface{}) Iterator {
 		var node = newNode(data)
-		var nodeIface = iterator2eface(node)
-		t.setChild(nodeIface, 0, t.end())
-		t.setChild(nodeIface, 1, t.end())
-		t.setParent(nodeIface, t.end())
+		var nodeEface = iterator2eface(node)
+		t.setChild(nodeEface, 0, t.end())
+		t.setChild(nodeEface, 1, t.end())
+		t.setParent(nodeEface, t.end())
 		node.setTree(tree)
-		t.setColor(nodeIface, red)
+		t.setColor(nodeEface, red)
 		return node
 	}
 	t.deleteNode = func(node Iterator) {
-		var nodeIface = iterator2eface(node)
-		t.setChild(nodeIface, 0, nilIface)
-		t.setChild(nodeIface, 1, nilIface)
-		t.setParent(nodeIface, nilIface)
+		var nodeEface = iterator2eface(node)
+		t.setChild(nodeEface, 0, nilEface)
+		t.setChild(nodeEface, 1, nilEface)
+		t.setParent(nodeEface, nilEface)
 		node.setTree(nil)
 		deleteNode(node)
 	}

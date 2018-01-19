@@ -415,9 +415,9 @@ func (t *RBTree) escape5(a interface{}) {
 	p := noescape(interface2pointer(a))
 	CompareInt(p, p)
 }
-func ExampleFindEscape() {
+func ExampleEscape() {
 	var n float64
-	var t = &RBTree{compare: CompareInt}
+	var t = NewMap(CompareInt)
 	n = testing.AllocsPerRun(1000, func() {
 		var a = 1
 		t.escape1(a)
@@ -449,4 +449,56 @@ func ExampleFindEscape() {
 	//1 allocs/op
 	//0 allocs/op
 	//0 allocs/op
+}
+
+func ExampleMapEscape() {
+	var pair = Pair{1, 2}
+	var t = NewMap(CompareInt)
+	var n float64
+	t.Insert(pair)
+	t.Insert(Pair{3, 4})
+	n = testing.AllocsPerRun(10, func() {
+		if _, ok := t.Insert(pair); ok {
+			panic("repeat insert")
+		}
+	})
+	fmt.Println(n, "allocs/op")
+	n = testing.AllocsPerRun(10, func() {
+		if t.Find(1) == t.End() {
+			panic("not found")
+		}
+	})
+	fmt.Println(n, "allocs/op")
+	n = testing.AllocsPerRun(10, func() {
+		if t.Erase(1) != 1 {
+			panic("not erase")
+		}
+		t.Insert(pair)
+	})
+	fmt.Println(n, "allocs/op")
+	// Output:
+	//0 allocs/op
+	//0 allocs/op
+	//0 allocs/op
+}
+
+func getType(a interface{}) *rtype {
+	return (*eface)(unsafe.Pointer(&a)).itype
+}
+
+func ExampleType() {
+	var (
+		i   int    = 1
+		i32 int32  = 1
+		i64 int64  = 1
+		s   string = "1"
+	)
+	fmt.Println(getType(int(1)) == getType(i))
+	fmt.Println(getType(int32(1)) == getType(i32))
+	fmt.Println(getType(int64(1)) == getType(i64))
+	fmt.Println(getType(string("1")) == getType(s))
+	// Output:
+	//true
+	//true
+	//true
 }

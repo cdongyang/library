@@ -1,6 +1,8 @@
 package rbtree
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 type Pair struct {
 	Key, Value interface{}
@@ -49,10 +51,8 @@ type Map struct {
 }
 
 func (m *Map) Insert(data interface{}) (Iterator, bool) {
-	//_ = data.(Pair)
-	var dataEface = (*eface)(unsafe.Pointer(&data))
-	var keyPointer = (*eface)(dataEface.pointer).pointer
-	iter, ok := m.RBTree.insert(data, keyPointer)
+	var pair = *(*Pair)(interface2pointer(data))
+	iter, ok := m.RBTree.insert(data, interface2pointer(pair.Key))
 	return eface2iterator(iter), ok
 }
 
@@ -73,7 +73,6 @@ func NewMap(compare func(a, b unsafe.Pointer) int) *Map {
 		func(Iterator) {
 		},
 		compare,
-		//SameMapNode,
 		getMapNodeKeyPointer,
 		true,
 	).(*Map)
@@ -87,7 +86,6 @@ func NewCustomMap(newNode func(interface{}) Iterator,
 	return NewRBTreer(mp, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
-		//SameMapNode,
 		getMapNodeKeyPointer,
 		true).(*Map)
 }
@@ -105,7 +103,6 @@ func NewMultiMap(compare func(a, b unsafe.Pointer) int) *Map {
 		func(Iterator) {
 		},
 		compare,
-		//SameMapNode,
 		getMapNodeKeyPointer,
 		false,
 	).(*Map)
@@ -119,7 +116,6 @@ func NewCustomMultiMap(newNode func(interface{}) Iterator,
 	return NewRBTreer(mp, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
-		//SameMapNode,
 		getMapNodeKeyPointer,
 		false).(*Map)
 }
