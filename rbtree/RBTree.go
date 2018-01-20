@@ -146,7 +146,7 @@ type RBTree struct {
 	size          int
 	newNode       func(interface{}) Iterator
 	deleteNode    func(Iterator)
-	compare       func(unsafe.Pointer, unsafe.Pointer) int
+	compare       func(a, b unsafe.Pointer) int
 	getKeyPointer func(unsafe.Pointer) unsafe.Pointer
 	nodeOffset    uintptr
 	unique        bool
@@ -386,10 +386,10 @@ func (t *RBTree) insert(data interface{}, key unsafe.Pointer) (unsafe.Pointer, b
 			fallthrough
 		case cmp < 0:
 			rootPoiter = t.getChildPointer(root, 0)
-			root = t.getChild(root, 0)
+			root = *rootPoiter
 		case cmp > 0:
 			rootPoiter = t.getChildPointer(root, 1)
-			root = t.getChild(root, 1)
+			root = *rootPoiter
 		}
 	}
 	t.size++
@@ -760,7 +760,10 @@ func init() {
 	//fmt.Println(offsetChild[0], offsetChild[1], offsetParent, offsetTree, offsetColor)
 }
 
+//var GetNodeCount = 0
+
 func getNodePointer(node unsafe.Pointer, offset uintptr) *unsafe.Pointer {
+	//GetNodeCount++
 	return (*unsafe.Pointer)(unsafe.Pointer(uintptr(node) + offset))
 }
 

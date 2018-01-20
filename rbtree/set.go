@@ -35,7 +35,10 @@ type Set struct {
 	RBTree
 }
 
+//var GetSetKeyPointerCount = 0
+
 func getSetNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
+	//GetSetKeyPointerCount++
 	return (*eface)(unsafe.Pointer(&(*SetNode)(p).data)).pointer
 }
 

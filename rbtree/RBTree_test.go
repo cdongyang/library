@@ -30,9 +30,14 @@ type node struct {
 	RBTreeNode
 }
 
-func NewTree(unique bool) *RBTree {
+type IntSet struct {
+	RBTree
+}
+
+func NewTree(unique bool) *IntSet {
 	var (
 		newNode = func(data interface{}) Iterator {
+			//return &node{data: data.(int)}
 			return &node{data: data.(int)}
 		}
 		deleteNode = func(node Iterator) {
@@ -41,11 +46,17 @@ func NewTree(unique bool) *RBTree {
 	var tree = &RBTree{}
 	var header = &node{}
 	//fmt.Printf("header: %p header: %+v\n", header, header)
-	return NewRBTreer(tree, header, offsetNode, newNode, deleteNode, CompareInt,
+	return &IntSet{*NewRBTreer(tree, header, offsetNode, newNode, deleteNode, CompareInt,
 		func(p unsafe.Pointer) unsafe.Pointer {
 			return unsafe.Pointer(&(*node)(p).data)
 		},
-		unique).(*RBTree)
+		unique).(*RBTree)}
+}
+
+func (s *IntSet) Insert(data interface{}) (iter Iterator, ok bool) {
+	var dataEface = interface2eface(data)
+	var dataCopy = eface{dataEface.itype, noescape(dataEface.pointer)}
+	return s.RBTree.Insert(*(*interface{})(noescape(unsafe.Pointer(&dataCopy))))
 }
 
 func ExampleNodeOffset() {
@@ -74,12 +85,15 @@ func (n *node) Last() Iterator {
 	return n.tree.Last(n)
 }
 
-func (n *node) GetData() interface{} {
-	return n.data
-}
+var intType = interface2eface(1).itype
 
 func (n *node) GetKey() interface{} {
-	return n.data
+	return *(*interface{})(unsafe.Pointer(&eface{intType, unsafe.Pointer(&n.data)}))
+}
+
+func (n *node) GetData() (key interface{}) {
+	*(*eface)(unsafe.Pointer(&key)) = eface{intType, unsafe.Pointer(&n.data)}
+	return
 }
 
 func (n *node) CopyData(src Iterator) {
@@ -397,8 +411,8 @@ func TestRBTree(t *testing.T) {
 
 var benchRand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
 
-// BenchmarkRBTreeInsert-4   	 1000000	      2072 ns/op	     247 B/op	      21 allocs/op
-func BenchmarkRBTreeInsert(t *testing.B) {
+// BenchmarkIntSetInsert-4   	 3000000	       564 ns/op	      64 B/op	       1 allocs/op
+func BenchmarkIntSetInsert(t *testing.B) {
 	var set = NewTree(true)
 	var rand = benchRand
 	for i := 0; i < t.N; i++ {
@@ -406,8 +420,8 @@ func BenchmarkRBTreeInsert(t *testing.B) {
 	}
 }
 
-// BenchmarkRBTreeErase-4   	 1000000	      1415 ns/op	     156 B/op	      19 allocs/op
-func BenchmarkRBTreeErase(t *testing.B) {
+// BenchmarkIntSetErase-4   	 5000000	       370 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkIntSetErase(t *testing.B) {
 	var set = NewTree(true)
 	t.StopTimer()
 	var keys = make([]int, t.N)
@@ -422,18 +436,25 @@ func BenchmarkRBTreeErase(t *testing.B) {
 	}
 }
 
-// BenchmarkRBTreeFind-4   	 1000000	      1238 ns/op	     164 B/op	      20 allocs/op
-func BenchmarkRBTreeFind(t *testing.B) {
+// BenchmarkIntSetFind-4   	 5000000	       289 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkIntSetFind(b *testing.B) {
 	var set = NewTree(true)
-	t.StopTimer()
-	var keys = make([]int, t.N)
+	b.StopTimer()
+	var keys = make([]int, b.N)
 	var rand = benchRand
-	for i := 0; i < t.N; i++ {
+	for i := 0; i < b.N; i++ {
 		keys[i] = rand.Int()
 		_, _ = set.Insert(keys[i])
 	}
-	t.StartTimer()
-	for i := 0; i < t.N; i++ {
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
 		_ = set.Find(keys[i])
+	}
+}
+
+func BenchmarkIntSetGetKey(b *testing.B) {
+	var a = &node{data: 1}
+	for i := 0; i < b.N; i++ {
+		_ = a.GetKey()
 	}
 }

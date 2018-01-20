@@ -76,20 +76,21 @@ func BenchmarkGetUintPtr(b *testing.B) {
 	}
 }
 
+func BenchmarkSetGetChild(b *testing.B) {
+	var set = NewSet(nil)
+	var node = unsafe.Pointer(&SetNode{})
+	var leftChild = unsafe.Pointer(&SetNode{})
+	*getNodePointer(node, offsetChild[0]) = leftChild
+	for i := 0; i < b.N; i++ {
+		_ = set.getChild(node, 0)
+	}
+}
+
 /*
 func getChild(t *RBTree, node eface, ch int) eface {
 	return *getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
 }
 
-func BenchmarkSetGetChild(b *testing.B) {
-	var set = NewSet(nil)
-	var node Iterator = &SetNode{}
-	var leftChild Iterator = &SetNode{}
-	*getIteratorPointer(node, offsetChild[0]) = leftChild
-	for i := 0; i < b.N; i++ {
-		_ = set.getChild(node, 0)
-	}
-}
 
 func BenchmarkGetIteratorPointer(b *testing.B) {
 	var node Iterator = &SetNode{}

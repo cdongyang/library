@@ -30,16 +30,52 @@ func BenchmarkSet(b *testing.B) {
 	b.Run("setFind", runWith(benchmarkSetFind, 0))
 }
 
+func BenchmarkSet1E5(b *testing.B) {
+	b.Run("setInsert", runWith(benchmarkSetInsert, 1e5))
+	b.Run("setErase", runWith(benchmarkSetErase, 1e5))
+	b.Run("setFind", runWith(benchmarkSetFind, 1e5))
+}
+
+func BenchmarkSet1E6(b *testing.B) {
+	b.Run("setInsert", runWith(benchmarkSetInsert, 1e6))
+	b.Run("setErase", runWith(benchmarkSetErase, 1e6))
+	b.Run("setFind", runWith(benchmarkSetFind, 1e6))
+}
+
 func BenchmarkHashMap(b *testing.B) {
 	b.Run("hashMapInsert", runWith(benchmarkHashMapInsert, 0))
 	b.Run("hashMapErase", runWith(benchmarkHashMapErase, 0))
 	b.Run("hashMapFind", runWith(benchmarkHashMapFind, 0))
 }
 
+func BenchmarkHashMap1E5(b *testing.B) {
+	b.Run("hashMapInsert", runWith(benchmarkHashMapInsert, 1e5))
+	b.Run("hashMapErase", runWith(benchmarkHashMapErase, 1e5))
+	b.Run("hashMapFind", runWith(benchmarkHashMapFind, 1e5))
+}
+
+func BenchmarkHashMap1E6(b *testing.B) {
+	b.Run("hashMapInsert", runWith(benchmarkHashMapInsert, 1e6))
+	b.Run("hashMapErase", runWith(benchmarkHashMapErase, 1e6))
+	b.Run("hashMapFind", runWith(benchmarkHashMapFind, 1e6))
+}
+
 func BenchmarkMap(b *testing.B) {
 	b.Run("mapInsert", runWith(benchmarkMapInsert, 0))
 	b.Run("mapErase", runWith(benchmarkSetErase, 0))
 	b.Run("mapFind", runWith(benchmarkMapFind, 0))
+}
+
+func BenchmarkMap1E5(b *testing.B) {
+	b.Run("mapInsert", runWith(benchmarkMapInsert, 1e5))
+	b.Run("mapErase", runWith(benchmarkSetErase, 1e5))
+	b.Run("mapFind", runWith(benchmarkMapFind, 1e5))
+}
+
+func BenchmarkMap1E6(b *testing.B) {
+	b.Run("mapInsert", runWith(benchmarkMapInsert, 1e6))
+	b.Run("mapErase", runWith(benchmarkSetErase, 1e6))
+	b.Run("mapFind", runWith(benchmarkMapFind, 1e6))
 }
 
 func BenchmarkSetInsert(b *testing.B) {
@@ -75,11 +111,14 @@ func benchmarkSetInsert(b *testing.B, n int) {
 	var set = rbtree.NewSet(rbtree.CompareInt)
 	var rand = benchRand
 	b.ResetTimer()
+	//rbtree.GetNodeCount = 0
+	//rbtree.GetSetKeyPointerCount = 0
 	var key int
 	for i := 0; i < b.N; i++ {
 		key = rand.Int()
 		_, _ = set.Insert(key)
 	}
+	//b.Log(b.N, rbtree.GetNodeCount, rbtree.GetSetKeyPointerCount)
 }
 
 func benchmarkSetErase(b *testing.B, n int) {
@@ -94,11 +133,14 @@ func benchmarkSetErase(b *testing.B, n int) {
 		_, _ = set.Insert(keys[i])
 	}
 	b.ResetTimer()
+	//rbtree.GetNodeCount = 0
+	//rbtree.GetSetKeyPointerCount = 0
 	var key int
 	for i := 0; i < b.N; i++ {
 		key = keys[i]
 		_ = set.Erase(key)
 	}
+	//b.Log(b.N, rbtree.GetNodeCount, rbtree.GetSetKeyPointerCount)
 }
 
 func benchmarkSetFind(b *testing.B, n int) {
@@ -113,11 +155,14 @@ func benchmarkSetFind(b *testing.B, n int) {
 		_, _ = set.Insert(keys[i])
 	}
 	b.ResetTimer()
+	//rbtree.GetNodeCount = 0
+	//rbtree.GetSetKeyPointerCount = 0
 	var key int
 	for i := 0; i < b.N; i++ {
 		key = keys[i]
 		_ = set.Find(key)
 	}
+	//b.Log(b.N, rbtree.GetNodeCount, rbtree.GetSetKeyPointerCount)
 }
 
 func benchmarkMapInsert(b *testing.B, n int) {
