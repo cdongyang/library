@@ -28,7 +28,7 @@ func (node *SetNode) CopyData(src Iterator) {
 }
 
 // Set is a set of element
-// you can use the Unique method to get wheather the Set element is unique
+// you can use the Unique method to find out wheather the Set element is unique
 // you can use NewSet or NewCustomSet to create a unique Set
 // you can use NewMultiSet or NewCustomSet to create a not unique Set
 type Set struct {
@@ -57,7 +57,6 @@ func NewSet(compare func(a, b unsafe.Pointer) int) *Set {
 		func(Iterator) {
 		},
 		compare,
-		//SameSetNode,
 		getSetNodeKeyPointer,
 		true,
 	).(*Set)
@@ -74,7 +73,6 @@ func NewCustomSet(newNode func(interface{}) Iterator,
 	return NewRBTreer(set, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
-		//SameSetNode,
 		getSetNodeKeyPointer,
 		true).(*Set)
 }
@@ -94,7 +92,6 @@ func NewMultiSet(compare func(a, b unsafe.Pointer) int) *Set {
 		func(Iterator) {
 		},
 		compare,
-		//SameSetNode,
 		getSetNodeKeyPointer,
 		false,
 	).(*Set)
@@ -111,7 +108,6 @@ func NewCustomMultiSet(newNode func(interface{}) Iterator,
 	return NewRBTreer(set, header,
 		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
-		//SameSetNode,
 		getSetNodeKeyPointer,
 		false).(*Set)
 }

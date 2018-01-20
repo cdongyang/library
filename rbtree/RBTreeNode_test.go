@@ -17,19 +17,15 @@ func TestRBTreeNode(t *testing.T) {
 		secElem := elem.Field(i)
 		fmt.Println(secElem.Name, secElem.Offset, secElem.Index, secElem.Anonymous, secElem.PkgPath, secElem.Type.String())
 	}
-	// Output:
-	//
 }
 
-func ExampleNode() {
+func TestNode(t *testing.T) {
 	var setNode Iterator = &SetNode{}
 	var ptr = unsafe.Pointer(setNode.(*SetNode))
 	var copyNode = *((*Iterator)(ptr))
 	fmt.Println(SameSetNode(copyNode, setNode))
 	fmt.Printf("setNode: %p,Iterator Pointer: %x\n", setNode.(*SetNode), (*(*[2]uintptr)(unsafe.Pointer(&ptr)))[1])
 	fmt.Println(uintptr(unsafe.Pointer(setNode.(*SetNode))) == (*(*[2]uintptr)(unsafe.Pointer(&ptr)))[1])
-	// Output:
-	//false
 }
 
 /*
@@ -117,9 +113,9 @@ func ExampleNodeSize() {
 	fmt.Println(reflect.TypeOf(SetNode{}).Size())
 	fmt.Println(reflect.TypeOf(MapNode{}).Size())
 	//Output:
+	//40
+	//56
 	//72
-	//88
-	//104
 }
 
 func ExampleSameSetNode() {
@@ -478,13 +474,13 @@ func ExampleMapEscape() {
 	})
 	fmt.Println(n, "allocs/op")
 	// Output:
+	//1 allocs/op
 	//0 allocs/op
-	//0 allocs/op
-	//0 allocs/op
+	//2 allocs/op
 }
 
 func getType(a interface{}) unsafe.Pointer {
-	return (*eface)(unsafe.Pointer(&a)).itype
+	return (*eface)(unsafe.Pointer(&a))._type
 }
 
 func ExampleType() {
@@ -499,6 +495,7 @@ func ExampleType() {
 	fmt.Println(getType(int64(1)) == getType(i64))
 	fmt.Println(getType(string("1")) == getType(s))
 	// Output:
+	//true
 	//true
 	//true
 	//true

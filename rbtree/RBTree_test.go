@@ -3,6 +3,7 @@ package rbtree
 import (
 	"fmt"
 	"sort"
+	"sync"
 	"testing"
 	"unsafe"
 
@@ -53,9 +54,33 @@ func NewTree(unique bool) *IntSet {
 		unique).(*RBTree)}
 }
 
+func NewTreeWithPool(unique bool) *IntSet {
+	var (
+		pool = &sync.Pool{New: func() interface{} {
+			return &node{}
+		}}
+		newNode = func(data interface{}) Iterator {
+			var n = pool.Get().(*node)
+			n.data = data.(int)
+			return n
+		}
+		deleteNode = func(node Iterator) {
+			pool.Put(node)
+		}
+	)
+	var tree = &RBTree{}
+	var header = &node{}
+	//fmt.Printf("header: %p header: %+v\n", header, header)
+	return &IntSet{*NewRBTreer(tree, header, offsetNode, newNode, deleteNode, CompareInt,
+		func(p unsafe.Pointer) unsafe.Pointer {
+			return unsafe.Pointer(&(*node)(p).data)
+		},
+		unique).(*RBTree)}
+}
+
 func (s *IntSet) Insert(data interface{}) (iter Iterator, ok bool) {
 	var dataEface = interface2eface(data)
-	var dataCopy = eface{dataEface.itype, noescape(dataEface.pointer)}
+	var dataCopy = eface{dataEface._type, noescape(dataEface.pointer)}
 	return s.RBTree.Insert(*(*interface{})(noescape(unsafe.Pointer(&dataCopy))))
 }
 
@@ -71,10 +96,10 @@ func ExampleNodeOffset() {
 	// Output:
 	//8
 	//8
+	//16
 	//24
+	//32
 	//40
-	//56
-	//72
 }
 
 func (n *node) Next() Iterator {
@@ -85,7 +110,7 @@ func (n *node) Last() Iterator {
 	return n.tree.Last(n)
 }
 
-var intType = interface2eface(1).itype
+var intType = interface2type(1)
 
 func (n *node) GetKey() interface{} {
 	return *(*interface{})(unsafe.Pointer(&eface{intType, unsafe.Pointer(&n.data)}))
@@ -420,6 +445,14 @@ func BenchmarkIntSetInsert(t *testing.B) {
 	}
 }
 
+func BenchmarkIntSetInsertWithPool(t *testing.B) {
+	var set = NewTreeWithPool(true)
+	var rand = benchRand
+	for i := 0; i < t.N; i++ {
+		_, _ = set.Insert(rand.Int())
+	}
+}
+
 // BenchmarkIntSetErase-4   	 5000000	       370 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkIntSetErase(t *testing.B) {
 	var set = NewTree(true)
@@ -436,9 +469,39 @@ func BenchmarkIntSetErase(t *testing.B) {
 	}
 }
 
+func BenchmarkIntSetEraseWithPool(t *testing.B) {
+	var set = NewTreeWithPool(true)
+	t.StopTimer()
+	var keys = make([]int, t.N)
+	var rand = benchRand
+	for i := 0; i < t.N; i++ {
+		keys[i] = rand.Int()
+		_, _ = set.Insert(keys[i])
+	}
+	t.StartTimer()
+	for i := 0; i < t.N; i++ {
+		_ = set.Erase(keys[i])
+	}
+}
+
 // BenchmarkIntSetFind-4   	 5000000	       289 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkIntSetFind(b *testing.B) {
 	var set = NewTree(true)
+	b.StopTimer()
+	var keys = make([]int, b.N)
+	var rand = benchRand
+	for i := 0; i < b.N; i++ {
+		keys[i] = rand.Int()
+		_, _ = set.Insert(keys[i])
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_ = set.Find(keys[i])
+	}
+}
+
+func BenchmarkIntSetFindWithPool(b *testing.B) {
+	var set = NewTreeWithPool(true)
 	b.StopTimer()
 	var keys = make([]int, b.N)
 	var rand = benchRand
