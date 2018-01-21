@@ -3,7 +3,7 @@ package rbtree
 import "unsafe"
 
 type SetNode struct {
-	RBTreeNode
+	Node
 	data interface{}
 }
 
@@ -32,7 +32,7 @@ func (node *SetNode) CopyData(src Iterator) {
 // you can use NewSet or NewCustomSet to create a unique Set
 // you can use NewMultiSet or NewCustomSet to create a not unique Set
 type Set struct {
-	RBTree
+	Tree
 }
 
 //var GetSetKeyPointerCount = 0
@@ -47,10 +47,10 @@ func getSetNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
 func NewSet(compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
 	var header = &SetNode{}
-	return NewRBTreer(
+	return NewTreer(
 		set,
 		header,
-		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
+		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
 		func(data interface{}) Iterator {
 			return &SetNode{data: data}
 		},
@@ -70,8 +70,8 @@ func NewCustomSet(newNode func(interface{}) Iterator,
 	compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
 	var header = &SetNode{}
-	return NewRBTreer(set, header,
-		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
+	return NewTreer(set, header,
+		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		getSetNodeKeyPointer,
 		true).(*Set)
@@ -82,10 +82,10 @@ func NewCustomSet(newNode func(interface{}) Iterator,
 func NewMultiSet(compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
 	var header = &SetNode{}
-	return NewRBTreer(
+	return NewTreer(
 		set,
 		header,
-		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
+		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
 		func(data interface{}) Iterator {
 			return &SetNode{data: data}
 		},
@@ -105,8 +105,8 @@ func NewCustomMultiSet(newNode func(interface{}) Iterator,
 	compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
 	var header = &SetNode{}
-	return NewRBTreer(set, header,
-		uintptr(unsafe.Pointer(&header.RBTreeNode))-uintptr(unsafe.Pointer(header)),
+	return NewTreer(set, header,
+		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
 		newNode, deleteNode, compare,
 		getSetNodeKeyPointer,
 		false).(*Set)

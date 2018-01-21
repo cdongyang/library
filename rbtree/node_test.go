@@ -7,11 +7,11 @@ import (
 	"unsafe"
 )
 
-func TestRBTreeNode(t *testing.T) {
+func TestTreeNode(t *testing.T) {
 	var setNode Iterator = &SetNode{}
-	fmt.Printf("setNode: %p, RBTreeNode: %p, data: %p\n", setNode.(*SetNode), &setNode.(*SetNode).RBTreeNode, &setNode.(*SetNode).data)
-	fmt.Printf("RBTreeNode.child: %p,RBTreeNode.parent: %p\n", &setNode.(*SetNode).RBTreeNode.child, &setNode.(*SetNode).RBTreeNode.parent)
-	fmt.Printf("RBTreeNode.tree: %p,RBTreeNode.color: %p\n", &setNode.(*SetNode).RBTreeNode.tree, &setNode.(*SetNode).RBTreeNode.color)
+	fmt.Printf("setNode: %p, Node: %p, data: %p\n", setNode.(*SetNode), &setNode.(*SetNode).Node, &setNode.(*SetNode).data)
+	fmt.Printf("Node.child: %p,Node.parent: %p\n", &setNode.(*SetNode).Node.child, &setNode.(*SetNode).Node.parent)
+	fmt.Printf("Node.tree: %p,Node.color: %p\n", &setNode.(*SetNode).Node.tree, &setNode.(*SetNode).Node.color)
 	elem := reflect.TypeOf(setNode).Elem()
 	for i := 0; i < elem.NumField(); i++ {
 		secElem := elem.Field(i)
@@ -34,7 +34,7 @@ func ExampleGetChild() {
 	var node Iterator = &SetNode{}
 	var leftChild Iterator = &SetNode{}
 	*getIteratorPointer(node, offsetChild[0]) = leftChild
-	var tmp = getChild(&set.RBTree, node, 0)
+	var tmp = getChild(&set.Tree, node, 0)
 	fmt.Println(SameSetNode(tmp, leftChild))
 	// Output:
 	//true
@@ -46,7 +46,7 @@ func BenchmarkUnsafeGetChild(b *testing.B) {
 	var leftChild Iterator = &SetNode{}
 	*getIteratorPointer(node, offsetChild[0]) = leftChild
 	for i := 0; i < b.N; i++ {
-		_ = getChild(&set.RBTree, node, 0)
+		_ = getChild(&set.Tree, node, 0)
 	}
 }
 */
@@ -83,7 +83,7 @@ func BenchmarkSetGetChild(b *testing.B) {
 }
 
 /*
-func getChild(t *RBTree, node eface, ch int) eface {
+func getChild(t *Tree, node eface, ch int) eface {
 	return *getIteratorPointer(node, t.nodeOffset+offsetChild[ch])
 }
 
@@ -109,7 +109,7 @@ func BenchmarkGetIteratorPointer(b *testing.B) {
 // }
 
 func ExampleNodeSize() {
-	fmt.Println(reflect.TypeOf(RBTreeNode{}).Size())
+	fmt.Println(reflect.TypeOf(Node{}).Size())
 	fmt.Println(reflect.TypeOf(SetNode{}).Size())
 	fmt.Println(reflect.TypeOf(MapNode{}).Size())
 	//Output:
@@ -167,12 +167,12 @@ func BenchmarkSetNewPoiterNode(b *testing.B) {
 	}
 }
 
-// BenchmarkRBTreeCompare-4                200000000                8.67 ns/op            0 B/op          0 allocs/op
-func BenchmarkRBTreeCompare(b *testing.B) {
+// BenchmarkTreeCompare-4                200000000                8.67 ns/op            0 B/op          0 allocs/op
+func BenchmarkTreeCompare(b *testing.B) {
 	var set = NewSet(CompareInt)
 	var a, c = set.newNode(0).(*SetNode), set.newNode(1).(*SetNode)
 	for i := 0; i < b.N; i++ {
-		_ = set.RBTree.compare(set.getKeyPointer(unsafe.Pointer(a)), set.getKeyPointer(unsafe.Pointer(c)))
+		_ = set.Tree.compare(set.getKeyPointer(unsafe.Pointer(a)), set.getKeyPointer(unsafe.Pointer(c)))
 	}
 }
 
@@ -258,10 +258,10 @@ func BenchmarkSetCompareInt(b *testing.B) {
 	}
 }
 
-// BenchmarkRBTreeCompareInt-4   	500000000	         3.89 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkRBTreeCompareInt(b *testing.B) {
+// BenchmarkTreeCompareInt-4   	500000000	         3.89 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkTreeCompareInt(b *testing.B) {
 	var set = NewSet(CompareInt)
-	var tree = &set.RBTree
+	var tree = &set.Tree
 	var a, c = 1, 2
 	for i := 0; i < b.N; i++ {
 		_ = tree.compare(unsafe.Pointer(&a), unsafe.Pointer(&c))
@@ -394,21 +394,21 @@ func BenchmarkTypeAssert(b *testing.B) {
 // 结构体调用method很快,但调用"函数成员"或者interface调用method很慢
 // 小函数容易在编译是被内联,因而并发测试直接调用时会特别快,通过结构体"函数成员"调用会很慢,测试时可以用 -gcflags '-l'禁止内联
 
-func (t *RBTree) escape1(a interface{}) {
+func (t *Tree) escape1(a interface{}) {
 	_ = a
 }
-func (t *RBTree) escape2(a interface{}) {
+func (t *Tree) escape2(a interface{}) {
 	_ = interface2pointer(a)
 }
-func (t *RBTree) escape3(a interface{}) {
+func (t *Tree) escape3(a interface{}) {
 	p := interface2pointer(a)
 	t.compare(p, p)
 }
-func (t *RBTree) escape4(a interface{}) {
+func (t *Tree) escape4(a interface{}) {
 	p := interface2pointer(a)
 	CompareInt(p, p)
 }
-func (t *RBTree) escape5(a interface{}) {
+func (t *Tree) escape5(a interface{}) {
 	p := noescape(interface2pointer(a))
 	CompareInt(p, p)
 }

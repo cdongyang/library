@@ -29,8 +29,8 @@ func testSet(t *testing.T, length int, unique bool) {
 		t.Fatal("empty tree begin and end error")
 	}
 
-	//test RBTreer
-	var _ rbtree.RBTreer = tree
+	//test Treer
+	var _ rbtree.Treer = tree
 	var iter = tree.End()
 	var index int
 

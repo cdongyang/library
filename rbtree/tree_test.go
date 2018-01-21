@@ -22,17 +22,17 @@ var offsetNode uintptr
 
 func init() {
 	var header = &node{}
-	offsetNode = uintptr(unsafe.Pointer(&header.RBTreeNode)) - uintptr(unsafe.Pointer(header))
+	offsetNode = uintptr(unsafe.Pointer(&header.Node)) - uintptr(unsafe.Pointer(header))
 	//fmt.Println("offsetNode:", offsetNode)
 }
 
 type node struct {
 	data int
-	RBTreeNode
+	Node
 }
 
 type IntSet struct {
-	RBTree
+	Tree
 }
 
 func NewTree(unique bool) *IntSet {
@@ -44,14 +44,14 @@ func NewTree(unique bool) *IntSet {
 		deleteNode = func(node Iterator) {
 		}
 	)
-	var tree = &RBTree{}
+	var tree = &Tree{}
 	var header = &node{}
 	//fmt.Printf("header: %p header: %+v\n", header, header)
-	return &IntSet{*NewRBTreer(tree, header, offsetNode, newNode, deleteNode, CompareInt,
+	return &IntSet{*NewTreer(tree, header, offsetNode, newNode, deleteNode, CompareInt,
 		func(p unsafe.Pointer) unsafe.Pointer {
 			return unsafe.Pointer(&(*node)(p).data)
 		},
-		unique).(*RBTree)}
+		unique).(*Tree)}
 }
 
 func NewTreeWithPool(unique bool) *IntSet {
@@ -68,26 +68,26 @@ func NewTreeWithPool(unique bool) *IntSet {
 			pool.Put(node)
 		}
 	)
-	var tree = &RBTree{}
+	var tree = &Tree{}
 	var header = &node{}
 	//fmt.Printf("header: %p header: %+v\n", header, header)
-	return &IntSet{*NewRBTreer(tree, header, offsetNode, newNode, deleteNode, CompareInt,
+	return &IntSet{*NewTreer(tree, header, offsetNode, newNode, deleteNode, CompareInt,
 		func(p unsafe.Pointer) unsafe.Pointer {
 			return unsafe.Pointer(&(*node)(p).data)
 		},
-		unique).(*RBTree)}
+		unique).(*Tree)}
 }
 
 func (s *IntSet) Insert(data interface{}) (iter Iterator, ok bool) {
 	var dataEface = interface2eface(data)
 	var dataCopy = eface{dataEface._type, noescape(dataEface.pointer)}
-	return s.RBTree.Insert(*(*interface{})(noescape(unsafe.Pointer(&dataCopy))))
+	return s.Tree.Insert(*(*interface{})(noescape(unsafe.Pointer(&dataCopy))))
 }
 
 func ExampleNodeOffset() {
 	var it = &node{}
 	var base = uintptr(unsafe.Pointer(it))
-	fmt.Println(uintptr(unsafe.Pointer(&it.RBTreeNode)) - base)
+	fmt.Println(uintptr(unsafe.Pointer(&it.Node)) - base)
 	fmt.Println(uintptr(unsafe.Pointer(&it.child[0])) - base)
 	fmt.Println(uintptr(unsafe.Pointer(&it.child[1])) - base)
 	fmt.Println(uintptr(unsafe.Pointer(&it.parent)) - base)
@@ -125,14 +125,14 @@ func (n *node) CopyData(src Iterator) {
 	n.data = src.GetKey().(int)
 }
 
-func (t *RBTree) Most(ch int) Iterator {
+func (t *Tree) Most(ch int) Iterator {
 	return t.pointer2iterator(t.most(ch))
 }
 
-func (t *RBTree) Leftmost() Iterator {
+func (t *Tree) Leftmost() Iterator {
 	return t.pointer2iterator(t.leftmost())
 }
-func (t *RBTree) leftmost() unsafe.Pointer {
+func (t *Tree) leftmost() unsafe.Pointer {
 	var root = t.root()
 	if sameNode(root, t.end()) {
 		return root
@@ -143,10 +143,10 @@ func (t *RBTree) leftmost() unsafe.Pointer {
 	return root
 }
 
-func (t *RBTree) Rightmost() Iterator {
+func (t *Tree) Rightmost() Iterator {
 	return t.pointer2iterator(t.rightmost())
 }
-func (t *RBTree) rightmost() unsafe.Pointer {
+func (t *Tree) rightmost() unsafe.Pointer {
 	var root = t.root()
 	if sameNode(root, t.end()) {
 		return root
@@ -158,13 +158,13 @@ func (t *RBTree) rightmost() unsafe.Pointer {
 }
 
 //check wheather the tree satisfy the rule of red-black tree
-func (t *RBTree) Check() (int, int) {
+func (t *Tree) Check() (int, int) {
 	if !sameNode(t.root(), t.end()) && t.getColor(t.root()) != black {
 		panic("not black root")
 	}
 	return t.check(t.root())
 }
-func (t *RBTree) check(root unsafe.Pointer) (l int, size int) {
+func (t *Tree) check(root unsafe.Pointer) (l int, size int) {
 	if sameNode(root, t.end()) {
 		return 0, 0
 	}
@@ -195,7 +195,7 @@ func (t *RBTree) check(root unsafe.Pointer) (l int, size int) {
 	return a, s1 + s2 + 1
 }
 
-func testRBTree(t *testing.T, length int, unique bool) {
+func testTree(t *testing.T, length int, unique bool) {
 	// init
 	var rand = randint.Rand{First: 23456, Add: 12345, Mod: 1000}
 	var max = rand.Int()%length + 1
@@ -215,8 +215,8 @@ func testRBTree(t *testing.T, length int, unique bool) {
 		t.Fatal("empty tree begin and end error")
 	}
 
-	//test RBTreer
-	var _ RBTreer = tree
+	//test Treer
+	var _ Treer = tree
 	var iter = tree.End()
 	var index int
 
@@ -428,9 +428,9 @@ func testRBTree(t *testing.T, length int, unique bool) {
 		t.Fatal("clear error,size != 0 or not empty")
 	}
 }
-func TestRBTree(t *testing.T) {
+func TestTree(t *testing.T) {
 	for i := 0; i < 500; i++ {
-		testRBTree(t, i+1, i%2 == 0)
+		testTree(t, i+1, i%2 == 0)
 	}
 }
 
