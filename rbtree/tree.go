@@ -1,9 +1,18 @@
 package rbtree
 
 import (
+	"errors"
 	"unsafe"
 )
 
+var (
+	ErrNotInTree  = errors.New("Iterator is not a node of this tree")
+	ErrNoLast     = errors.New("begin of tree has no Last()")
+	ErrNoNext     = errors.New("end of tree has no Next()")
+	ErrEraseEmpty = errors.New("can't erase empty node")
+)
+
+// Iterator is the interface of Node
 type Iterator interface {
 	Next() Iterator
 	Last() Iterator
@@ -28,8 +37,10 @@ type eface struct {
 	pointer unsafe.Pointer
 }
 
-// Node is the base node on Tree funtion
-// inherit Node should not use pointer, because the operation of Tree treate is as value
+// Node is the node of Tree, it implement Iterator
+// inherit Node should not use pointer
+// because the operation of Tree treate it as value
+// also, pointer will increase the GC pressure
 type Node struct {
 	child  [2]unsafe.Pointer
 	parent unsafe.Pointer
@@ -52,36 +63,43 @@ func (node *Node) Last() Iterator {
 // GetData get the data of this
 // inherit Node must rewrite this method
 func (node *Node) GetData() interface{} {
+	// do nothing here, just implement the interface
 	return nil
 }
 
 // GetKey get the compare key of this
 // inherit Node must rewrite this method
 func (node *Node) GetKey() interface{} {
+	// do nothing here, just implement the interface
 	return nil
 }
 
 // GetValue get the value of this
 // map node should rewrite this method
 func (node *Node) GetValue() interface{} {
+	// do nothing here, just implement the interface
 	return nil
 }
 
 // SetValue set the value of this
 // map node should rewrite this method
 func (node *Node) SetValue(interface{}) {
+	// do nothing here, just implement the interface
 }
 
 //CopyData copy the node data to this from src
 // inherit Node must rewrite this method
 func (node *Node) CopyData(src Iterator) {
+	// do nothing here, just implement the interface
 }
 
 // GetTree get the Treer of this
+// this method should not be rewrite
 func (node *Node) GetTree() Treer {
 	return (*Tree)(node.tree).tree
 }
 
+// Treer is the interface of Tree
 type Treer interface {
 	SameIterator(a, b Iterator) bool
 	Compare(key1, key2 unsafe.Pointer) int
@@ -115,19 +133,31 @@ type Treer interface {
 	)
 }
 
+// Tree is a red-black tree
 type Tree struct {
-	header        unsafe.Pointer
-	nodeType      unsafe.Pointer
-	tree          Treer
-	size          int
-	newNode       func(interface{}) Iterator
-	deleteNode    func(Iterator)
+	// header is a virtual node, it represent the tree's end
+	header unsafe.Pointer
+	// nodeType is the runtime type of inherit Node type
+	nodeType unsafe.Pointer
+	// tree represent the interface of inherit Tree type
+	tree Treer
+	// size represent the size of tree
+	size int
+	// newNode is the func to create a new node of inherit Node type
+	newNode func(interface{}) Iterator
+	// deleteNode is the func to delete a node of inherit Node type
+	// return to a pool or just do nothing and let it recycle by GC
+	deleteNode func(Iterator)
+	// compare is the compare func to compare two node key
 	compare       func(a, b unsafe.Pointer) int
 	getKeyPointer func(unsafe.Pointer) unsafe.Pointer
-	nodeOffset    uintptr
-	unique        bool
+	// represent the offset of Node in the inherit Node type
+	nodeOffset uintptr
+	// unique is to mark whether the tree node is unique
+	unique bool
 }
 
+// NewTreer create a new tree with it's element
 func NewTreer(
 	t Treer,
 	header Iterator,
@@ -218,18 +248,23 @@ func (t *Tree) clear(root unsafe.Pointer) {
 	t.deleteNode(t.pointer2iterator(root))
 }
 
+// Unique return a bool value represent whether the tree node is unique
 func (t *Tree) Unique() bool {
 	return t.unique
 }
 
+// Size return the size of tree, which represent the number of node in tree
 func (t *Tree) Size() int {
 	return t.size
 }
 
+// Empty return a bool value represent whether the tree has no node
 func (t *Tree) Empty() bool {
 	return t.size == 0
 }
 
+// Begin return the Iterator of first node
+// if the tree is empty, it will equal to End
 func (t *Tree) Begin() Iterator {
 	return t.pointer2iterator(t.begin())
 }
@@ -238,6 +273,8 @@ func (t *Tree) begin() unsafe.Pointer {
 	return t.most(0)
 }
 
+// End return the End of tree, but it's not a tree node of tree
+// just like a[10] of var a [10]int, it's the pointer to end
 func (t *Tree) End() Iterator {
 	return t.pointer2iterator(t.end())
 }
@@ -246,12 +283,17 @@ func (t *Tree) end() unsafe.Pointer {
 	return t.header
 }
 
+// Next return the next Iterator of node in this tree
+// if node has no next Iterator, it will panic
 func (t *Tree) Next(node Iterator) Iterator {
+	if !t.sameTree(node) {
+		panic(ErrNotInTree)
+	}
 	return t.pointer2iterator(t.next(iterator2pointer(node)))
 }
 func (t *Tree) next(node unsafe.Pointer) unsafe.Pointer {
 	if sameNode(node, t.end()) {
-		panic("end of tree has no Next()")
+		panic(ErrNoNext)
 	}
 	if sameNode(node, t.most(1)) {
 		return t.end()
@@ -259,12 +301,17 @@ func (t *Tree) next(node unsafe.Pointer) unsafe.Pointer {
 	return t.gothrough(1, node)
 }
 
+// Last return the last Iterator of node in this tree
+// if node has no last Iterator, it will panic
 func (t *Tree) Last(node Iterator) Iterator {
+	if !t.sameTree(node) {
+		panic(ErrNotInTree)
+	}
 	return t.pointer2iterator(t.last(iterator2pointer(node)))
 }
 func (t *Tree) last(node unsafe.Pointer) unsafe.Pointer {
 	if sameNode(node, t.begin()) {
-		panic("begin of tree has no Last()")
+		panic(ErrNoLast)
 	}
 	if sameNode(node, t.end()) {
 		return t.most(1)
@@ -286,6 +333,7 @@ func (t *Tree) gothrough(ch int, node unsafe.Pointer) unsafe.Pointer {
 	return t.getParent(node)
 }
 
+// Count return the num of node key equal to key in this tree
 func (t *Tree) Count(key interface{}) (count int) {
 	var keyPointer = interface2pointer(key)
 	if t.unique {
@@ -302,10 +350,14 @@ func (t *Tree) Count(key interface{}) (count int) {
 	return count
 }
 
+// EqualRange return the Iterator range of equal key node in this tree
 func (t *Tree) EqualRange(key interface{}) (beg, end Iterator) {
 	return t.LowerBound(key), t.UpperBound(key)
 }
 
+// Find return the Iterator of key in this tree
+// if the key is not exist in this tree, result will be the End of tree
+// if there has multi node key equal to key, result will be random one
 func (t *Tree) Find(key interface{}) Iterator {
 	return t.pointer2iterator(t.find(noescape(interface2pointer(key))))
 }
@@ -326,6 +378,9 @@ func (t *Tree) find(keyPointer unsafe.Pointer) unsafe.Pointer {
 	}
 }
 
+// Insert insert a new node with data to tree
+// it return the insert node Iterator and true when success insert
+// otherwise, it return the end of tree and false
 func (t *Tree) Insert(data interface{}) (Iterator, bool) {
 	iter, ok := t.insert(data, interface2pointer(data))
 	return t.pointer2iterator(iter), ok
@@ -421,6 +476,7 @@ func (t *Tree) insertAdjust(node unsafe.Pointer) {
 	t.rotate(parentCh^1, parent)
 }
 
+// Erase erase all the node keys equal to key in this tree and return the number of erase node
 func (t *Tree) Erase(key interface{}) (count int) {
 	var keyPointer = noescape(interface2pointer(key))
 	if t.unique {
@@ -441,12 +497,17 @@ func (t *Tree) Erase(key interface{}) (count int) {
 	return count
 }
 
+// EraseIterator erase node from the tree
+// if node is not in tree, it will panic
 func (t *Tree) EraseIterator(node Iterator) {
+	if !t.sameTree(node) {
+		panic(ErrNotInTree)
+	}
 	t.eraseIterator(iterator2pointer(node))
 }
 func (t *Tree) eraseIterator(node unsafe.Pointer) {
 	if sameNode(node, t.end()) {
-		panic("can't erase empty node")
+		panic(ErrEraseEmpty)
 	}
 	t.size--
 	if !sameNode(t.getChild(node, 0), t.end()) && !sameNode(t.getChild(node, 1), t.end()) {
@@ -559,6 +620,9 @@ func (t *Tree) eraseAdjust(node, parent unsafe.Pointer) {
 	t.rotate(nodeCh, brother)
 }
 
+// EraseIteratorRange erase the given iterator range
+// if the given range is not in this tree, it will panic with ErrNoInTree
+// if end can get beg after multi Next method, it will panic with ErrNoLast
 func (t *Tree) EraseIteratorRange(beg, end Iterator) (count int) {
 	return t.eraseIteratorRange(iterator2pointer(beg), iterator2pointer(end))
 }
@@ -572,6 +636,7 @@ func (t *Tree) eraseIteratorRange(beg, end unsafe.Pointer) (count int) {
 	return count
 }
 
+// LowerBound return the first Iterator greater than or equal to key
 func (t *Tree) LowerBound(key interface{}) Iterator {
 	return t.pointer2iterator(t.lowerBound(noescape(interface2pointer(key))))
 }
@@ -596,6 +661,7 @@ func (t *Tree) lowerBound(keyPointer unsafe.Pointer) unsafe.Pointer {
 	}
 }
 
+// UpperBound return the first Iterator greater than key
 func (t *Tree) UpperBound(key interface{}) Iterator {
 	return t.pointer2iterator(t.upperBound(noescape(interface2pointer(key))))
 }
@@ -670,6 +736,10 @@ func (t *Tree) mustGetColor(node unsafe.Pointer) colorType {
 		return t.getColor(node)
 	}
 	return black
+}
+
+func (t *Tree) sameTree(node Iterator) bool {
+	return unsafe.Pointer(t) == interface2pointer(node.GetTree())
 }
 
 func (t *Tree) pointer2iterator(node unsafe.Pointer) Iterator {
