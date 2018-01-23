@@ -31,10 +31,16 @@ const (
 	black = true
 )
 
-// 将value赋值给interface时编译器取这个value的runtime type并和这个value的指针绑定成一个iface/eface struct
+// 将value赋值给interface时编译器取这个value的runtime type和在堆上分配的value对象的指针绑定成一个iface/eface struct
+// 将pointer赋值给interface时编译器取这个pointer的指向的值的runtime type并和这个pointer绑定成一个iface/eface struct
 type eface struct {
 	_type   unsafe.Pointer
 	pointer unsafe.Pointer
+}
+
+// inherit this node type to set the tree node privite
+type _node struct {
+	Node
 }
 
 // Node is the node of Tree, it implement Iterator
@@ -49,52 +55,44 @@ type Node struct {
 }
 
 // Next return next Iterator of this
-// inherit Node must rewrite this method
 func (node *Node) Next() Iterator {
 	return node.GetTree().Next(node)
 }
 
 // Last return last Iterator of this
-// inherit Node must rewrite this method
 func (node *Node) Last() Iterator {
 	return node.GetTree().Last(node)
 }
 
 // GetData get the data of this
-// inherit Node must rewrite this method
 func (node *Node) GetData() interface{} {
 	// do nothing here, just implement the interface
 	return nil
 }
 
 // GetKey get the compare key of this
-// inherit Node must rewrite this method
 func (node *Node) GetKey() interface{} {
 	// do nothing here, just implement the interface
 	return nil
 }
 
 // GetValue get the value of this
-// map node should rewrite this method
 func (node *Node) GetValue() interface{} {
 	// do nothing here, just implement the interface
 	return nil
 }
 
 // SetValue set the value of this
-// map node should rewrite this method
 func (node *Node) SetValue(interface{}) {
 	// do nothing here, just implement the interface
 }
 
 //CopyData copy the node data to this from src
-// inherit Node must rewrite this method
 func (node *Node) CopyData(src Iterator) {
 	// do nothing here, just implement the interface
 }
 
 // GetTree get the Treer of this
-// this method should not be rewrite
 func (node *Node) GetTree() Treer {
 	return (*Tree)(node.tree).tree
 }
@@ -131,6 +129,11 @@ type Treer interface {
 		getKeyPointer func(unsafe.Pointer) unsafe.Pointer,
 		unique bool,
 	)
+}
+
+// inherit this tree type to set tree privite
+type _tree struct {
+	Tree
 }
 
 // Tree is a red-black tree

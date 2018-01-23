@@ -9,9 +9,9 @@ import (
 
 func TestTreeNode(t *testing.T) {
 	var setNode Iterator = &SetNode{}
-	fmt.Printf("setNode: %p, Node: %p, data: %p\n", setNode.(*SetNode), &setNode.(*SetNode).Node, &setNode.(*SetNode).data)
-	fmt.Printf("Node.child: %p,Node.parent: %p\n", &setNode.(*SetNode).Node.child, &setNode.(*SetNode).Node.parent)
-	fmt.Printf("Node.tree: %p,Node.color: %p\n", &setNode.(*SetNode).Node.tree, &setNode.(*SetNode).Node.color)
+	fmt.Printf("setNode: %p, Node: %p, data: %p\n", setNode.(*SetNode), &setNode.(*SetNode)._node, &setNode.(*SetNode).data)
+	fmt.Printf("Node.child: %p,Node.parent: %p\n", &setNode.(*SetNode).child, &setNode.(*SetNode).parent)
+	fmt.Printf("Node.tree: %p,Node.color: %p\n", &setNode.(*SetNode).tree, &setNode.(*SetNode).color)
 	elem := reflect.TypeOf(setNode).Elem()
 	for i := 0; i < elem.NumField(); i++ {
 		secElem := elem.Field(i)

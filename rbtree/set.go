@@ -4,7 +4,7 @@ import "unsafe"
 
 // SetNode is the node of Set,it implement Iterator
 type SetNode struct {
-	Node
+	_node
 	data interface{}
 }
 
@@ -33,12 +33,19 @@ func (node *SetNode) CopyData(src Iterator) {
 	node.data = src.(*SetNode).data
 }
 
+var setNodeOffset uintptr
+
+func init() {
+	var header = &SetNode{}
+	setNodeOffset = uintptr(unsafe.Pointer(&header._node)) - uintptr(unsafe.Pointer(header))
+}
+
 // Set is a set of data with red-black tree data struct, it implement Treer
 // you can use the Unique method to find out wheather the Set key is unique
 // you can use NewSet or NewCustomSet to create a unique Set
 // you can use NewMultiSet or NewCustomSet to create a not unique Set
 type Set struct {
-	Tree
+	_tree
 }
 
 //var GetSetKeyPointerCount = 0
@@ -55,11 +62,10 @@ func getSetNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
 //	return positive int when a > b
 func NewSet(compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
-	var header = &SetNode{}
 	return NewTreer(
 		set,
-		header,
-		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
+		&SetNode{},
+		setNodeOffset,
 		func(data interface{}) Iterator {
 			return &SetNode{data: data}
 		},
@@ -78,12 +84,7 @@ func NewCustomSet(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
-	var header = &SetNode{}
-	return NewTreer(set, header,
-		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
-		newNode, deleteNode, compare,
-		getSetNodeKeyPointer,
-		true).(*Set)
+	return NewTreer(set, &SetNode{}, setNodeOffset, newNode, deleteNode, compare, getSetNodeKeyPointer, true).(*Set)
 }
 
 // NewMultiSet create a new not unique Set with compare func
@@ -93,11 +94,10 @@ func NewCustomSet(newNode func(interface{}) Iterator,
 //	return positive int when a > b
 func NewMultiSet(compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
-	var header = &SetNode{}
 	return NewTreer(
 		set,
-		header,
-		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
+		&SetNode{},
+		setNodeOffset,
 		func(data interface{}) Iterator {
 			return &SetNode{data: data}
 		},
@@ -116,10 +116,5 @@ func NewCustomMultiSet(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(a, b unsafe.Pointer) int) *Set {
 	var set = &Set{}
-	var header = &SetNode{}
-	return NewTreer(set, header,
-		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
-		newNode, deleteNode, compare,
-		getSetNodeKeyPointer,
-		false).(*Set)
+	return NewTreer(set, &SetNode{}, setNodeOffset, newNode, deleteNode, compare, getSetNodeKeyPointer, false).(*Set)
 }

@@ -18,7 +18,7 @@ func NewPair(key, value interface{}) Pair {
 
 // MapNode is the node of Map,it implement Iterator
 type MapNode struct {
-	Node
+	_node
 	Pair
 }
 
@@ -58,12 +58,19 @@ func (node *MapNode) CopyData(src Iterator) {
 	node.Pair = src.(*MapNode).Pair
 }
 
+var mapNodeOffset uintptr
+
+func init() {
+	var header = &MapNode{}
+	mapNodeOffset = uintptr(unsafe.Pointer(&header._node)) - uintptr(unsafe.Pointer(header))
+}
+
 // Map is a set of key-value Pair with red-black tree data struct, it implement Treer
 // you can use the Unique method to find out wheather the Map key is unique
 // you can use NewMap or NewCustomMap to create a unique Map
 // you can use NewMultiMap or NewCustomMap to create a not unique Map
 type Map struct {
-	Tree
+	_tree
 }
 
 // Insert is rewrite to get data key and type assert data to Pair
@@ -83,11 +90,10 @@ func getMapNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
 //	return positive int when a > b
 func NewMap(compare func(a, b unsafe.Pointer) int) *Map {
 	var mp = &Map{}
-	var header = &MapNode{}
 	return NewTreer(
 		mp,
-		header,
-		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
+		&MapNode{},
+		mapNodeOffset,
 		func(data interface{}) Iterator {
 			return &MapNode{Pair: data.(Pair)}
 		},
@@ -105,13 +111,8 @@ func NewMap(compare func(a, b unsafe.Pointer) int) *Map {
 func NewCustomMap(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(a, b unsafe.Pointer) int) *Map {
-	var mp = &Map{}
-	var header = &MapNode{}
-	return NewTreer(mp, header,
-		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
-		newNode, deleteNode, compare,
-		getMapNodeKeyPointer,
-		true).(*Map)
+	var set = &Map{}
+	return NewTreer(set, &MapNode{}, mapNodeOffset, newNode, deleteNode, compare, getMapNodeKeyPointer, true).(*Map)
 }
 
 // NewMultiMap create a new not unique Map with compare func
@@ -121,11 +122,10 @@ func NewCustomMap(newNode func(interface{}) Iterator,
 //	return positive int when a > b
 func NewMultiMap(compare func(a, b unsafe.Pointer) int) *Map {
 	var mp = &Map{}
-	var header = &MapNode{}
 	return NewTreer(
 		mp,
-		header,
-		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
+		&MapNode{},
+		mapNodeOffset,
 		func(data interface{}) Iterator {
 			return &MapNode{Pair: data.(Pair)}
 		},
@@ -144,10 +144,5 @@ func NewCustomMultiMap(newNode func(interface{}) Iterator,
 	deleteNode func(Iterator),
 	compare func(a, b unsafe.Pointer) int) *Map {
 	var mp = &Map{}
-	var header = &MapNode{}
-	return NewTreer(mp, header,
-		uintptr(unsafe.Pointer(&header.Node))-uintptr(unsafe.Pointer(header)),
-		newNode, deleteNode, compare,
-		getMapNodeKeyPointer,
-		false).(*Map)
+	return NewTreer(mp, &MapNode{}, mapNodeOffset, newNode, deleteNode, compare, getMapNodeKeyPointer, false).(*Map)
 }
