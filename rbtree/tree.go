@@ -2,6 +2,7 @@ package rbtree
 
 import (
 	"errors"
+	"reflect"
 	"unsafe"
 )
 
@@ -790,27 +791,12 @@ func (t *Tree) setTree(node unsafe.Pointer, tree unsafe.Pointer) {
 	*getNodePointer(node, t.nodeOffset+offsetTree) = tree
 }
 
-/*func (t *Tree) compare(a, b unsafe.Pointer) int {
-	fun := (*func(a, b unsafe.Pointer) int)(t.compareFun)
-	return (*fun)(a, b)
-}*/
-
 var (
-	offsetChild [2]uintptr
-	offsetParent,
-	offsetTree,
-	offsetColor uintptr
+	offsetChild  = [2]uintptr{unsafe.Offsetof(Node{}.child), unsafe.Offsetof(Node{}.child) + reflect.TypeOf(uintptr(1)).Size()}
+	offsetParent = unsafe.Offsetof(Node{}.parent)
+	offsetTree   = unsafe.Offsetof(Node{}.tree)
+	offsetColor  = unsafe.Offsetof(Node{}.color)
 )
-
-func init() {
-	var node = &Node{}
-	offsetChild[0] = uintptr(unsafe.Pointer(&node.child[0])) - uintptr(unsafe.Pointer(node))
-	offsetChild[1] = uintptr(unsafe.Pointer(&node.child[1])) - uintptr(unsafe.Pointer(node))
-	offsetParent = uintptr(unsafe.Pointer(&node.parent)) - uintptr(unsafe.Pointer(node))
-	offsetTree = uintptr(unsafe.Pointer(&node.tree)) - uintptr(unsafe.Pointer(node))
-	offsetColor = uintptr(unsafe.Pointer(&node.color)) - uintptr(unsafe.Pointer(node))
-	//fmt.Println(offsetChild[0], offsetChild[1], offsetParent, offsetTree, offsetColor)
-}
 
 //var GetNodeCount = 0
 

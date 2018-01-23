@@ -58,12 +58,7 @@ func (node *MapNode) CopyData(src Iterator) {
 	node.Pair = src.(*MapNode).Pair
 }
 
-var mapNodeOffset uintptr
-
-func init() {
-	var header = &MapNode{}
-	mapNodeOffset = uintptr(unsafe.Pointer(&header._node)) - uintptr(unsafe.Pointer(header))
-}
+var mapNodeOffset = unsafe.Offsetof(MapNode{}._node)
 
 // Map is a set of key-value Pair with red-black tree data struct, it implement Treer
 // you can use the Unique method to find out wheather the Map key is unique

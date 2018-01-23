@@ -33,12 +33,7 @@ func (node *SetNode) CopyData(src Iterator) {
 	node.data = src.(*SetNode).data
 }
 
-var setNodeOffset uintptr
-
-func init() {
-	var header = &SetNode{}
-	setNodeOffset = uintptr(unsafe.Pointer(&header._node)) - uintptr(unsafe.Pointer(header))
-}
+var setNodeOffset = unsafe.Offsetof(SetNode{}._node)
 
 // Set is a set of data with red-black tree data struct, it implement Treer
 // you can use the Unique method to find out wheather the Set key is unique
