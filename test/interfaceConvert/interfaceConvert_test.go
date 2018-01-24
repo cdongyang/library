@@ -540,16 +540,13 @@ func TestInterface(t *testing.T) {
 	eface := runtimecp.EfaceOf(a)
 	pEface := runtimecp.EfaceOf(ap)
 	ppEface := runtimecp.EfaceOf(&ap)
-	if *(*int)(eface.Data) != 2 || *(*int)(pEface.Data) != 2 {
-		t.Fatal(eface.Data, *(*int)(eface.Data), pEface.Data, *(*int)(pEface.Data))
-	}
-	if *(*int)(eface.Data) != 2 || runtimecp.IsDirectIface(eface.Type) || eface.Type.Kind != runtimecp.KindInt+runtimecp.KindNoPointers {
+	if (*int)(eface.Data) == ap || *(*int)(eface.Data) != 2 || runtimecp.IsDirectIface(eface.Type) || eface.Type.Kind != runtimecp.KindInt+runtimecp.KindNoPointers {
 		t.Fatal("error: int type is stored direct in interface{} value", eface.Type)
 	}
-	if *(*int)(pEface.Data) != 2 || !runtimecp.IsDirectIface(pEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+	if (*int)(pEface.Data) != ap || *(*int)(pEface.Data) != 2 || !runtimecp.IsDirectIface(pEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
 		t.Fatal("error: int pointer type is not stored  direct in interface{} value", pEface.Type)
 	}
-	if **(**int)(ppEface.Data) != 2 || !runtimecp.IsDirectIface(ppEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+	if *(**int)(ppEface.Data) != ap || **(**int)(ppEface.Data) != 2 || !runtimecp.IsDirectIface(ppEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
 		t.Fatal("error: pointer of int pointer type is not stored  direct in interface{} value", ppEface.Type)
 	}
 	var b = "b"
@@ -565,5 +562,36 @@ func TestInterface(t *testing.T) {
 	}
 	if **(**string)(ppEface.Data) != "b" || !runtimecp.IsDirectIface(ppEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
 		t.Fatal("error: pointer of int pointer type is not stored  direct in interface{} value", ppEface.Type)
+	}
+
+	var c interface{} = 2
+	var cp = &c
+	eface = runtimecp.EfaceOf(c)
+	pEface = runtimecp.EfaceOf(cp)
+	ppEface = runtimecp.EfaceOf(&cp)
+	if *(*int)(eface.Data) != 2 || runtimecp.IsDirectIface(eface.Type) || eface.Type.Kind != runtimecp.KindInt+runtimecp.KindNoPointers {
+		t.Fatal("error: int type is stored direct in interface{} value", eface.Type)
+	}
+	if *(*interface{})(pEface.Data) != 2 || !runtimecp.IsDirectIface(pEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+		t.Fatal("error: interface{} pointer type is not stored  direct in interface{} value", pEface.Type)
+	}
+	if **(**interface{})(ppEface.Data) != 2 || !runtimecp.IsDirectIface(ppEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+		t.Fatal("error: pointer of interface{} pointer type is not stored  direct in interface{} value", ppEface.Type)
+	}
+
+	var s32 = &struct32b{1, 2, 3, 4}
+	var d struct32ber = s32
+	var dp = &d
+	eface = runtimecp.EfaceOf(d) // ConvI2E, eface.Data is s32
+	pEface = runtimecp.EfaceOf(dp)
+	ppEface = runtimecp.EfaceOf(&dp)
+	if (*struct32b)(eface.Data) != s32 || !runtimecp.IsDirectIface(eface.Type) || eface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+		t.Fatal("error: interface type is stored direct in interface{} value", eface.Type)
+	}
+	if *(*struct32ber)(pEface.Data) != d || !runtimecp.IsDirectIface(pEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+		t.Fatal("error: interface pointer type is not stored  direct in interface{} value", pEface.Type)
+	}
+	if **(**struct32ber)(ppEface.Data) != d || !runtimecp.IsDirectIface(ppEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+		t.Fatal("error: pointer of interface pointer type is not stored  direct in interface{} value", ppEface.Type)
 	}
 }
