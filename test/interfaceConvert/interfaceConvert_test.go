@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"runtime/debug"
 	"testing"
+
+	"github.com/cdongyang/library/runtimecp"
 )
 
 type struct16b struct {
@@ -531,3 +533,37 @@ PASS
 总结:
 	interface{}虽然能实现泛化,但是以runtime开销作为代价的,在有些效率要求高并且调用频繁的情况下尽量使用具体类型
 */
+
+func TestInterface(t *testing.T) {
+	var a = 2
+	var ap = &a
+	eface := runtimecp.EfaceOf(a)
+	pEface := runtimecp.EfaceOf(ap)
+	ppEface := runtimecp.EfaceOf(&ap)
+	if *(*int)(eface.Data) != 2 || *(*int)(pEface.Data) != 2 {
+		t.Fatal(eface.Data, *(*int)(eface.Data), pEface.Data, *(*int)(pEface.Data))
+	}
+	if *(*int)(eface.Data) != 2 || runtimecp.IsDirectIface(eface.Type) || eface.Type.Kind != runtimecp.KindInt+runtimecp.KindNoPointers {
+		t.Fatal("error: int type is stored direct in interface{} value", eface.Type)
+	}
+	if *(*int)(pEface.Data) != 2 || !runtimecp.IsDirectIface(pEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+		t.Fatal("error: int pointer type is not stored  direct in interface{} value", pEface.Type)
+	}
+	if **(**int)(ppEface.Data) != 2 || !runtimecp.IsDirectIface(ppEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+		t.Fatal("error: pointer of int pointer type is not stored  direct in interface{} value", ppEface.Type)
+	}
+	var b = "b"
+	var bp = &b
+	eface = runtimecp.EfaceOf(b)
+	pEface = runtimecp.EfaceOf(bp)
+	ppEface = runtimecp.EfaceOf(&bp)
+	if *(*string)(eface.Data) != "b" || runtimecp.IsDirectIface(eface.Type) || eface.Type.Kind != runtimecp.KindString {
+		t.Fatal("error: int type is stored direct in interface{} value", eface.Type)
+	}
+	if *(*string)(pEface.Data) != "b" || !runtimecp.IsDirectIface(pEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+		t.Fatal("error: int pointer type is not stored  direct in interface{} value", pEface.Type)
+	}
+	if **(**string)(ppEface.Data) != "b" || !runtimecp.IsDirectIface(ppEface.Type) || pEface.Type.Kind != runtimecp.KindPtr+runtimecp.KindDirectIface {
+		t.Fatal("error: pointer of int pointer type is not stored  direct in interface{} value", ppEface.Type)
+	}
+}
