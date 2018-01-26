@@ -21,6 +21,17 @@ var (
 	TypeString = TypeOf(string(""))
 )
 
+// Everywhere in the runtime and reflect packages, it is assumed that
+// there is exactly one *_type per Go type, so that pointer equality
+// can be used to test if types are equal. There is one place that
+// breaks this assumption: buildmode=shared. In this case a type can
+// appear as two different pieces of memory. This is hidden from the
+// runtime and reflect package by the per-module typemap built in
+// typelinksinit. It uses typesEqual to map types from later modules
+// back into earlier ones.
+//
+// Only typelinksinit needs this function.
+
 // Needs to be in sync with ../cmd/link/internal/ld/decodesym.go:/^func.commonsize,
 // ../cmd/compile/internal/gc/reflect.go:/^func.dcommontype and
 // ../reflect/type.go:/^type.rtype.
@@ -90,11 +101,6 @@ const (
 	KindMask        = (1 << 5) - 1
 )
 
-// IsDirectIface reports whether t is stored directly in an interface value.
-func IsDirectIface(t *Type) bool {
-	return t.Kind&KindDirectIface != 0
-}
-
 type Slice struct {
 	Array unsafe.Pointer
 	Len   int
@@ -102,13 +108,13 @@ type Slice struct {
 }
 
 type String struct {
-	str unsafe.Pointer
-	len int
+	Str unsafe.Pointer
+	Len int
 }
 
 type Iface struct {
 	Tab  *itab
-	data unsafe.Pointer
+	Data unsafe.Pointer
 }
 
 type Eface struct {
@@ -122,7 +128,7 @@ type Eface struct {
 // ../cmd/compile/internal/gc/reflect.go:/^func.dumptypestructs.
 type itab struct {
 	inter  *unsafe.Pointer
-	_type  *Type
+	Type   *Type
 	link   *itab
 	hash   uint32 // copy of _type.hash. Used for type switches.
 	bad    bool   // type does not implement interface

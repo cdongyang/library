@@ -4,7 +4,7 @@ import (
 	"unsafe"
 )
 
-func Allocbytes(size uintptr) unsafe.Pointer {
+func UnsafeAlloc(size uintptr) unsafe.Pointer {
 	bs := make([]byte, size)
 	return (*Slice)(unsafe.Pointer(&bs)).Array
 }
@@ -13,8 +13,17 @@ func EfaceOf(eface interface{}) Eface {
 	return *(*Eface)(unsafe.Pointer(&eface))
 }
 
+func Eface2Interface(eface Eface) interface{} {
+	return *(*interface{})(unsafe.Pointer(&eface))
+}
+
 func TypeOf(eface interface{}) *Type {
-	return (*Eface)(unsafe.Pointer(&eface)).Type
+	return (*Eface)(Noescape(unsafe.Pointer(&eface))).Type
+}
+
+// IsDirectIface reports whether t is stored directly in an interface value.
+func IsDirectIface(t *Type) bool {
+	return t.Kind&KindDirectIface != 0
 }
 
 // copy from package runtime
@@ -27,6 +36,12 @@ func TypeOf(eface interface{}) *Type {
 func Noescape(p unsafe.Pointer) unsafe.Pointer {
 	x := uintptr(p)
 	return unsafe.Pointer(x ^ 0)
+}
+
+func NoescapeInterface(x interface{}) interface{} {
+	var eface = *(*Eface)(Noescape(unsafe.Pointer(&x)))
+	eface.Data = Noescape(eface.Data)
+	return *(*interface{})(unsafe.Pointer(&eface))
 }
 
 func add(x unsafe.Pointer, n uintptr) unsafe.Pointer {
