@@ -105,13 +105,13 @@ func TestInterface(t *testing.T) {
 	eface := EfaceOf(a)
 	pEface := EfaceOf(ap)
 	ppEface := EfaceOf(&ap)
-	if (*int)(eface.Data) == ap || *(*int)(eface.Data) != 2 || eface.Type.Kind != KindInt+KindNoPointers {
+	if (*int)(eface.Data) == ap || *(*int)(eface.Data) != 2 || eface.Type.Kind != KindInt+KindNoPointers || eface.Type.Size != 8 {
 		t.Fatal(eface.Type)
 	}
-	if (*int)(pEface.Data) != ap || *(*int)(pEface.Data) != 2 || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if (*int)(pEface.Data) != ap || *(*int)(pEface.Data) != 2 || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if *(**int)(ppEface.Data) != ap || **(**int)(ppEface.Data) != 2 || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if *(**int)(ppEface.Data) != ap || **(**int)(ppEface.Data) != 2 || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 	var b = "b"
@@ -119,13 +119,13 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(b)
 	pEface = EfaceOf(bp)
 	ppEface = EfaceOf(&bp)
-	if *(*string)(eface.Data) != "b" || eface.Type.Kind != KindString {
+	if *(*string)(eface.Data) != "b" || eface.Type.Kind != KindString || eface.Type.Size != 16 {
 		t.Fatal(eface.Type)
 	}
-	if *(*string)(pEface.Data) != "b" || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if *(*string)(pEface.Data) != "b" || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if **(**string)(ppEface.Data) != "b" || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if **(**string)(ppEface.Data) != "b" || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
@@ -134,13 +134,13 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(c)
 	pEface = EfaceOf(cp)
 	ppEface = EfaceOf(&cp)
-	if *(*int)(eface.Data) != 2 || eface.Type.Kind != KindInt+KindNoPointers {
+	if *(*int)(eface.Data) != 2 || eface.Type.Kind != KindInt+KindNoPointers || eface.Type.Size != 8 {
 		t.Fatal(eface.Type)
 	}
-	if *(*interface{})(pEface.Data) != 2 || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if *(*interface{})(pEface.Data) != 2 || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if **(**interface{})(ppEface.Data) != 2 || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if **(**interface{})(ppEface.Data) != 2 || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
@@ -150,13 +150,13 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(d) // ConvI2E, eface.Data is s32
 	pEface = EfaceOf(dp)
 	ppEface = EfaceOf(&dp)
-	if (*struct32b)(eface.Data) != s32 || eface.Type.Kind != KindPtr+KindDirectIface {
+	if (*struct32b)(eface.Data) != s32 || eface.Type.Kind != KindPtr+KindDirectIface || eface.Type.Size != 8 {
 		t.Fatal(eface.Type)
 	}
-	if *(*struct32ber)(pEface.Data) != d || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if *(*struct32ber)(pEface.Data) != d || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if **(**struct32ber)(ppEface.Data) != d || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if **(**struct32ber)(ppEface.Data) != d || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
@@ -165,13 +165,13 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(e)
 	pEface = EfaceOf(ep)
 	ppEface = EfaceOf(&ep)
-	if *(*struct32b)(eface.Data) != e || eface.Type.Kind != KindStruct+KindNoPointers {
+	if *(*struct32b)(eface.Data) != e || eface.Type.Kind != KindStruct+KindNoPointers || eface.Type.Size != 32 {
 		t.Fatal(eface.Type)
 	}
-	if *(*struct32b)(pEface.Data) != e || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if *(*struct32b)(pEface.Data) != e || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if **(**struct32b)(ppEface.Data) != e || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if **(**struct32b)(ppEface.Data) != e || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
@@ -180,28 +180,28 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(f)
 	pEface = EfaceOf(fp)
 	ppEface = EfaceOf(&fp)
-	if !equalIntSlice(*(*[]int)(eface.Data), f) || eface.Type.Kind != KindSlice {
+	if !equalIntSlice(*(*[]int)(eface.Data), f) || eface.Type.Kind != KindSlice || eface.Type.Size != 24 {
 		t.Fatal(eface.Type)
 	}
-	if !equalIntSlice(*(*[]int)(pEface.Data), f) || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if !equalIntSlice(*(*[]int)(pEface.Data), f) || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if !equalIntSlice(**(**[]int)(ppEface.Data), f) || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if !equalIntSlice(**(**[]int)(ppEface.Data), f) || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
-	var g = [3]int{1, 2, 3}
+	var g = [5]int{1, 2, 3, 4, 5}
 	var gp = &g
 	eface = EfaceOf(g)
 	pEface = EfaceOf(gp)
 	ppEface = EfaceOf(&gp)
-	if *(*[3]int)(eface.Data) != g || eface.Type.Kind != KindArray+KindNoPointers {
+	if *(*[5]int)(eface.Data) != g || eface.Type.Kind != KindArray+KindNoPointers || eface.Type.Size != 40 {
 		t.Fatal(eface.Type)
 	}
-	if *(*[3]int)(pEface.Data) != g || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if *(*[5]int)(pEface.Data) != g || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if **(**[3]int)(ppEface.Data) != g || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if **(**[5]int)(ppEface.Data) != g || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
@@ -210,13 +210,13 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(h)
 	pEface = EfaceOf(hp)
 	ppEface = EfaceOf(&hp)
-	if *(*chan bool)(unsafe.Pointer(&eface.Data)) != h || eface.Type.Kind != KindChan+KindDirectIface {
+	if *(*chan bool)(unsafe.Pointer(&eface.Data)) != h || eface.Type.Kind != KindChan+KindDirectIface || eface.Type.Size != 8 {
 		t.Fatal(eface.Type)
 	}
-	if *(*chan bool)(pEface.Data) != h || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if *(*chan bool)(pEface.Data) != h || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if **(**chan bool)(ppEface.Data) != h || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if **(**chan bool)(ppEface.Data) != h || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
@@ -225,13 +225,13 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(i)
 	pEface = EfaceOf(ip)
 	ppEface = EfaceOf(&ip)
-	if !equalMap(*(*map[int]bool)(unsafe.Pointer(&eface.Data)), i) || eface.Type.Kind != KindMap+KindDirectIface {
+	if !equalMap(*(*map[int]bool)(unsafe.Pointer(&eface.Data)), i) || eface.Type.Kind != KindMap+KindDirectIface || eface.Type.Size != 8 {
 		t.Fatal(eface.Type)
 	}
-	if !equalMap(*(*map[int]bool)(pEface.Data), i) || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if !equalMap(*(*map[int]bool)(pEface.Data), i) || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if !equalMap(**(**map[int]bool)(ppEface.Data), i) || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if !equalMap(**(**map[int]bool)(ppEface.Data), i) || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
@@ -240,13 +240,13 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(j)
 	pEface = EfaceOf(jp)
 	ppEface = EfaceOf(&jp)
-	if eface.Type.Kind != KindFunc+KindDirectIface {
+	if eface.Type.Kind != KindFunc+KindDirectIface || eface.Type.Size != 8 {
 		t.Fatal(eface.Type)
 	}
-	if pEface.Type.Kind != KindPtr+KindDirectIface {
+	if pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if pEface.Type.Kind != KindPtr+KindDirectIface {
+	if pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
@@ -255,13 +255,13 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(k)
 	pEface = EfaceOf(kp)
 	ppEface = EfaceOf(&kp)
-	if eface.Data != k || eface.Type.Kind != KindUnsafePointer+KindDirectIface {
+	if eface.Data != k || eface.Type.Kind != KindUnsafePointer+KindDirectIface || eface.Type.Size != 8 {
 		t.Fatal(eface.Type)
 	}
-	if *(*unsafe.Pointer)(pEface.Data) != k || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if *(*unsafe.Pointer)(pEface.Data) != k || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if **(**unsafe.Pointer)(ppEface.Data) != k || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if **(**unsafe.Pointer)(ppEface.Data) != k || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
@@ -270,13 +270,13 @@ func TestInterface(t *testing.T) {
 	eface = EfaceOf(l)
 	pEface = EfaceOf(lp)
 	ppEface = EfaceOf(&lp)
-	if *(*complex128)(eface.Data) != l || eface.Type.Kind != KindComplex128+KindNoPointers {
+	if *(*complex128)(eface.Data) != l || eface.Type.Kind != KindComplex128+KindNoPointers || eface.Type.Size != 16 {
 		t.Fatal(eface.Type)
 	}
-	if *(*complex128)(pEface.Data) != l || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if *(*complex128)(pEface.Data) != l || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
 		t.Fatal(pEface.Type)
 	}
-	if **(**complex128)(ppEface.Data) != l || pEface.Type.Kind != KindPtr+KindDirectIface {
+	if **(**complex128)(ppEface.Data) != l || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
 
