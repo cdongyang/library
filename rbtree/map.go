@@ -78,6 +78,11 @@ func getMapNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
 	return (*eface)(unsafe.Pointer(&(*MapNode)(p).Key)).pointer
 }
 
+// NewMapNode use to create a new SetNode when create custom set
+func NewMapNode(data interface{}) Iterator {
+	return &MapNode{Pair: data.(Pair)}
+}
+
 // NewMap create a new unique Map with compare func
 // the compare func
 //	return negative int when a < b
@@ -89,9 +94,7 @@ func NewMap(compare func(a, b unsafe.Pointer) int) *Map {
 		mp,
 		&MapNode{},
 		mapNodeOffset,
-		func(data interface{}) Iterator {
-			return &MapNode{Pair: data.(Pair)}
-		},
+		NewMapNode,
 		func(Iterator) {
 		},
 		compare,
@@ -121,9 +124,7 @@ func NewMultiMap(compare func(a, b unsafe.Pointer) int) *Map {
 		mp,
 		&MapNode{},
 		mapNodeOffset,
-		func(data interface{}) Iterator {
-			return &MapNode{Pair: data.(Pair)}
-		},
+		NewMapNode,
 		func(Iterator) {
 		},
 		compare,
