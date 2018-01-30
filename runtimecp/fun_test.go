@@ -86,6 +86,51 @@ func TestNoescape(t *testing.T) {
 	if n != 0 {
 		t.Fatal("should not escape", n)
 	}
+	n = testing.AllocsPerRun(1000, func() {
+		var a = 1
+		func(p unsafe.Pointer) {
+			func(b unsafe.Pointer) {
+				for i := 0; i < 1000; i++ {
+					if *(*int)(b) != 1 {
+						t.Fatal("not 1")
+					}
+				}
+			}(p)
+		}(unsafe.Pointer(&a))
+	})
+	if n == 0 {
+		t.Fatal("should escape", n)
+	}
+	n = testing.AllocsPerRun(1000, func() {
+		var a = 1
+		func(p unsafe.Pointer) {
+			func(b unsafe.Pointer) {
+				for i := 0; i < 1000; i++ {
+					if *(*int)(b) != 1 {
+						t.Fatal("not 1")
+					}
+				}
+			}(p)
+		}(Noescape(unsafe.Pointer(&a)))
+	})
+	if n != 0 {
+		t.Fatal("should not escape", n)
+	}
+	n = testing.AllocsPerRun(1000, func() {
+		var a = 1
+		func(p unsafe.Pointer) {
+			go func(b unsafe.Pointer) {
+				for i := 0; i < 1000; i++ {
+					if *(*int)(b) != 1 {
+						t.Fatal("not 1")
+					}
+				}
+			}(p)
+		}(Noescape(unsafe.Pointer(&a)))
+	})
+	if n == 0 {
+		t.Fatal("should escape", n)
+	}
 }
 
 type struct32ber interface {

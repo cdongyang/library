@@ -50,6 +50,11 @@ func getSetNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
 	return (*eface)(unsafe.Pointer(&(*SetNode)(p).data)).pointer
 }
 
+// NewSetNode use to create a new SetNode when create custom set
+func NewSetNode(data interface{}) Iterator {
+	return &SetNode{data: data}
+}
+
 // NewSet create a new unique Set with compare func
 // the compare func
 //	return negative int when a < b
@@ -61,9 +66,7 @@ func NewSet(compare func(a, b unsafe.Pointer) int) *Set {
 		set,
 		&SetNode{},
 		setNodeOffset,
-		func(data interface{}) Iterator {
-			return &SetNode{data: data}
-		},
+		NewSetNode,
 		func(Iterator) {
 		},
 		compare,
@@ -93,9 +96,7 @@ func NewMultiSet(compare func(a, b unsafe.Pointer) int) *Set {
 		set,
 		&SetNode{},
 		setNodeOffset,
-		func(data interface{}) Iterator {
-			return &SetNode{data: data}
-		},
+		NewSetNode,
 		func(Iterator) {
 		},
 		compare,
