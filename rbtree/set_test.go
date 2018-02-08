@@ -1,8 +1,11 @@
 package rbtree_test
 
 import (
+	"fmt"
+	"runtime"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/cdongyang/library/algorithm"
 	"github.com/cdongyang/library/randint"
@@ -246,4 +249,97 @@ func TestSet(t *testing.T) {
 	for i := 0; i < 500; i++ {
 		testSet(t, i+1, i%2 == 0)
 	}
+}
+
+var mem runtime.MemStats
+var outmem = true
+
+func memStats() {
+	if !outmem {
+		return
+	}
+	runtime.ReadMemStats(&mem)
+	fmt.Println("HeapAlloc:", mem.HeapAlloc, "HeapInuse:", mem.HeapInuse, "HeapObjects:", mem.HeapObjects, "HeapIdle", mem.HeapIdle, "HeapReleased", mem.HeapReleased, "HeapSys", mem.HeapSys)
+	runtime.GC()
+}
+
+func TestSet1(t *testing.T) {
+	t.Run("gc tree", func(t *testing.T) {
+		memStats()
+		var s = rbtree.NewSet(rbtree.CompareInt)
+		for i := 0; i < 1e5; i++ {
+			s.Insert(i)
+		}
+		memStats()
+		s = nil
+		time.Sleep(time.Second)
+		memStats()
+	})
+	t.Run("gc all node data", func(t *testing.T) {
+		memStats()
+		var s = rbtree.NewSet(rbtree.CompareInt)
+		var keys = make([]interface{}, 0, 1e5)
+		memStats()
+		for i := 0; i < 1e5; i++ {
+			s.Insert(i)
+		}
+		time.Sleep(time.Second)
+		memStats()
+		for it := s.Begin(); it != s.End(); it = it.Next() {
+			keys = append(keys, it.GetData())
+		}
+		//s.Clear()
+		s = nil
+		time.Sleep(time.Second)
+		memStats()
+		for i, v := range keys {
+			if i != v {
+				t.Fatal()
+			}
+		}
+		time.Sleep(time.Second)
+		memStats()
+		for i, v := range keys {
+			if i != v {
+				t.Fatal()
+			}
+		}
+		keys = nil
+		memStats()
+		time.Sleep(time.Second)
+		memStats()
+		time.Sleep(time.Second)
+		memStats()
+		time.Sleep(time.Second)
+		memStats()
+	})
+	t.Run("gc node data", func(t *testing.T) {
+		memStats()
+		var s = rbtree.NewSet(rbtree.CompareInt)
+		memStats()
+		for i := 0; i < 1e5; i++ {
+			s.Insert(i)
+		}
+		time.Sleep(time.Second)
+		memStats()
+		var key = s.Find(3)
+		if key.GetData() != 3 {
+			t.Fatal()
+		}
+		s = nil
+		time.Sleep(time.Second)
+		memStats()
+		if key.GetData() != 3 {
+			t.Fatal()
+		}
+		time.Sleep(time.Second)
+		memStats()
+		if key.GetData() != 3 {
+			t.Fatal()
+		}
+		key = nil
+		memStats()
+		time.Sleep(time.Second)
+		memStats()
+	})
 }
