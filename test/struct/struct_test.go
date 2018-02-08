@@ -60,6 +60,9 @@ type s9 struct {
 	c bool
 }
 
+//1___4
+//1________
+//8
 type s10 struct {
 	a bool
 	b int32
@@ -67,6 +70,8 @@ type s10 struct {
 	d int64
 }
 
+//11__
+//4
 type s11 struct {
 	a bool
 	b bool
@@ -78,6 +83,30 @@ type s12 struct {
 	b bool
 	c int16
 	d int32
+}
+
+type s13 struct {
+	a s2
+	b int8
+}
+
+type s14 struct {
+	a s3
+	b int16
+}
+
+type s15 struct {
+	a s4
+	b int32 //4
+}
+
+type s16 struct {
+	a struct {
+		a int64 // 8
+		b int64 // 8
+		c int32 // 4_
+	}
+	b int32 // 4_
 }
 
 func checkSize(t *testing.T, name string, want, real, rf uintptr) {
@@ -99,6 +128,10 @@ func TestStructSize(t *testing.T) {
 	checkSize(t, "s10", 24, unsafe.Sizeof(s10{}), reflect.TypeOf(s10{}).Size())
 	checkSize(t, "s11", 8, unsafe.Sizeof(s11{}), reflect.TypeOf(s11{}).Size())
 	checkSize(t, "s12", 8, unsafe.Sizeof(s12{}), reflect.TypeOf(s12{}).Size())
+	checkSize(t, "s13", 4, unsafe.Sizeof(s13{}), reflect.TypeOf(s13{}).Size())
+	checkSize(t, "s14", 8, unsafe.Sizeof(s14{}), reflect.TypeOf(s14{}).Size())
+	checkSize(t, "s15", 16, unsafe.Sizeof(s15{}), reflect.TypeOf(s15{}).Size())
+	checkSize(t, "s16", 32, unsafe.Sizeof(s16{}), reflect.TypeOf(s16{}).Size())
 }
 
 func checkOffset(t *testing.T, name string, want, real, rf uintptr) {

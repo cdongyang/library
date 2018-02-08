@@ -9,14 +9,7 @@ import (
 	"github.com/cdongyang/library/rbtree"
 )
 
-func NewMap(unique bool) *rbtree.Map {
-	if unique {
-		return rbtree.NewMap(int(1), int(1), rbtree.CompareInt)
-	}
-	return rbtree.NewMultiMap(int(1), int(1), rbtree.CompareInt)
-}
-
-func testMap(t *testing.T, length int, unique bool) {
+func testSet(t *testing.T, length int, unique bool) {
 	// init
 	var rand = randint.Rand{First: 23456, Add: 12345, Mod: 1000}
 	var max = rand.Int()%length + 1
@@ -25,7 +18,7 @@ func testMap(t *testing.T, length int, unique bool) {
 		intSlice1K[i] = rand.Int() % max
 	}
 	//fmt.Println("offsetNode:", offsetNode)
-	var tree = NewMap(unique)
+	var tree = rbtree.NewSet(rbtree.CompareInt)
 	var count = make(map[int]int, len(intSlice1K))
 	// test empty tree and empty tree Begin and End
 	if !tree.Empty() {
@@ -36,17 +29,19 @@ func testMap(t *testing.T, length int, unique bool) {
 		t.Fatal("empty tree begin and end error")
 	}
 
+	//test Treer
+	var _ rbtree.Treer = tree
 	var iter = tree.End()
 	var index int
 
 	//test empty tree LowerBound method
 	iter = tree.LowerBound(intSlice1K[0])
-	if iter != tree.End() {
+	if !tree.SameIterator(iter, tree.End()) {
 		t.Fatal("empty tree LowerBound error")
 	}
 	//test empty tree UpperBound method
 	iter = tree.UpperBound(intSlice1K[0])
-	if iter != tree.End() {
+	if !tree.SameIterator(iter, tree.End()) {
 		t.Fatal("empty tree UpperBound error")
 	}
 
@@ -60,15 +55,15 @@ func testMap(t *testing.T, length int, unique bool) {
 			minVal = val
 		}
 		//fmt.Println("insert", val)
-		_, ok := tree.Insert(val, val*2)
+		_, ok := tree.Insert(val)
 		if !tree.Unique() && !ok || tree.Unique() && ok == (count[val] != 0) {
 			t.Fatal("insert error", ok, count[val], val)
 		}
-		if tree.Begin().GetKey() != minVal || tree.Begin().GetVal() != 2*minVal || tree.Most(0) != tree.Leftmost() {
+		if tree.Begin().GetKey() != minVal || tree.Most(0) != tree.Leftmost() {
 			t.Fatal("leftmost error")
 		}
-		if tree.End().Last().GetKey() != maxVal || tree.End().Last().GetVal() != 2*maxVal || tree.Most(1) != tree.Rightmost() {
-			t.Fatal("rightmost error", tree.End().Last().GetKey(), maxVal)
+		if tree.End().Last().GetKey() != maxVal || tree.Most(1) != tree.Rightmost() {
+			t.Fatal("rightmost error")
 		}
 		if tree.Unique() {
 			count[val] = 1
@@ -85,7 +80,7 @@ func testMap(t *testing.T, length int, unique bool) {
 	}
 
 	// test Compare
-	if tree.Begin().GetKey() != minVal || tree.Begin().GetVal() != 2*minVal {
+	if tree.Begin().GetKey() != minVal {
 		t.Fatal("Compare error")
 	}
 	var sortSlice = make([]int, len(intSlice1K))
@@ -95,9 +90,9 @@ func testMap(t *testing.T, length int, unique bool) {
 	//test LowerBound method
 	iter = tree.LowerBound(intSlice1K[0])
 	index = algorithm.LowerBound(algorithm.SearchIntSlice{sortSlice, intSlice1K[0]})
-	if iter == tree.End() && index == len(sortSlice) {
+	if tree.SameIterator(iter, tree.End()) && index == len(sortSlice) {
 		//ok
-	} else if iter.GetKey() == intSlice1K[0] && iter.GetVal() == 2*intSlice1K[0] {
+	} else if iter.GetKey() == intSlice1K[0] {
 		//ok
 	} else {
 		t.Fatal("LowerBound error")
@@ -105,21 +100,21 @@ func testMap(t *testing.T, length int, unique bool) {
 	//test UpperBound method
 	iter = tree.UpperBound(intSlice1K[0])
 	index = algorithm.UpperBound(algorithm.SearchIntSlice{sortSlice, intSlice1K[0]})
-	if iter == tree.End() && index == len(sortSlice) {
+	if tree.SameIterator(iter, tree.End()) && index == len(sortSlice) {
 		//ok
-	} else if iter.GetKey() == intSlice1K[0] && iter.GetVal() == 2*intSlice1K[0] {
+	} else if iter.GetKey() == intSlice1K[0] {
 	}
 	//test Begin and EndNode method
-	if tree.Begin().GetKey() != sortSlice[0] || tree.Begin().GetVal() != sortSlice[0]*2 {
+	if tree.Begin().GetKey() != sortSlice[0] {
 		t.Fatal("begin error", tree.Begin().GetKey(), sortSlice[0])
 	}
-	if tree.End().Last().GetKey() != sortSlice[len(sortSlice)-1] || tree.End().Last().GetVal() != sortSlice[len(sortSlice)-1]*2 {
+	if tree.End().Last().GetKey() != sortSlice[len(sortSlice)-1] {
 		t.Fatal("endNode error", tree.Begin().GetKey(), sortSlice[len(sortSlice)-1])
 	}
 	//test Begin and End and Next method
 	var i int
-	for it := tree.Begin(); it != tree.End(); it = it.Next() {
-		if it.GetKey() != sortSlice[i] || it.GetVal() != sortSlice[i]*2 {
+	for it := tree.Begin(); !tree.SameIterator(it, tree.End()); it = it.Next() {
+		if it.GetKey() != sortSlice[i] {
 			t.Fatal("go through error", it.GetKey(), sortSlice[i])
 		}
 		if tree.Unique() {
@@ -132,7 +127,7 @@ func testMap(t *testing.T, length int, unique bool) {
 	//test End and Last method
 	i = len(sortSlice) - 1
 	for it := tree.End().Last(); ; it = it.Last() {
-		if it.GetKey() != sortSlice[i] || it.GetVal() != sortSlice[i]*2 {
+		if it.GetKey() != sortSlice[i] {
 			t.Fatal("go back tree error", it.GetKey(), sortSlice[i])
 		}
 		if tree.Unique() {
@@ -141,16 +136,16 @@ func testMap(t *testing.T, length int, unique bool) {
 			}
 		}
 		i--
-		if tree.Begin() == it {
+		if tree.SameIterator(tree.Begin(), it) {
 			break
 		}
 	}
 	//test Find method
 	iter = tree.Find(intSlice1K[0])
 	index = sort.SearchInts(sortSlice, intSlice1K[0])
-	if iter == tree.End() && index == len(sortSlice) {
+	if tree.SameIterator(iter, tree.End()) && index == len(sortSlice) {
 		//ok
-	} else if iter.GetKey() == sortSlice[index] || iter.GetVal() != sortSlice[index]*2 {
+	} else if iter.GetKey() == sortSlice[index] {
 		//ok
 	} else {
 		t.Fatal("Find error")
@@ -195,7 +190,7 @@ func testMap(t *testing.T, length int, unique bool) {
 	}
 	count = make(map[int]int)
 	for _, val := range intSlice1K {
-		_, ok := tree.Insert(val, val)
+		_, ok := tree.Insert(val)
 		if !tree.Unique() && !ok || tree.Unique() && ok == (count[val] != 0) {
 			t.Fatal("insert error", ok, count[val], val)
 		}
@@ -212,11 +207,11 @@ func testMap(t *testing.T, length int, unique bool) {
 			t.Fatal("size error", size, tree.Size())
 		}
 	}
-	//test EqualRange and EraseNodeRange
+	//test EqualRange and EraseIteratorRange
 	for _, val := range intSlice1K {
 		//fmt.Println("erase", val)
 		beg, end := tree.EqualRange(val)
-		num := tree.EraseNodeRange(beg, end)
+		num := tree.EraseIteratorRange(beg, end)
 		if num != count[val] {
 			t.Fatal("erase error", num, count[val], val)
 		}
@@ -240,30 +235,15 @@ func testMap(t *testing.T, length int, unique bool) {
 	}
 	//test Clear method
 	for _, val := range intSlice1K {
-		_, _ = tree.Insert(val, val)
+		_, _ = tree.Insert(val)
 	}
 	tree.Clear()
 	if tree.Size() != 0 || !tree.Empty() {
 		t.Fatal("clear error,size != 0 or not empty")
 	}
 }
-
-func TestMap(t *testing.T) {
-	var testN = 500
-	t.Run("unique", func(t *testing.T) {
-		for i := 0; i < testN; i++ {
-			testMap(t, i+1, true)
-		}
-	})
-	t.Run("not unique", func(t *testing.T) {
-		for i := 0; i < testN; i++ {
-			testMap(t, i+1, false)
-		}
-	})
-	t.Run("unique 1e4", func(t *testing.T) {
-		testMap(t, 1e4, true)
-	})
-	t.Run("not unique 1e4", func(t *testing.T) {
-		testMap(t, 1e4, false)
-	})
+func TestSet(t *testing.T) {
+	for i := 0; i < 500; i++ {
+		testSet(t, i+1, i%2 == 0)
+	}
 }

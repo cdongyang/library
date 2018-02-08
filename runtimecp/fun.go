@@ -39,9 +39,7 @@ func Noescape(p unsafe.Pointer) unsafe.Pointer {
 }
 
 func NoescapeInterface(x interface{}) interface{} {
-	var eface = *(*Eface)(Noescape(unsafe.Pointer(&x)))
-	eface.Data = Noescape(eface.Data)
-	return *(*interface{})(unsafe.Pointer(&eface))
+	return *(*interface{})(Noescape(unsafe.Pointer(&x)))
 }
 
 func add(x unsafe.Pointer, n uintptr) unsafe.Pointer {
