@@ -167,3 +167,8 @@ func memcopy(des, src unsafe.Pointer, size uintptr) {
 		src = add(src, lb)
 	}
 }
+
+func getGCPointer(p unsafe.Pointer, size int) unsafe.Pointer {
+	var tmp = *(*[]byte)(unsafe.Pointer(&slice{p, size, size}))
+	return *(*unsafe.Pointer)(unsafe.Pointer(&tmp))
+}

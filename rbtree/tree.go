@@ -66,8 +66,8 @@ type tree struct {
 	directval bool
 	keySize   uintptr
 	dataSize  uintptr
-	nodeQ     []*node
-	dataArray []unsafe.Pointer
+	nodeQ     unsafe.Pointer
+	qsize     int
 }
 
 func (t *tree) init(unique bool, keyType, valType *_type, compare func(a, b interface{}) int) {
@@ -82,6 +82,7 @@ func (t *tree) init(unique bool, keyType, valType *_type, compare func(a, b inte
 	t.size = 0
 	t.compare = compare
 	t.nodeQ = nil
+	t.qsize = 0
 
 	if keyType == nil {
 		panic("no key type")
@@ -163,23 +164,16 @@ func (t *tree) copyNodeData(des, src *node) {
 }
 
 func (t *tree) newNode(data interface{}) *node {
-	if len(t.nodeQ) == 0 {
-		var size = t.size
+	var fullNodeSize = t.dataSize + nodeSize
+	if t.qsize == 0 {
 		if t.size > maxSpan {
-			size = maxSpan
+			t.qsize = maxSpan
 		} else if t.size == 0 {
-			size = 8 // begin at 8 node
+			t.qsize = 8 // begin at 8 node
 		}
-		t.nodeQ = make([]*node, 0, size)
-		var fullNodeSize = t.dataSize + nodeSize
-		p := newmem(uintptr(size) * fullNodeSize)
-		t.dataArray = append(t.dataArray, p)
-		for ; size > 0; size-- {
-			t.nodeQ = append(t.nodeQ, (*node)(p))
-			p = add(p, fullNodeSize)
-		}
+		t.nodeQ = newmem(uintptr(t.qsize) * fullNodeSize)
 	}
-	var res = t.nodeQ[0]
+	var res = (*node)(t.nodeQ)
 	res.child[0] = t.end()
 	res.child[1] = t.end()
 	res.parent = t.end()
@@ -191,7 +185,7 @@ func (t *tree) newNode(data interface{}) *node {
 	} else {
 		t.setKey(res, data)
 	}
-	t.nodeQ = t.nodeQ[1:]
+	t.nodeQ = getGCPointer(add(t.nodeQ, fullNodeSize), int(fullNodeSize))
 	t.size++
 	return res
 }

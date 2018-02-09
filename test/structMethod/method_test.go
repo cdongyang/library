@@ -276,13 +276,6 @@ func BenchmarkStruct40bValueInterfaceUseValueFun(b *testing.B) {
 }
 
 /*
-	32byte作为small struct 和 large struct 的分界,不超过32byte的结构体会在cache缓存,参考自
-	https://github.com/qyuhen/book/blob/master/gopher2015/qyuhen.pdf	第10页
-	/usr/local/go/src/runtime/malloc.go runtime.mallocgc源码:
-	// Allocate an object of size bytes.
-	// Small objects are allocated from the per-P cache's free lists.
-	// Large objects (> 32 kB) are allocated straight from the heap.
-	func mallocgc(size uintptr, typ *_type, needzero bool) unsafe.Pointer
 
 	goos: linux
 	goarch: amd64

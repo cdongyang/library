@@ -398,8 +398,8 @@ func TestNewNode(t *testing.T) {
 			t.Fatal(node)
 		}
 		size--
-		if len(tree.nodeQ) != size {
-			t.Fatal(i, len(tree.nodeQ), size)
+		if tree.qsize != size {
+			t.Fatal(i, tree.qsize, size)
 		}
 		if (i+1) >= 8 && (i&(i+1)) == 0 {
 			size = tree.size
