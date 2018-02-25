@@ -29,6 +29,18 @@ type _type struct {
 	ptrToThis int32
 }
 
+func unpackIface(x interface{}) eface {
+	return *(*eface)(unsafe.Pointer(&x))
+}
+
+func packIface(x eface) interface{} {
+	return *(*interface{})(unsafe.Pointer(&x))
+}
+
+func pack2Iface(typ *_type, p unsafe.Pointer) interface{} {
+	return *(*interface{})(unsafe.Pointer(&eface{_type: typ, p: p}))
+}
+
 type slice struct {
 	array unsafe.Pointer
 	len   int
@@ -80,7 +92,7 @@ func add(p unsafe.Pointer, x uintptr) unsafe.Pointer {
 
 func newmem(size uintptr) unsafe.Pointer {
 	bytes := make([]byte, size)
-	return *(*unsafe.Pointer)(unsafe.Pointer(&bytes))
+	return (*slice)(unsafe.Pointer(&bytes)).array
 }
 
 // noescape hides a pointer from escape analysis.  noescape is
@@ -94,18 +106,10 @@ func noescape(p unsafe.Pointer) unsafe.Pointer {
 	return unsafe.Pointer(x ^ 0)
 }
 
-func interface2eface(node interface{}) eface {
-	return *(*eface)(unsafe.Pointer(&node))
-}
-
 func interface2noescape(x interface{}) interface{} {
 	// return *(*interface{})(unsafe.Pointer(&x))
 	var xeface = *(*eface)(noescape(unsafe.Pointer(&x)))
 	return *(*interface{})(unsafe.Pointer(&xeface))
-}
-
-func eface2interface(node eface) interface{} {
-	return *(*interface{})(unsafe.Pointer(&node))
 }
 
 func interface2type(a interface{}) *_type {
@@ -116,33 +120,13 @@ func interface2pointer(a interface{}) unsafe.Pointer {
 	return (*eface)(unsafe.Pointer(&a)).p
 }
 
-func memcopy8(des, src unsafe.Pointer) {
-	*(*uint8)(des) = *(*uint8)(src)
-}
-
-func memcopy16(des, src unsafe.Pointer) {
-	*(*uint16)(des) = *(*uint16)(src)
-}
-
-func memcopy32(des, src unsafe.Pointer) {
-	*(*uint32)(des) = *(*uint32)(src)
-}
-
-func memcopy64(des, src unsafe.Pointer) {
-	*(*uint64)(des) = *(*uint64)(src)
-}
-
-func memcopy128(des, src unsafe.Pointer) {
-	*(*complex128)(des) = *(*complex128)(src)
-}
-
 func lowbit(x uintptr) uintptr {
 	return x & (-x)
 }
 
 func memcopy(des, src unsafe.Pointer, size uintptr) {
 	for size >= 16 {
-		memcopy128(des, src)
+		*(*complex128)(des) = *(*complex128)(src)
 		size -= 16
 		des = add(des, 16)
 		src = add(src, 16)
@@ -152,13 +136,13 @@ func memcopy(des, src unsafe.Pointer, size uintptr) {
 		lb = lowbit(size)
 		switch lb {
 		case 1:
-			memcopy8(des, src)
+			*(*uint8)(des) = *(*uint8)(src)
 		case 2:
-			memcopy16(des, src)
+			*(*uint16)(des) = *(*uint16)(src)
 		case 4:
-			memcopy32(des, src)
+			*(*uint32)(des) = *(*uint32)(src)
 		case 8:
-			memcopy64(des, src)
+			*(*uint64)(des) = *(*uint64)(src)
 		default:
 			panic(fmt.Sprint("memcopy error: size:", size))
 		}
@@ -168,7 +152,34 @@ func memcopy(des, src unsafe.Pointer, size uintptr) {
 	}
 }
 
+func memclr(p unsafe.Pointer, size uintptr) {
+	for size >= 16 {
+		*(*complex128)(p) = 0
+		size -= 16
+		p = add(p, 16)
+	}
+	var lb uintptr
+	for size > 0 {
+		lb = lowbit(size)
+		switch lb {
+		case 1:
+			*(*uint8)(p) = 0
+		case 2:
+			*(*uint16)(p) = 0
+		case 4:
+			*(*uint32)(p) = 0
+		case 8:
+			*(*uint64)(p) = 0
+		default:
+			panic(fmt.Sprint("memcopy error: size:", size))
+		}
+		size -= lb
+		p = add(p, lb)
+	}
+}
+
 func getGCPointer(p unsafe.Pointer, size int) unsafe.Pointer {
-	var tmp = *(*[]byte)(unsafe.Pointer(&slice{p, size, size}))
-	return *(*unsafe.Pointer)(unsafe.Pointer(&tmp))
+	var bytes = *(*[]byte)(unsafe.Pointer(&slice{p, size, size}))
+	var tmp = *(*slice)(unsafe.Pointer(&bytes))
+	return tmp.array
 }

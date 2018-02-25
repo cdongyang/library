@@ -38,6 +38,43 @@ func add(p unsafe.Pointer, x uintptr) unsafe.Pointer {
 	return unsafe.Pointer(uintptr(p) + x)
 }
 
+func TestStructGC(t *testing.T) {
+	type struct1 struct {
+		a [1e5]int
+		b [1e5]int
+	}
+	t.Run("1", func(t *testing.T) {
+		test.MemStats("init")
+		var a = new(struct1)
+		a.a[0] = 1
+		a.b[0] = 1
+		test.MemStats()
+		var b = &a.b
+		a = nil
+		time.Sleep(time.Second)
+		test.MemStats("free a")
+		if b[0] != 1 {
+			t.Fatal()
+		}
+		var c = unsafe.Pointer(b)
+		b = nil
+		time.Sleep(time.Second)
+		test.MemStats("free b")
+		if *(*int)(c) != 1 {
+			t.Fatal()
+		}
+		c = nil
+		_ = c
+		time.Sleep(time.Second)
+		test.MemStats("free c")
+		time.Sleep(time.Second)
+		test.MemStats("repeat free c")
+	})
+}
+
+// p为mallocgc申请的内存的首地址, 任意一个unsafe.Pointer指向p,这块内存都不会被释放
+// 但如果unsafe.Pointer up指向p中的一小段内存, p会被GC回收, 访问up会导致core
+// 如果将up赋给一个原生slice 这种含有隐含指针的结构, 编译器会让p不被回收, 但p后面就回收不了了, p指向的内存泄漏了
 func TestSliceGCPointer(t *testing.T) {
 	test.MemStats("test 1")
 	t.Run("1", func(t *testing.T) {

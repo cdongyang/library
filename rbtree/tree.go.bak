@@ -361,10 +361,10 @@ func (t *Tree) Find(key interface{}) Iterator {
 func (t *Tree) find(keyPointer unsafe.Pointer) unsafe.Pointer {
 	var root = t.root()
 	for {
-		if sameNode(root, t.end()) {
+		if samenode(root, t.end()) {
 			return root
 		}
-		switch cmp := t.compare(keyPointer, t.getKeyPointer(root)); {
+		switch cmp := t.compare(keypointer, t.getkeypointer(root)); {
 		case cmp == 0:
 			return root
 		case cmp < 0:
