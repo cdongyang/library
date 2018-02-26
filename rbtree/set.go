@@ -90,6 +90,7 @@ type Set struct {
 	baseSet
 }
 
+// if data is value type, the pointer was save in an memory, it will be collected by GC
 func (s *Set) Init(unique bool, data interface{}, compare func(a, b interface{}) int) {
 	s.ifacedata = true
 	s.baseSet.Init(unique, data, compare)
