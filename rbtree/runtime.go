@@ -106,18 +106,15 @@ func noescape(p unsafe.Pointer) unsafe.Pointer {
 	return unsafe.Pointer(x ^ 0)
 }
 
-func interface2noescape(x interface{}) interface{} {
-	// return *(*interface{})(unsafe.Pointer(&x))
+func NoescapeInterface(x interface{}) interface{} {
 	var xeface = *(*eface)(noescape(unsafe.Pointer(&x)))
 	return *(*interface{})(unsafe.Pointer(&xeface))
 }
 
-func interface2type(a interface{}) *_type {
-	return (*eface)(unsafe.Pointer(&a))._type
-}
-
-func interface2pointer(a interface{}) unsafe.Pointer {
-	return (*eface)(unsafe.Pointer(&a)).p
+func interface2noescape(x interface{}) interface{} {
+	// return *(*interface{})(unsafe.Pointer(&x))
+	var xeface = *(*eface)(noescape(unsafe.Pointer(&x)))
+	return *(*interface{})(unsafe.Pointer(&xeface))
 }
 
 func lowbit(x uintptr) uintptr {
@@ -176,10 +173,4 @@ func memclr(p unsafe.Pointer, size uintptr) {
 		size -= lb
 		p = add(p, lb)
 	}
-}
-
-func getGCPointer(p unsafe.Pointer, size int) unsafe.Pointer {
-	var bytes = *(*[]byte)(unsafe.Pointer(&slice{p, size, size}))
-	var tmp = *(*slice)(unsafe.Pointer(&bytes))
-	return tmp.array
 }

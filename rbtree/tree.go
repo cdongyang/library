@@ -2,6 +2,7 @@ package rbtree
 
 import (
 	"errors"
+	"fmt"
 	"unsafe"
 )
 
@@ -10,6 +11,10 @@ var (
 	ErrNoLast     = errors.New("begin of tree has no Last()")
 	ErrNoNext     = errors.New("end of tree has no Next()")
 	ErrEraseEmpty = errors.New("can't erase empty node")
+	ErrNoData     = errors.New("tree has no data")
+	ErrNoValue    = errors.New("tree has no value")
+	ErrBadKey     = errors.New("not same key type with tree")
+	ErrBadValue   = errors.New("not same value type with tree")
 )
 
 const _NodeSize = unsafe.Sizeof(node{})
@@ -30,7 +35,7 @@ const (
 	black = true
 )
 
-type Node struct {
+type _node struct {
 	node
 	tree *tree
 }
@@ -40,28 +45,24 @@ type node struct {
 	j int32
 }
 
-func (n Node) GetData() interface{} {
-	return n.tree.getData(n.node)
-}
-
-func (n Node) GetKey() interface{} {
+func (n _node) GetKey() interface{} {
 	return n.tree.getKey(n.node)
 }
 
-func (n Node) GetVal() interface{} {
+func (n _node) GetVal() interface{} {
 	return n.tree.getVal(n.node)
 }
 
-func (n Node) SetVal(val interface{}) {
+func (n _node) SetVal(val interface{}) {
 	n.tree.setVal(n.node, val)
 }
 
-func (n Node) Next() node {
-	return n.tree.next(n.node)
+func (n _node) Next() _node {
+	return n.tree.Next(n)
 }
 
-func (n Node) Last() node {
-	return n.tree.last(n.node)
+func (n _node) Last() _node {
+	return n.tree.Last(n)
 }
 
 type mem struct {
@@ -101,17 +102,18 @@ type tree struct {
 }
 
 func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interface{}) int) {
+	t.header = node{-1, -1}
 	t.unique = unique
 	t.keyType = unpackIface(key)._type
 	t.valType = unpackIface(val)._type
-	t.size = 1
+	t.size = 0
 	t.compare = compare
 	t.spans = nil
 	t.freeNodes = nil
 	t.maxSpan = _DefaultMaxSpan
 
 	if t.keyType == nil {
-		panic("no key type")
+		panic(ErrNoData.Error())
 	}
 	t.directkey = !isDirectIface(t.keyType) && !t.ifacedata
 	if t.directkey {
@@ -194,7 +196,7 @@ func (t *tree) getKey(n node) interface{} {
 
 func (t *tree) getVal(n node) interface{} {
 	if t.valType == nil {
-		panic("no value")
+		panic(ErrNoValue.Error())
 	}
 	vp := t.getValPointer(n)
 	if !t.directval {
@@ -206,7 +208,7 @@ func (t *tree) getVal(n node) interface{} {
 func (t *tree) setKey(node node, key interface{}) {
 	keyEface := unpackIface(key)
 	if keyEface._type != t.keyType {
-		panic("not same key type")
+		panic(ErrBadKey.Error())
 	}
 	if t.directkey {
 		memcopy(t.getKeyPointer(node), keyEface.p, t.keySize)
@@ -218,7 +220,7 @@ func (t *tree) setKey(node node, key interface{}) {
 func (t *tree) setVal(node node, val interface{}) {
 	valEface := unpackIface(val)
 	if valEface._type != t.valType {
-		panic("not same value type")
+		panic(ErrBadValue.Error())
 	}
 	if t.directval {
 		memcopy(t.getValPointer(node), valEface.p, t.valType.size)
@@ -261,6 +263,18 @@ func (t *tree) newNode(key, val interface{}) node {
 		t.freeNodes = t.freeNodes[1:]
 	}
 	t.initNode(n)
+	if t.directkey {
+		memcopy(t.getKeyPointer(n), unpackIface(key).p, t.keySize)
+	} else {
+		*(*unsafe.Pointer)(t.getKeyPointer(n)) = unpackIface(key).p
+	}
+	if t.valType != nil {
+		if t.directval {
+			memcopy(t.getValPointer(n), unpackIface(val).p, t.valSize)
+		} else {
+			*(*unsafe.Pointer)(t.getValPointer(n)) = unpackIface(val).p
+		}
+	}
 	t.size++
 	return n
 }
@@ -287,12 +301,12 @@ func (t *tree) deleteNode(n node) {
 	t.freeNodes[l-1] = append(t.freeNodes[l-1], n)
 }
 
-func (t *tree) pack(n node) Node {
-	return Node{node: n, tree: t}
+func (t *tree) pack(n node) _node {
+	return _node{node: n, tree: t}
 }
 
 func (t *tree) Size() int {
-	return t.size
+	return t.size - 1
 }
 
 func (t *tree) Unique() bool {
@@ -300,10 +314,10 @@ func (t *tree) Unique() bool {
 }
 
 func (t *tree) Empty() bool {
-	return t.size == 0
+	return t.size == 1
 }
 
-func (t *tree) Begin() Node {
+func (t *tree) Begin() _node {
 	return t.pack(t.begin())
 }
 
@@ -311,7 +325,7 @@ func (t *tree) begin() node {
 	return t.most(0)
 }
 
-func (t *tree) End() Node {
+func (t *tree) End() _node {
 	return t.pack(t.end())
 }
 
@@ -348,17 +362,17 @@ func sameNode(a, b node) bool {
 	return a == b
 }
 
-// Next return the next Node of n in this tree
-// if n has no next Node, it will panic
-func (t *tree) Next(n Node) Node {
+// Next return the next _node of n in this tree
+// if n has no next _node, it will panic
+func (t *tree) Next(n _node) _node {
 	if t != n.tree {
-		panic(ErrNotInTree)
+		panic(ErrNotInTree.Error())
 	}
 	return t.pack(t.next(n.node))
 }
 func (t *tree) next(n node) node {
 	if sameNode(n, t.end()) {
-		panic(ErrNoNext)
+		panic(ErrNoNext.Error())
 	}
 	if sameNode(n, t.most(1)) {
 		return t.end()
@@ -366,17 +380,17 @@ func (t *tree) next(n node) node {
 	return t.gothrough(1, n)
 }
 
-// Last return the last Node of n in this tree
-// if n has no last Node, it will panic
-func (t *tree) Last(n Node) Node {
+// Last return the last _node of n in this tree
+// if n has no last _node, it will panic
+func (t *tree) Last(n _node) _node {
 	if t != n.tree {
-		panic(ErrNotInTree)
+		panic(ErrNotInTree.Error())
 	}
 	return t.pack(t.last(n.node))
 }
 func (t *tree) last(n node) node {
 	if sameNode(n, t.begin()) {
-		panic(ErrNoLast)
+		panic(ErrNoLast.Error())
 	}
 	if sameNode(n, t.end()) {
 		return t.most(1)
@@ -414,15 +428,15 @@ func (t *tree) Count(key interface{}) (count int) {
 	return count
 }
 
-// EqualRange return the Node range of equal key n in this tree
-func (t *tree) EqualRange(key interface{}) (beg, end Node) {
+// EqualRange return the _node range of equal key n in this tree
+func (t *tree) EqualRange(key interface{}) (beg, end _node) {
 	return t.LowerBound(key), t.UpperBound(key)
 }
 
-// Find return the Node of key in this tree
+// Find return the _node of key in this tree
 // if the key is not exist in this tree, result will be the End of tree
 // if there has multi n key equal to key, result will be random one
-func (t *tree) Find(key interface{}) Node {
+func (t *tree) Find(key interface{}) _node {
 	return t.pack(t.find(key))
 }
 func (t *tree) find(key interface{}) node {
@@ -443,9 +457,9 @@ func (t *tree) find(key interface{}) node {
 }
 
 // Insert insert a new n with data to tree
-// it return the insert n Node and true when success insert
-// otherwise, it return the end of tree and false
-func (t *tree) Insert(key, val interface{}) (Node, bool) {
+// it return the insert a _node and true when success insert
+// otherwise, it return the exist _node and false
+func (t *tree) Insert(key, val interface{}) (_node, bool) {
 	n, ok := t.insert(key, val)
 	return t.pack(n), ok
 }
@@ -453,7 +467,6 @@ func (t *tree) insert(key, val interface{}) (node, bool) {
 	var root = t.root()
 	var rootPoiter = t.rootPoiter()
 	if sameNode(root, t.end()) {
-		t.size++
 		*rootPoiter = t.newNode(key, val)
 		t.insertAdjust(*rootPoiter)
 		*t.mostPoiter(0) = *rootPoiter
@@ -466,7 +479,7 @@ func (t *tree) insert(key, val interface{}) (node, bool) {
 		switch cmp := t.compare(key, t.getKey(root)); {
 		case cmp == 0:
 			if t.unique {
-				return t.end(), false
+				return root, false
 			}
 			fallthrough
 		case cmp < 0:
@@ -477,7 +490,6 @@ func (t *tree) insert(key, val interface{}) (node, bool) {
 			root = *rootPoiter
 		}
 	}
-	t.size++
 	*rootPoiter = t.newNode(key, val)
 	t.setParent((*rootPoiter), parent)
 	for ch := uintptr(0); ch < 2; ch++ {
@@ -493,13 +505,13 @@ func (t *tree) insert(key, val interface{}) (node, bool) {
 func (t *tree) insertAdjust(n node) {
 	var parent = t.getParent(n)
 	if sameNode(parent, t.end()) {
-		//fmt.Println("case 1: insert")
+		fmt.Println("case 1: insert")
 		//n is root,set black
 		t.setColor(n, black)
 		return
 	}
 	if t.getColor(parent) == black {
-		//fmt.Println("case 2: insert")
+		fmt.Println("case 2: insert")
 		//if parent is black,do nothing
 		return
 	}
@@ -513,7 +525,7 @@ func (t *tree) insertAdjust(n node) {
 
 	var uncle = t.getChild(grandpa, parentCh^1)
 	if !sameNode(uncle, t.end()) && t.getColor(uncle) == red {
-		//fmt.Println("case 3: insert")
+		fmt.Println("case 3: insert")
 		//uncle is red
 		t.setColor(parent, black)
 		t.setColor(grandpa, red)
@@ -527,14 +539,14 @@ func (t *tree) insertAdjust(n node) {
 		childCh = 1
 	}
 	if childCh != parentCh {
-		//fmt.Println("case 4: insert")
+		fmt.Println("case 4: insert")
 		t.rotate(parentCh, n)
 		var tmp = parent
 		parent = n
 		n = tmp
 	}
 
-	//fmt.Println("case 5: insert")
+	fmt.Println("case 5: insert")
 	t.setColor(parent, black)
 	t.setColor(grandpa, red)
 	t.rotate(parentCh^1, parent)
@@ -542,9 +554,8 @@ func (t *tree) insertAdjust(n node) {
 
 // Erase erase all the n keys equal to key in this tree and return the number of erase n
 func (t *tree) Erase(key interface{}) (count int) {
-	var keyPointer = noescape(interface2pointer(key))
 	if t.unique {
-		var iter = t.find(keyPointer)
+		var iter = t.find(key)
 		if sameNode(iter, t.end()) {
 			return 0
 		}
@@ -552,7 +563,7 @@ func (t *tree) Erase(key interface{}) (count int) {
 		return 1
 	}
 	var beg = t.lowerBound(key)
-	for !sameNode(beg, t.end()) && t.compare(keyPointer, t.getKeyPointer(beg)) == 0 {
+	for !sameNode(beg, t.end()) && t.compare(key, t.getKey(beg)) == 0 {
 		var tmp = t.next(beg)
 		t.eraseNode(beg)
 		beg = tmp
@@ -563,17 +574,16 @@ func (t *tree) Erase(key interface{}) (count int) {
 
 // EraseNode erase n from the tree
 // if n is not in tree, it will panic
-func (t *tree) EraseNode(n Node) {
+func (t *tree) EraseNode(n _node) {
 	if t != n.tree {
-		panic(ErrNotInTree)
+		panic(ErrNotInTree.Error())
 	}
 	t.eraseNode(n.node)
 }
 func (t *tree) eraseNode(n node) {
 	if sameNode(n, t.end()) {
-		panic(ErrEraseEmpty)
+		panic(ErrEraseEmpty.Error())
 	}
-	t.size--
 	if !sameNode(t.getChild(n, 0), t.end()) && !sameNode(t.getChild(n, 1), t.end()) {
 		//if n has two child,it's last n must has no more than one child,copy to n and erase last n
 		var tmp = t.last(n)
@@ -609,7 +619,7 @@ func (t *tree) eraseNode(n node) {
 	}
 	if t.getColor(n) == black { //if n is red,just erase,otherwise adjust
 		t.eraseAdjust(child, parent)
-		//fmt.Println("eraseAdjust:")
+		fmt.Println("eraseAdjust:")
 	}
 	t.deleteNode(n)
 	return
@@ -618,7 +628,7 @@ func (t *tree) eraseNode(n node) {
 func (t *tree) eraseAdjust(n, parent node) {
 	if sameNode(parent, t.end()) {
 		//n is root
-		//fmt.Println("case 1: erase")
+		fmt.Println("case 1: erase")
 		if !sameNode(n, t.end()) {
 			t.setColor(n, black)
 		}
@@ -626,7 +636,7 @@ func (t *tree) eraseAdjust(n, parent node) {
 	}
 	if t.mustGetColor(n) == red {
 		//n is red,just set black
-		//fmt.Println("case 2: erase")
+		fmt.Println("case 2: erase")
 		t.setColor(n, black)
 		return
 	}
@@ -639,26 +649,26 @@ func (t *tree) eraseAdjust(n, parent node) {
 	if t.getColor(parent) == red {
 		//parent is red,brother must be black but can't be empty n,because the path has a black n more
 		if t.mustGetColor(t.getChild(brother, 0)) == black && t.mustGetColor(t.getChild(brother, 1)) == black {
-			//fmt.Println("case 3: erase")
+			fmt.Println("case 3: erase")
 			t.setColor(brother, red)
 			t.setColor(parent, black)
 			return
 		}
 		if !sameNode(brother, t.end()) && t.mustGetColor(t.getChild(brother, nCh)) == red {
-			//fmt.Println("case 4: erase", nCh)
+			fmt.Println("case 4: erase", nCh)
 			t.setColor(parent, black)
 			t.rotate(nCh^1, t.getChild(brother, nCh))
 			t.rotate(nCh, t.getChild(parent, nCh^1))
 			return
 		}
-		//fmt.Println("case 5: erase")
+		fmt.Println("case 5: erase")
 		t.rotate(nCh, brother)
 		return
 	}
 	//parent is black
 	if t.mustGetColor(brother) == red {
 		//brother is red, it's children must be black
-		//fmt.Println("case 6: erase")
+		fmt.Println("case 6: erase")
 		t.setColor(brother, black)
 		t.setColor(parent, red)
 		t.rotate(nCh, brother)
@@ -667,19 +677,19 @@ func (t *tree) eraseAdjust(n, parent node) {
 	}
 	//brother is black
 	if t.mustGetColor(t.getChild(brother, 0)) == black && t.mustGetColor(t.getChild(brother, 1)) == black {
-		//fmt.Println("case 7: erase")
+		fmt.Println("case 7: erase")
 		t.setColor(brother, red)
 		t.eraseAdjust(parent, t.getParent(parent))
 		return
 	}
 	if t.mustGetColor(t.getChild(brother, nCh)) == red {
-		//fmt.Println("case 8: erase", nCh)
+		fmt.Println("case 8: erase", nCh)
 		t.setColor(t.getChild(brother, nCh), black)
 		t.rotate(nCh^1, t.getChild(brother, nCh))
 		t.rotate(nCh, t.getChild(parent, nCh^1))
 		return
 	}
-	//fmt.Println("case 9: erase", nCh)
+	fmt.Println("case 9: erase", nCh)
 	t.setColor(t.getChild(brother, nCh^1), black)
 	t.rotate(nCh, brother)
 }
@@ -687,7 +697,7 @@ func (t *tree) eraseAdjust(n, parent node) {
 // EraseNodeRange erase the given iterator range
 // if the given range is not in this tree, it will panic with ErrNoIntree
 // if end can get beg after multi Next method, it will panic with ErrNoLast
-func (t *tree) EraseNodeRange(beg, end Node) (count int) {
+func (t *tree) EraseNodeRange(beg, end _node) (count int) {
 	return t.eraseNodeRange(beg.node, end.node)
 }
 func (t *tree) eraseNodeRange(beg, end node) (count int) {
@@ -700,8 +710,8 @@ func (t *tree) eraseNodeRange(beg, end node) (count int) {
 	return count
 }
 
-// LowerBound return the first Node greater than or equal to key
-func (t *tree) LowerBound(key interface{}) Node {
+// LowerBound return the first _node greater than or equal to key
+func (t *tree) LowerBound(key interface{}) _node {
 	return t.pack(t.lowerBound(key))
 }
 func (t *tree) lowerBound(key interface{}) node {
@@ -725,8 +735,8 @@ func (t *tree) lowerBound(key interface{}) node {
 	}
 }
 
-// UpperBound return the first Node greater than key
-func (t *tree) UpperBound(key interface{}) Node {
+// UpperBound return the first _node greater than key
+func (t *tree) UpperBound(key interface{}) _node {
 	return t.pack(t.upperBound(key))
 }
 func (t *tree) upperBound(key interface{}) node {
