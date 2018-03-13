@@ -86,6 +86,10 @@ func isDirectIface(t *_type) bool {
 	return t.kind&kindDirectIface != 0
 }
 
+func isNoPtrIface(t *_type) bool {
+	return t.kind&kindNoPointers != 0
+}
+
 func add(p unsafe.Pointer, x uintptr) unsafe.Pointer {
 	return unsafe.Pointer(uintptr(p) + x)
 }

@@ -2,7 +2,6 @@ package rbtree
 
 import (
 	"errors"
-	"fmt"
 	"unsafe"
 )
 
@@ -68,6 +67,8 @@ func (n _node) Last() _node {
 type mem struct {
 	p    unsafe.Pointer
 	size uintptr
+	keys []unsafe.Pointer
+	vals []unsafe.Pointer
 }
 
 type tree struct {
@@ -115,7 +116,7 @@ func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interfa
 	if t.keyType == nil {
 		panic(ErrNoData.Error())
 	}
-	t.directkey = !isDirectIface(t.keyType) && !t.ifacedata
+	t.directkey = isNoPtrIface(t.keyType) && !t.ifacedata
 	if t.directkey {
 		t.keySize = t.keyType.size
 	} else {
@@ -123,7 +124,7 @@ func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interfa
 	}
 	t.valSize = 0
 	if t.valType != nil {
-		t.directval = !isDirectIface(t.valType) && !t.ifacedata
+		t.directval = isNoPtrIface(t.valType) && !t.ifacedata
 		if t.directval {
 			t.valSize = t.valType.size
 		} else {
@@ -187,9 +188,11 @@ func (t *tree) getValPointer(n node) unsafe.Pointer {
 }
 
 func (t *tree) getKey(n node) interface{} {
-	kp := t.getKeyPointer(n)
-	if !t.directkey {
-		kp = *(*unsafe.Pointer)(kp)
+	var kp unsafe.Pointer
+	if t.directkey {
+		kp = t.getKeyPointer(n)
+	} else {
+		kp = t.spans[n.i].keys[n.j]
 	}
 	return pack2Iface(t.keyType, kp)
 }
@@ -198,64 +201,71 @@ func (t *tree) getVal(n node) interface{} {
 	if t.valType == nil {
 		panic(ErrNoValue.Error())
 	}
-	vp := t.getValPointer(n)
-	if !t.directval {
-		vp = *(*unsafe.Pointer)(vp)
+	var vp unsafe.Pointer
+	if t.directval {
+		vp = t.getValPointer(n)
+	} else {
+		vp = t.spans[n.i].vals[n.j]
 	}
 	return pack2Iface(t.valType, vp)
 }
 
-func (t *tree) setKey(node node, key interface{}) {
+func (t *tree) setKey(n node, key interface{}) {
 	keyEface := unpackIface(key)
 	if keyEface._type != t.keyType {
 		panic(ErrBadKey.Error())
 	}
 	if t.directkey {
-		memcopy(t.getKeyPointer(node), keyEface.p, t.keySize)
+		memcopy(t.getKeyPointer(n), keyEface.p, t.keySize)
 	} else {
-		*(*unsafe.Pointer)(t.getKeyPointer(node)) = keyEface.p
+		t.spans[n.i].keys[n.j] = keyEface.p
 	}
 }
 
-func (t *tree) setVal(node node, val interface{}) {
+func (t *tree) setVal(n node, val interface{}) {
 	valEface := unpackIface(val)
 	if valEface._type != t.valType {
 		panic(ErrBadValue.Error())
 	}
 	if t.directval {
-		memcopy(t.getValPointer(node), valEface.p, t.valType.size)
+		memcopy(t.getValPointer(n), valEface.p, t.valSize)
 	} else {
-		*(*unsafe.Pointer)(t.getValPointer(node)) = valEface.p
+		t.spans[n.i].vals[n.j] = valEface.p
 	}
-}
-
-func (t *tree) getData(node node) interface{} {
-	return t.getKey(node)
 }
 
 func (t *tree) copyNodeData(des, src node) {
-	memcopy(t.getKeyPointer(des), t.getKeyPointer(src), t.keySize)
+	t.setKey(des, t.getKey(src))
 	if t.valType != nil {
-		memcopy(t.getValPointer(des), t.getValPointer(src), t.valSize)
+		t.setVal(des, t.getVal(src))
 	}
+}
+
+func (t *tree) newSpan() {
+	t.curSpan = uintptr(t.size)
+	if t.curSpan > uintptr(t.maxSpan) {
+		t.curSpan = uintptr(t.maxSpan)
+	} else if t.size <= 8 {
+		t.curSpan = 8 // begin at 8 node, and then the curSpan must be the multiple of 8
+	}
+	span := mem{p: newmem(t.curSpan * (_NodeOffSet + t.keySize + t.valSize + _ColorSize)), size: t.curSpan}
+	if !t.directkey {
+		span.keys = *(*[]unsafe.Pointer)(unsafe.Pointer(&slice{array: add(span.p, t.curSpan*_NodeOffSet), len: int(t.curSpan), cap: int(t.curSpan)}))
+	}
+	if t.valType != nil && !t.directval {
+		span.vals = *(*[]unsafe.Pointer)(unsafe.Pointer(&slice{array: add(span.p, t.curSpan*(_NodeOffSet+t.keySize)), len: int(t.curSpan), cap: int(t.curSpan)}))
+	}
+	t.spans = append(t.spans, span)
+	nodes := make([]node, 0, t.curSpan)
+	for i := uintptr(0); i < t.curSpan; i++ {
+		nodes = append(nodes, node{int32(len(t.spans)) - 1, int32(i)})
+	}
+	t.freeNodes = append(t.freeNodes, nodes)
 }
 
 func (t *tree) newNode(key, val interface{}) node {
 	if len(t.freeNodes) <= 0 {
-		t.curSpan = uintptr(t.size)
-		if t.curSpan > uintptr(t.maxSpan) {
-			t.curSpan = uintptr(t.maxSpan)
-		} else if t.size <= 8 {
-			t.curSpan = 8 // begin at 8 node, and then the curSpan must be the multiple of 8
-		}
-		t.spans = append(t.spans, mem{
-			p:    newmem(t.curSpan * (_NodeOffSet + t.keySize + t.valSize + _ColorSize)),
-			size: t.curSpan})
-		nodes := make([]node, 0, t.curSpan)
-		for i := uintptr(0); i < t.curSpan; i++ {
-			nodes = append(nodes, node{int32(len(t.spans)) - 1, int32(i)})
-		}
-		t.freeNodes = append(t.freeNodes, nodes)
+		t.newSpan()
 	}
 	n := t.freeNodes[0][0]
 	t.freeNodes[0] = t.freeNodes[0][1:]
@@ -263,17 +273,9 @@ func (t *tree) newNode(key, val interface{}) node {
 		t.freeNodes = t.freeNodes[1:]
 	}
 	t.initNode(n)
-	if t.directkey {
-		memcopy(t.getKeyPointer(n), unpackIface(key).p, t.keySize)
-	} else {
-		*(*unsafe.Pointer)(t.getKeyPointer(n)) = unpackIface(key).p
-	}
+	t.setKey(n, key)
 	if t.valType != nil {
-		if t.directval {
-			memcopy(t.getValPointer(n), unpackIface(val).p, t.valSize)
-		} else {
-			*(*unsafe.Pointer)(t.getValPointer(n)) = unpackIface(val).p
-		}
+		t.setVal(n, val)
 	}
 	t.size++
 	return n
@@ -287,9 +289,17 @@ func (t *tree) initNode(n node) {
 }
 
 func (t *tree) deleteNode(n node) {
-	memclr(t.getKeyPointer(n), t.keySize)
+	if t.directkey {
+		memclr(t.getKeyPointer(n), t.keySize)
+	} else {
+		t.spans[n.i].keys[n.j] = nil
+	}
 	if t.valType != nil {
-		memclr(t.getValPointer(n), t.valSize)
+		if t.directval {
+			memclr(t.getValPointer(n), t.valSize)
+		} else {
+			t.spans[n.i].vals[n.j] = nil
+		}
 	}
 	t.size--
 	l := len(t.freeNodes)
@@ -505,13 +515,13 @@ func (t *tree) insert(key, val interface{}) (node, bool) {
 func (t *tree) insertAdjust(n node) {
 	var parent = t.getParent(n)
 	if sameNode(parent, t.end()) {
-		fmt.Println("case 1: insert")
+		//fmt.Println("case 1: insert")
 		//n is root,set black
 		t.setColor(n, black)
 		return
 	}
 	if t.getColor(parent) == black {
-		fmt.Println("case 2: insert")
+		//fmt.Println("case 2: insert")
 		//if parent is black,do nothing
 		return
 	}
@@ -525,7 +535,7 @@ func (t *tree) insertAdjust(n node) {
 
 	var uncle = t.getChild(grandpa, parentCh^1)
 	if !sameNode(uncle, t.end()) && t.getColor(uncle) == red {
-		fmt.Println("case 3: insert")
+		//fmt.Println("case 3: insert")
 		//uncle is red
 		t.setColor(parent, black)
 		t.setColor(grandpa, red)
@@ -539,14 +549,14 @@ func (t *tree) insertAdjust(n node) {
 		childCh = 1
 	}
 	if childCh != parentCh {
-		fmt.Println("case 4: insert")
+		//fmt.Println("case 4: insert")
 		t.rotate(parentCh, n)
 		var tmp = parent
 		parent = n
 		n = tmp
 	}
 
-	fmt.Println("case 5: insert")
+	//fmt.Println("case 5: insert")
 	t.setColor(parent, black)
 	t.setColor(grandpa, red)
 	t.rotate(parentCh^1, parent)
@@ -619,7 +629,7 @@ func (t *tree) eraseNode(n node) {
 	}
 	if t.getColor(n) == black { //if n is red,just erase,otherwise adjust
 		t.eraseAdjust(child, parent)
-		fmt.Println("eraseAdjust:")
+		//fmt.Println("eraseAdjust:")
 	}
 	t.deleteNode(n)
 	return
@@ -628,7 +638,7 @@ func (t *tree) eraseNode(n node) {
 func (t *tree) eraseAdjust(n, parent node) {
 	if sameNode(parent, t.end()) {
 		//n is root
-		fmt.Println("case 1: erase")
+		//fmt.Println("case 1: erase")
 		if !sameNode(n, t.end()) {
 			t.setColor(n, black)
 		}
@@ -636,7 +646,7 @@ func (t *tree) eraseAdjust(n, parent node) {
 	}
 	if t.mustGetColor(n) == red {
 		//n is red,just set black
-		fmt.Println("case 2: erase")
+		//fmt.Println("case 2: erase")
 		t.setColor(n, black)
 		return
 	}
@@ -649,26 +659,26 @@ func (t *tree) eraseAdjust(n, parent node) {
 	if t.getColor(parent) == red {
 		//parent is red,brother must be black but can't be empty n,because the path has a black n more
 		if t.mustGetColor(t.getChild(brother, 0)) == black && t.mustGetColor(t.getChild(brother, 1)) == black {
-			fmt.Println("case 3: erase")
+			//fmt.Println("case 3: erase")
 			t.setColor(brother, red)
 			t.setColor(parent, black)
 			return
 		}
 		if !sameNode(brother, t.end()) && t.mustGetColor(t.getChild(brother, nCh)) == red {
-			fmt.Println("case 4: erase", nCh)
+			//fmt.Println("case 4: erase", nCh)
 			t.setColor(parent, black)
 			t.rotate(nCh^1, t.getChild(brother, nCh))
 			t.rotate(nCh, t.getChild(parent, nCh^1))
 			return
 		}
-		fmt.Println("case 5: erase")
+		//fmt.Println("case 5: erase")
 		t.rotate(nCh, brother)
 		return
 	}
 	//parent is black
 	if t.mustGetColor(brother) == red {
 		//brother is red, it's children must be black
-		fmt.Println("case 6: erase")
+		//fmt.Println("case 6: erase")
 		t.setColor(brother, black)
 		t.setColor(parent, red)
 		t.rotate(nCh, brother)
@@ -677,19 +687,19 @@ func (t *tree) eraseAdjust(n, parent node) {
 	}
 	//brother is black
 	if t.mustGetColor(t.getChild(brother, 0)) == black && t.mustGetColor(t.getChild(brother, 1)) == black {
-		fmt.Println("case 7: erase")
+		//fmt.Println("case 7: erase")
 		t.setColor(brother, red)
 		t.eraseAdjust(parent, t.getParent(parent))
 		return
 	}
 	if t.mustGetColor(t.getChild(brother, nCh)) == red {
-		fmt.Println("case 8: erase", nCh)
+		//fmt.Println("case 8: erase", nCh)
 		t.setColor(t.getChild(brother, nCh), black)
 		t.rotate(nCh^1, t.getChild(brother, nCh))
 		t.rotate(nCh, t.getChild(parent, nCh^1))
 		return
 	}
-	fmt.Println("case 9: erase", nCh)
+	//fmt.Println("case 9: erase", nCh)
 	t.setColor(t.getChild(brother, nCh^1), black)
 	t.rotate(nCh, brother)
 }

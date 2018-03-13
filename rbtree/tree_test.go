@@ -2,8 +2,10 @@ package rbtree
 
 import (
 	"fmt"
+	"runtime"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/cdongyang/library/algorithm"
 	"github.com/cdongyang/library/randint"
@@ -59,8 +61,10 @@ func (t *tree) check(root node) (l int, size int) {
 			} else if cmp == 0 && t.unique {
 				panic("order equal error")
 			} else if i == 0 && cmp > 0 {
+				fmt.Println(i, t.getKey(t.getChild(root, i)), t.getKey(root))
 				panic("order error")
 			} else if i == 1 && cmp < 0 {
+				fmt.Println(i, t.getKey(t.getChild(root, i)), t.getKey(root))
 				panic("order error")
 			}
 		}
@@ -404,8 +408,14 @@ func ExampleSet() {
 	if !ok {
 		panic("insert error")
 	}
+	time.Sleep(time.Second)
+	runtime.GC()
+	fmt.Println(n.GetData())
+	time.Sleep(time.Second)
+	runtime.GC()
 	fmt.Println(n.GetData())
 	// Output:
 	//true false false
+	//1
 	//1
 }
