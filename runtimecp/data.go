@@ -95,9 +95,9 @@ const (
 	KindStruct
 	KindUnsafePointer
 
-	KindDirectIface = 1 << 5
+	KindDirectIface = 1 << 5 //结构体只含一个指针/普通指针/unsafe.Pointer 总结: 值为直接指针
 	KindGCProg      = 1 << 6
-	KindNoPointers  = 1 << 7
+	KindNoPointers  = 1 << 7 // int/float/complex/不含指针的struct/int array/float array 等 总结: 值完全不含指针
 	KindMask        = (1 << 5) - 1
 )
 

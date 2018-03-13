@@ -339,6 +339,49 @@ func TestInterface(t *testing.T) {
 	if **(**interface{})(ppEface.Data) != 1 || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
 		t.Fatal(ppEface.Type)
 	}
+
+	func() {
+		type pointerStruct struct {
+			a *int
+		}
+		var aaa = 1
+		var m interface{} = pointerStruct{a: &aaa}
+		var mp = &m
+		eface = EfaceOf(m)
+		pEface = EfaceOf(mp)
+		ppEface = EfaceOf(&mp)
+		if *(*int)(eface.Data) != 1 || eface.Type.Kind != KindStruct+KindDirectIface || eface.Type.Size != 8 {
+			t.Fatal(eface.Type)
+		}
+		if *(*interface{})(pEface.Data) != m || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
+			t.Fatal(pEface.Type)
+		}
+		if **(**interface{})(ppEface.Data) != m || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
+			t.Fatal(ppEface.Type)
+		}
+	}()
+
+	func() {
+		type pointerStruct struct {
+			b int
+			a *int
+		}
+		var aaa = 1
+		var m interface{} = pointerStruct{b: 2, a: &aaa}
+		var mp = &m
+		eface = EfaceOf(m)
+		pEface = EfaceOf(mp)
+		ppEface = EfaceOf(&mp)
+		if *(*int)(eface.Data) != 2 || eface.Type.Kind != KindStruct || eface.Type.Size != 16 {
+			t.Fatal(eface.Type)
+		}
+		if *(*interface{})(pEface.Data) != m || pEface.Type.Kind != KindPtr+KindDirectIface || pEface.Type.Size != 8 {
+			t.Fatal(pEface.Type)
+		}
+		if **(**interface{})(ppEface.Data) != m || pEface.Type.Kind != KindPtr+KindDirectIface || ppEface.Type.Size != 8 {
+			t.Fatal(ppEface.Type)
+		}
+	}()
 }
 
 func equalIntSlice(a, b []int) bool {
