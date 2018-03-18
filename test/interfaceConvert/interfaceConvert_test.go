@@ -132,9 +132,17 @@ func BenchmarkDefineHeapVariable(b *testing.B) {
 //HeapAlloc: 1213864 HeapInuse: 1490944 HeapObjects: 71433 HeapIdle 4374528 HeapReleased 0 HeapSys 5865472
 //50000000	        32.5 ns/op	       8 B/op	       1 allocs/op
 func BenchmarkInterfaceConvertInt(b *testing.B) { //1 allocs/op和主要耗时都在iface = i
-	var iface interface{}
+	var iface interface{} = 1
 	for i := 0; i < b.N; i++ {
-		iface = i
+		iface = i // i 的作用域是括号内, 当循环结束时iface必须依然持有i的值, 所以iface = i会escape
+	}
+	_ = iface.(int)
+	memStats()
+}
+
+func BenchmarkInterfaceConvertIntNoescape(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var iface interface{} = i
 		_ = iface.(int)
 	}
 	memStats()

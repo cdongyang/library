@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"runtime"
 	"testing"
+	"time"
+	"unsafe"
+
+	"github.com/cdongyang/library/test"
 )
 
 func TestMapHeapSize1E6(t *testing.T) {
@@ -36,70 +40,70 @@ func TestMapKeyValue(t *testing.T) {
 		for i := 0; i < 1e5; i++ {
 			mp[struct32B{[4]int{i}}] = i
 		}
-		memStats()
+		test.MemStats()
 	})
 	t.Run("key 40b", func(t *testing.T) {
 		var mp = make(map[struct40B]int)
 		for i := 0; i < 1e5; i++ {
 			mp[struct40B{[5]int{i}}] = i
 		}
-		memStats()
+		test.MemStats()
 	})
 	t.Run("key 64b", func(t *testing.T) {
 		var mp = make(map[struct64B]int)
 		for i := 0; i < 1e5; i++ {
 			mp[struct64B{[8]int{i}}] = i
 		}
-		memStats()
+		test.MemStats()
 	})
 	t.Run("key 128b", func(t *testing.T) {
 		var mp = make(map[struct128B]int)
 		for i := 0; i < 1e5; i++ {
 			mp[struct128B{[16]int{i}}] = i
 		}
-		memStats()
+		test.MemStats()
 	})
 	t.Run("key 256b", func(t *testing.T) {
 		var mp = make(map[struct256B]int)
 		for i := 0; i < 1e5; i++ {
 			mp[struct256B{[32]int{i}}] = i
 		}
-		memStats()
+		test.MemStats()
 	})
 	t.Run("val 32b", func(t *testing.T) {
 		var mp = make(map[int]struct32B)
 		for i := 0; i < 1e5; i++ {
 			mp[i] = struct32B{[4]int{i}}
 		}
-		memStats()
+		test.MemStats()
 	})
 	t.Run("val 40b", func(t *testing.T) {
 		var mp = make(map[int]struct40B)
 		for i := 0; i < 1e5; i++ {
 			mp[i] = struct40B{[5]int{i}}
 		}
-		memStats()
+		test.MemStats()
 	})
 	t.Run("val 64b", func(t *testing.T) {
 		var mp = make(map[int]struct64B)
 		for i := 0; i < 1e5; i++ {
 			mp[i] = struct64B{[8]int{i}}
 		}
-		memStats()
+		test.MemStats()
 	})
 	t.Run("val 128b", func(t *testing.T) {
 		var mp = make(map[int]struct128B)
 		for i := 0; i < 1e5; i++ {
 			mp[i] = struct128B{[16]int{i}}
 		}
-		memStats()
+		test.MemStats()
 	})
 	t.Run("val 256b", func(t *testing.T) {
 		var mp = make(map[int]struct256B)
 		for i := 0; i < 1e5; i++ {
 			mp[i] = struct256B{[32]int{i}}
 		}
-		memStats()
+		test.MemStats()
 	})
 }
 
@@ -108,23 +112,23 @@ func testMapHeapSize(n int) {
 	for i := 0; i < n; i++ {
 		mp[i] = i
 	}
-	memStats()
+	test.MemStats()
 	for k := range mp {
 		delete(mp, k)
 	}
-	memStats()
+	test.MemStats()
 	for i := 0; i < 2*n; i++ {
 		mp[i] = i
 	}
-	memStats()
+	test.MemStats()
 	for k := range mp {
 		delete(mp, k)
 	}
-	memStats()
+	test.MemStats()
 	for i := 0; i < 3*n; i++ {
 		mp[i] = i
 	}
-	memStats()
+	test.MemStats()
 }
 
 func testBufferMapHeapSize(n int) {
@@ -132,33 +136,72 @@ func testBufferMapHeapSize(n int) {
 	for i := 0; i < n; i++ {
 		mp[i] = i
 	}
-	memStats()
+	test.MemStats()
 	for k := range mp {
 		delete(mp, k)
 	}
-	memStats()
+	test.MemStats()
 	for i := 0; i < 2*n; i++ {
 		mp[i] = i
 	}
-	memStats()
+	test.MemStats()
 	for k := range mp {
 		delete(mp, k)
 	}
-	memStats()
+	test.MemStats()
 	for i := 0; i < 3*n; i++ {
 		mp[i] = i
 	}
-	memStats()
+	test.MemStats()
 }
 
-var mem runtime.MemStats
-var outmem = true
+func panicWarper(f func()) {
+	defer func() {
+		err := recover()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+	f()
+}
 
-func memStats() {
-	if !outmem {
-		return
+func TestMapKeyType(t *testing.T) {
+	t.Run("int", func(t *testing.T) {
+		panicWarper(func() {
+			m := make(map[unsafe.Pointer]int)
+			func() {
+				a := 1
+				m[unsafe.Pointer(&a)] = 1
+			}()
+			time.Sleep(time.Second)
+			runtime.GC()
+			for key, val := range m {
+				fmt.Println(*(*int)(key), val)
+			}
+		})
+	})
+	type tstruct struct {
+		a *int
 	}
-	runtime.ReadMemStats(&mem)
-	fmt.Println("HeapAlloc:", mem.HeapAlloc, "HeapInuse:", mem.HeapInuse, "HeapObjects:", mem.HeapObjects, "HeapIdle", mem.HeapIdle, "HeapReleased", mem.HeapReleased, "HeapSys", mem.HeapSys)
-	runtime.GC()
+}
+
+func BenchmarkMakeMap(b *testing.B) {
+	test.MemStats()
+	for i := 0; i < b.N; i++ {
+		m := make(map[int]bool)
+		m[1] = true
+	}
+	test.MemStats()
+}
+
+func TestMapSize(t *testing.T) {
+	test.MemStats()
+	intMap := make(map[int]int, 1e5)
+	test.MemStats()
+	intMap = nil
+	time.Sleep(time.Second)
+	test.MemStats()
+	time.Sleep(time.Second)
+	test.MemStats()
+	_ = intMap
 }

@@ -1,4 +1,4 @@
-package varEscape_test
+package escape_test
 
 import "testing"
 
