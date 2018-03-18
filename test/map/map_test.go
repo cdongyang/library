@@ -205,3 +205,25 @@ func TestMapSize(t *testing.T) {
 	test.MemStats()
 	_ = intMap
 }
+
+func TestMapDirectIface(t *testing.T) {
+	t.Run("array", func(t *testing.T) {
+		const n = 10000000
+		var keys = [n]byte{}
+		for i := range keys {
+			keys[i] = '1'
+		}
+		var mp = make(map[*byte]*byte, n)
+		for i := range keys {
+			mp[&keys[i]] = &keys[i]
+		}
+	})
+	t.Run("var", func(t *testing.T) {
+		const n = 10000000
+		var mp = make(map[*byte]*byte, n)
+		for i := 0; i < n; i++ {
+			var t byte = '1'
+			mp[&t] = &t
+		}
+	})
+}

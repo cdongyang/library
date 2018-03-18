@@ -73,16 +73,18 @@ type mem struct {
 }
 
 type tree struct {
-	header  node
-	keyType reflect.Type
-	valType reflect.Type
-	zeroKey reflect.Value
-	zeroVal reflect.Value
-	key     reflect.Value
-	val     reflect.Value
-	size    int
-	compare func(a, b interface{}) int
-	unique  bool
+	header      node
+	keyType     reflect.Type
+	valType     reflect.Type
+	zeroKey     reflect.Value
+	zeroVal     reflect.Value
+	key         reflect.Value
+	val         reflect.Value
+	size        int
+	compare     func(a, b interface{}) int
+	unique      bool
+	indirectkey bool
+	indirectval bool
 	// maxSpan means the max number of node alloc to a span of spans
 	maxSpan uint32
 	// curSpan means the current number of node alloc to a span of spans
@@ -112,9 +114,12 @@ func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interfa
 	if t.keyType == nil {
 		panic(ErrNoData.Error())
 	}
+	//fmt.Println(t.keyType.String(), t.valType.String())
 	t.key = reflect.ValueOf(key)
+	t.indirectkey = isDirectIface(unpackIface(key)._type)
 	if t.valType != nil {
 		t.val = reflect.ValueOf(val)
+		t.indirectval = isDirectIface(unpackIface(val)._type)
 	}
 	t.header = t.newNode(key, val)
 	t.getValueOfKey(t.header).Set(reflect.Zero(t.keyType))
@@ -180,7 +185,7 @@ func (t *tree) getValueOfKey(n node) reflect.Value {
 }
 
 func (t *tree) getValueOfVal(n node) reflect.Value {
-	return t.spans[n.j].vals.Index(int(n.j))
+	return t.spans[n.i].vals.Index(int(n.j))
 }
 
 func (t *tree) setValueOfKey(n node, key reflect.Value) {
@@ -195,26 +200,34 @@ func (t *tree) getKey(n node) interface{} {
 	// func getValueOfKey can not inlined, but it's invoke frequently,
 	// so copy the func code to there
 	key := t.spans[n.i].keys.Index(int(n.j))
-	return *(*interface{})(unsafe.Pointer(&key))
+	iface := *(*eface)(unsafe.Pointer(&key))
+	if t.indirectkey {
+		iface.p = *(*unsafe.Pointer)(iface.p)
+	}
+	return *(*interface{})(unsafe.Pointer(&iface))
 }
 
 func (t *tree) getVal(n node) interface{} {
 	// func getValueOfVal can not inlined, but it's invoke frequently,
 	// so copy the func code to there
 	val := t.spans[n.i].vals.Index(int(n.j))
-	return *(*interface{})(unsafe.Pointer(&val))
+	iface := *(*eface)(unsafe.Pointer(&val))
+	if t.indirectval {
+		iface.p = *(*unsafe.Pointer)(iface.p)
+	}
+	return *(*interface{})(unsafe.Pointer(&iface))
 }
 
 func (t *tree) setKey(n node, key interface{}) {
 	tmp := t.key
 	*(*interface{})(unsafe.Pointer(&tmp)) = key
-	t.getValueOfKey(n).Set(*(*reflect.Value)(unsafe.Pointer(&tmp)))
+	t.getValueOfKey(n).Set(tmp)
 }
 
 func (t *tree) setVal(n node, val interface{}) {
 	tmp := t.val
 	*(*interface{})(unsafe.Pointer(&tmp)) = val
-	t.getValueOfVal(n).Set(*(*reflect.Value)(unsafe.Pointer(&tmp)))
+	t.getValueOfVal(n).Set(tmp)
 }
 
 func (t *tree) copyNodeData(des, src node) {
@@ -234,7 +247,7 @@ func (t *tree) newSpan() {
 	span := mem{p: newmem(t.curSpan * (_NodeOffSet + _ColorSize)), size: t.curSpan}
 	span.keys = reflect.MakeSlice(reflect.SliceOf(t.keyType), int(t.curSpan), int(t.curSpan))
 	if t.valType != nil {
-		span.vals = reflect.MakeSlice(reflect.SliceOf(t.keyType), int(t.curSpan), int(t.curSpan))
+		span.vals = reflect.MakeSlice(reflect.SliceOf(t.valType), int(t.curSpan), int(t.curSpan))
 	}
 	//fmt.Println("keys:", span.keys.String(), "vals:", span.vals.String())
 	t.spans = append(t.spans, span)
@@ -443,12 +456,17 @@ func (t *tree) find(key interface{}) node {
 	}
 }
 
+type cheat struct {
+	p unsafe.Pointer
+	a bool
+}
+
 // Insert insert a new n with data to tree
 // it return the insert a _node and true when success insert
 // otherwise, it return the exist _node and false
-func (t *tree) Insert(_key, _val interface{}) (_node, bool) {
-	key := noescapeInterface(_key)
-	val := noescapeInterface(_val)
+func (t *tree) Insert(key, val interface{}) (_node, bool) {
+	//key := noescapeInterface(_key)
+	//val := noescapeInterface(_val)
 	n, ok := t.insert(key, val)
 	return t.pack(n), ok
 }
