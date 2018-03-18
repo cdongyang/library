@@ -2,10 +2,8 @@ package rbtree
 
 import (
 	"fmt"
-	"runtime"
 	"sort"
 	"testing"
-	"time"
 
 	"github.com/cdongyang/library/algorithm"
 	"github.com/cdongyang/library/randint"
@@ -93,8 +91,9 @@ func testTree(t *testing.T, length int, unique bool) {
 	var max = rand.Int()%length + 1
 	var intSlice1K = make([]int, length)
 	for i := range intSlice1K {
-		intSlice1K[i] = rand.Int() % max
+		intSlice1K[i] = (rand.Int() % max) + 1
 	}
+	max++
 	//fmt.Println("offsetNode:", offsetNode)
 	var tree = NewTree(unique)
 	var count = make(map[int]int, len(intSlice1K))
@@ -399,23 +398,4 @@ func TestNewNode(t *testing.T) {
 
 func CompareInt(a, b interface{}) int {
 	return a.(int) - b.(int)
-}
-
-func ExampleSet() {
-	s := NewSet(tmpInt, CompareInt)
-	fmt.Println(s.ifacedata, s.directkey, s.directval)
-	n, ok := s.Insert(1)
-	if !ok {
-		panic("insert error")
-	}
-	time.Sleep(time.Second)
-	runtime.GC()
-	fmt.Println(n.GetData())
-	time.Sleep(time.Second)
-	runtime.GC()
-	fmt.Println(n.GetData())
-	// Output:
-	//true false false
-	//1
-	//1
 }

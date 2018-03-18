@@ -2,6 +2,7 @@ package rbtree
 
 import (
 	"errors"
+	"reflect"
 	"unsafe"
 )
 
@@ -67,30 +68,25 @@ func (n _node) Last() _node {
 type mem struct {
 	p    unsafe.Pointer
 	size uintptr
-	keys []unsafe.Pointer
-	vals []unsafe.Pointer
+	keys reflect.Value
+	vals reflect.Value
 }
 
 type tree struct {
 	header  node
-	keyType *_type
-	valType *_type
+	keyType reflect.Type
+	valType reflect.Type
+	zeroKey reflect.Value
+	zeroVal reflect.Value
+	key     reflect.Value
+	val     reflect.Value
 	size    int
 	compare func(a, b interface{}) int
 	unique  bool
-	// true means data is interface, so spans will only store the pointer of key or value
-	// then the directkey and directval must be false
-	ifacedata bool
-	// directkey is true will store the key direct in spans
-	directkey bool
-	// directval is true will store the value direct in spans
-	directval bool
 	// maxSpan means the max number of node alloc to a span of spans
 	maxSpan int32
 	// curSpan means the current number of node alloc to a span of spans
 	curSpan uintptr
-	keySize uintptr
-	valSize uintptr
 	// spans is the memory to store node data, key and value
 	// it arrange in this way:
 	// maxSpan*(child [2]node,parent node),maxSpan*key,maxSpan*val,maxSpan*(color colorType)
@@ -105,8 +101,8 @@ type tree struct {
 func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interface{}) int) {
 	t.header = node{-1, -1}
 	t.unique = unique
-	t.keyType = unpackIface(key)._type
-	t.valType = unpackIface(val)._type
+	t.keyType = reflect.TypeOf(key)
+	t.valType = reflect.TypeOf(val)
 	t.size = 0
 	t.compare = compare
 	t.spans = nil
@@ -116,22 +112,17 @@ func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interfa
 	if t.keyType == nil {
 		panic(ErrNoData.Error())
 	}
-	t.directkey = isNoPtrIface(t.keyType) && !t.ifacedata
-	if t.directkey {
-		t.keySize = t.keyType.size
-	} else {
-		t.keySize = _PointerSize
-	}
-	t.valSize = 0
+	t.zeroKey = reflect.Zero(t.keyType)
+	t.key = reflect.ValueOf(key)
 	if t.valType != nil {
-		t.directval = isNoPtrIface(t.valType) && !t.ifacedata
-		if t.directval {
-			t.valSize = t.valType.size
-		} else {
-			t.valSize = _PointerSize
-		}
+		t.zeroVal = reflect.Zero(t.valType)
+		t.val = reflect.ValueOf(val)
 	}
 	t.header = t.newNode(key, val)
+	t.getValueOfKey(t.header).Set(t.zeroKey)
+	if t.valType != nil {
+		t.getValueOfVal(t.header).Set(t.zeroVal)
+	}
 	t.setChild(t.header, 0, t.end())
 	t.setChild(t.header, 1, t.end())
 	t.setParent(t.header, t.end())
@@ -139,7 +130,14 @@ func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interfa
 }
 
 func (t *tree) SetMaxSpan(maxSpan int) {
-	t.maxSpan = int32(maxSpan)
+	t.maxSpan = int32(maxSpan) &^ 7
+	if t.maxSpan < 8 {
+		t.maxSpan = 8
+	}
+}
+
+func (t *tree) GetMaxSpan(maxSpan int) int {
+	return int(t.maxSpan)
 }
 
 func (t *tree) getChild(n node, ch uintptr) node {
@@ -175,69 +173,52 @@ func (t *tree) setColor(n node, color colorType) {
 }
 
 func (t *tree) getColorPointer(n node) *colorType {
-	offset := t.spans[n.i].size*(_NodeOffSet+t.keySize+t.valSize) + uintptr(n.j)*_ColorSize
+	offset := t.spans[n.i].size*(_NodeOffSet) + uintptr(n.j)*_ColorSize
 	return (*colorType)(add(t.spans[n.i].p, offset))
 }
 
-func (t *tree) getKeyPointer(n node) unsafe.Pointer {
-	return add(t.spans[n.i].p, t.spans[n.i].size*_NodeOffSet+uintptr(n.j)*t.keySize)
+func (t *tree) getValueOfKey(n node) reflect.Value {
+	return t.spans[n.i].keys.Index(int(n.j))
 }
 
-func (t *tree) getValPointer(n node) unsafe.Pointer {
-	return add(t.spans[n.i].p, t.spans[n.i].size*(_NodeOffSet+t.keySize)+uintptr(n.j)*t.valSize)
+func (t *tree) getValueOfVal(n node) reflect.Value {
+	return t.spans[n.j].vals.Index(int(n.j))
+}
+
+func (t *tree) setValueOfKey(n node, key reflect.Value) {
+	t.getValueOfKey(n).Set(key)
+}
+
+func (t *tree) setValueOfVal(n node, val reflect.Value) {
+	t.getValueOfVal(n).Set(val)
 }
 
 func (t *tree) getKey(n node) interface{} {
-	var kp unsafe.Pointer
-	if t.directkey {
-		kp = t.getKeyPointer(n)
-	} else {
-		kp = t.spans[n.i].keys[n.j]
-	}
-	return pack2Iface(t.keyType, kp)
+	key := t.getValueOfKey(n)
+	return *(*interface{})(unsafe.Pointer(&key))
 }
 
 func (t *tree) getVal(n node) interface{} {
-	if t.valType == nil {
-		panic(ErrNoValue.Error())
-	}
-	var vp unsafe.Pointer
-	if t.directval {
-		vp = t.getValPointer(n)
-	} else {
-		vp = t.spans[n.i].vals[n.j]
-	}
-	return pack2Iface(t.valType, vp)
+	val := t.getValueOfVal(n)
+	return *(*interface{})(unsafe.Pointer(&val))
 }
 
 func (t *tree) setKey(n node, key interface{}) {
-	keyEface := unpackIface(key)
-	if keyEface._type != t.keyType {
-		panic(ErrBadKey.Error())
-	}
-	if t.directkey {
-		memcopy(t.getKeyPointer(n), keyEface.p, t.keySize)
-	} else {
-		t.spans[n.i].keys[n.j] = keyEface.p
-	}
+	tmp := t.key
+	*(*interface{})(unsafe.Pointer(&tmp)) = key
+	t.getValueOfKey(n).Set(*(*reflect.Value)(unsafe.Pointer(&tmp)))
 }
 
 func (t *tree) setVal(n node, val interface{}) {
-	valEface := unpackIface(val)
-	if valEface._type != t.valType {
-		panic(ErrBadValue.Error())
-	}
-	if t.directval {
-		memcopy(t.getValPointer(n), valEface.p, t.valSize)
-	} else {
-		t.spans[n.i].vals[n.j] = valEface.p
-	}
+	tmp := t.val
+	*(*interface{})(unsafe.Pointer(&tmp)) = val
+	t.getValueOfVal(n).Set(*(*reflect.Value)(unsafe.Pointer(&tmp)))
 }
 
 func (t *tree) copyNodeData(des, src node) {
-	t.setKey(des, t.getKey(src))
+	t.setValueOfKey(des, t.getValueOfKey(src))
 	if t.valType != nil {
-		t.setVal(des, t.getVal(src))
+		t.setValueOfVal(des, t.getValueOfVal(src))
 	}
 }
 
@@ -248,13 +229,12 @@ func (t *tree) newSpan() {
 	} else if t.size <= 8 {
 		t.curSpan = 8 // begin at 8 node, and then the curSpan must be the multiple of 8
 	}
-	span := mem{p: newmem(t.curSpan * (_NodeOffSet + t.keySize + t.valSize + _ColorSize)), size: t.curSpan}
-	if !t.directkey {
-		span.keys = *(*[]unsafe.Pointer)(unsafe.Pointer(&slice{array: add(span.p, t.curSpan*_NodeOffSet), len: int(t.curSpan), cap: int(t.curSpan)}))
+	span := mem{p: newmem(t.curSpan * (_NodeOffSet + _ColorSize)), size: t.curSpan}
+	span.keys = reflect.MakeSlice(reflect.SliceOf(t.keyType), int(t.curSpan), int(t.curSpan))
+	if t.valType != nil {
+		span.vals = reflect.MakeSlice(reflect.SliceOf(t.keyType), int(t.curSpan), int(t.curSpan))
 	}
-	if t.valType != nil && !t.directval {
-		span.vals = *(*[]unsafe.Pointer)(unsafe.Pointer(&slice{array: add(span.p, t.curSpan*(_NodeOffSet+t.keySize)), len: int(t.curSpan), cap: int(t.curSpan)}))
-	}
+	//fmt.Println("keys:", span.keys.String(), "vals:", span.vals.String())
 	t.spans = append(t.spans, span)
 	nodes := make([]node, 0, t.curSpan)
 	for i := uintptr(0); i < t.curSpan; i++ {
@@ -289,17 +269,9 @@ func (t *tree) initNode(n node) {
 }
 
 func (t *tree) deleteNode(n node) {
-	if t.directkey {
-		memclr(t.getKeyPointer(n), t.keySize)
-	} else {
-		t.spans[n.i].keys[n.j] = nil
-	}
+	t.setValueOfKey(n, t.getValueOfKey(t.header))
 	if t.valType != nil {
-		if t.directval {
-			memclr(t.getValPointer(n), t.valSize)
-		} else {
-			t.spans[n.i].vals[n.j] = nil
-		}
+		t.setValueOfVal(n, t.getValueOfVal(t.header))
 	}
 	t.size--
 	l := len(t.freeNodes)
@@ -446,7 +418,8 @@ func (t *tree) EqualRange(key interface{}) (beg, end _node) {
 // Find return the _node of key in this tree
 // if the key is not exist in this tree, result will be the End of tree
 // if there has multi n key equal to key, result will be random one
-func (t *tree) Find(key interface{}) _node {
+func (t *tree) Find(_key interface{}) _node {
+	key := noescapeInterface(_key)
 	return t.pack(t.find(key))
 }
 func (t *tree) find(key interface{}) node {
@@ -473,7 +446,9 @@ func (t *tree) Insert(key, val interface{}) (_node, bool) {
 	n, ok := t.insert(key, val)
 	return t.pack(n), ok
 }
-func (t *tree) insert(key, val interface{}) (node, bool) {
+func (t *tree) insert(_key, _val interface{}) (node, bool) {
+	key := noescapeInterface(_key)
+	val := noescapeInterface(_val)
 	var root = t.root()
 	var rootPoiter = t.rootPoiter()
 	if sameNode(root, t.end()) {
@@ -563,7 +538,8 @@ func (t *tree) insertAdjust(n node) {
 }
 
 // Erase erase all the n keys equal to key in this tree and return the number of erase n
-func (t *tree) Erase(key interface{}) (count int) {
+func (t *tree) Erase(_key interface{}) (count int) {
+	key := noescapeInterface(_key)
 	if t.unique {
 		var iter = t.find(key)
 		if sameNode(iter, t.end()) {
@@ -796,3 +772,23 @@ func (t *tree) rotate(ch uintptr, n node) {
 		t.setChild(grandpa, 1, n)
 	}
 }
+
+/* TODO: 实现调用typedmemmove
+// Set assigns x to the value v.
+  // It panics if CanSet returns false.
+  // As in Go, x's value must be assignable to v's type.
+  func (v Value) Set(x Value) {
+  	v.mustBeAssignable()
+  	x.mustBeExported() // do not let unexported x leak
+  	var target unsafe.Pointer
+  	if v.kind() == Interface {
+  		target = v.ptr
+  	}
+  	x = x.assignTo("reflect.Set", v.typ, target)
+  	if x.flag&flagIndir != 0 {
+  		typedmemmove(v.typ, v.ptr, x.ptr)
+  	} else {
+  		*(*unsafe.Pointer)(v.ptr) = x.ptr
+  	}
+	}
+*/

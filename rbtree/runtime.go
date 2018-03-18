@@ -12,6 +12,37 @@ type eface struct {
 	p     unsafe.Pointer
 }
 
+type rvalue struct {
+	// typ holds the type of the value represented by a Value.
+	typ *_type
+
+	// Pointer-valued data or, if flagIndir is set, pointer to data.
+	// Valid when either flagIndir is set or typ.pointers() is true.
+	ptr unsafe.Pointer
+
+	// flag holds metadata about the value.
+	// The lowest bits are flag bits:
+	//	- flagStickyRO: obtained via unexported not embedded field, so read-only
+	//	- flagEmbedRO: obtained via unexported embedded field, so read-only
+	//	- flagIndir: val holds a pointer to the data
+	//	- flagAddr: v.CanAddr is true (implies flagIndir)
+	//	- flagMethod: v is a method value.
+	// The next five bits give the Kind of the value.
+	// This repeats typ.Kind() except for method values.
+	// The remaining 23+ bits give a method number for method values.
+	// If flag.kind() != Func, code can assume that flagMethod is unset.
+	// If ifaceIndir(typ), code can assume that flagIndir is set.
+	flag
+
+	// A method value represents a curried method invocation
+	// like r.Read for some receiver r. The typ+val+flag bits describe
+	// the receiver r, but the flag's Kind bits say Func (methods are
+	// functions), and the top bits of the flag give the method number
+	// in r's type's method table.
+}
+
+type flag uintptr
+
 type _type struct {
 	size       uintptr
 	ptrdata    uintptr // size of memory prefix holding all pointers
@@ -110,9 +141,8 @@ func noescape(p unsafe.Pointer) unsafe.Pointer {
 	return unsafe.Pointer(x ^ 0)
 }
 
-func NoescapeInterface(x interface{}) interface{} {
-	var xeface = *(*eface)(noescape(unsafe.Pointer(&x)))
-	return *(*interface{})(unsafe.Pointer(&xeface))
+func noescapeInterface(x interface{}) interface{} {
+	return *(*interface{})(noescape(unsafe.Pointer(&x)))
 }
 
 func interface2noescape(x interface{}) interface{} {
