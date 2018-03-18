@@ -1,5 +1,9 @@
 package rbtree
 
+import (
+	"unsafe"
+)
+
 type SetNode struct {
 	n _node
 }
@@ -14,6 +18,10 @@ func (n SetNode) Next() SetNode {
 
 func (n SetNode) Last() SetNode {
 	return SetNode{n.n.tree.Last(n.n)}
+}
+
+func (n SetNode) GetSet() *Set {
+	return (*Set)(unsafe.Pointer(n.n.tree))
 }
 
 type Set struct {

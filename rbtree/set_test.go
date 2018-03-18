@@ -261,39 +261,3 @@ func TestSet(t *testing.T) {
 		testSet(t, 1e4, false)
 	})
 }
-
-func BenchmarkIntSetInsert(b *testing.B) {
-	var set = NewSet(true)
-	var rand = benchRand
-	for i := 0; i < b.N; i++ {
-		_, _ = set.Insert(rand.Int())
-	}
-}
-
-func BenchmarkIntSetErase(b *testing.B) {
-	var set = NewSet(true)
-	var keys = make([]int, b.N)
-	var rand = benchRand
-	for i := 0; i < b.N; i++ {
-		keys[i] = rand.Int()
-		_, _ = set.Insert(keys[i])
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = set.Erase(keys[i])
-	}
-}
-
-func BenchmarkIntSetFind(b *testing.B) {
-	var set = NewSet(true)
-	var keys = make([]int, b.N)
-	var rand = benchRand
-	for i := 0; i < b.N; i++ {
-		keys[i] = rand.Int()
-		_, _ = set.Insert(keys[i])
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = set.Find(keys[i])
-	}
-}

@@ -84,12 +84,12 @@ type tree struct {
 	compare func(a, b interface{}) int
 	unique  bool
 	// maxSpan means the max number of node alloc to a span of spans
-	maxSpan int32
+	maxSpan uint32
 	// curSpan means the current number of node alloc to a span of spans
 	curSpan uintptr
 	// spans is the memory to store node data, key and value
 	// it arrange in this way:
-	// maxSpan*(child [2]node,parent node),maxSpan*key,maxSpan*val,maxSpan*(color colorType)
+	// maxSpan*(child [2]node,parent node),maxSpan*(color colorType)
 	// color also can store as a bit
 	spans []mem
 	// freeNodes store the node free by deleteNode
@@ -112,16 +112,14 @@ func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interfa
 	if t.keyType == nil {
 		panic(ErrNoData.Error())
 	}
-	t.zeroKey = reflect.Zero(t.keyType)
 	t.key = reflect.ValueOf(key)
 	if t.valType != nil {
-		t.zeroVal = reflect.Zero(t.valType)
 		t.val = reflect.ValueOf(val)
 	}
 	t.header = t.newNode(key, val)
-	t.getValueOfKey(t.header).Set(t.zeroKey)
+	t.getValueOfKey(t.header).Set(reflect.Zero(t.keyType))
 	if t.valType != nil {
-		t.getValueOfVal(t.header).Set(t.zeroVal)
+		t.getValueOfVal(t.header).Set(reflect.Zero(t.valType))
 	}
 	t.setChild(t.header, 0, t.end())
 	t.setChild(t.header, 1, t.end())
@@ -129,15 +127,15 @@ func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interfa
 	t.setColor(t.header, red)
 }
 
-func (t *tree) SetMaxSpan(maxSpan int) {
-	t.maxSpan = int32(maxSpan) &^ 7
+func (t *tree) SetMaxSpan(maxSpan uint32) {
+	t.maxSpan = maxSpan &^ 7
 	if t.maxSpan < 8 {
 		t.maxSpan = 8
 	}
 }
 
-func (t *tree) GetMaxSpan(maxSpan int) int {
-	return int(t.maxSpan)
+func (t *tree) GetMaxSpan() uint32 {
+	return t.maxSpan
 }
 
 func (t *tree) getChild(n node, ch uintptr) node {
@@ -194,12 +192,16 @@ func (t *tree) setValueOfVal(n node, val reflect.Value) {
 }
 
 func (t *tree) getKey(n node) interface{} {
-	key := t.getValueOfKey(n)
+	// func getValueOfKey can not inlined, but it's invoke frequently,
+	// so copy the func code to there
+	key := t.spans[n.i].keys.Index(int(n.j))
 	return *(*interface{})(unsafe.Pointer(&key))
 }
 
 func (t *tree) getVal(n node) interface{} {
-	val := t.getValueOfVal(n)
+	// func getValueOfVal can not inlined, but it's invoke frequently,
+	// so copy the func code to there
+	val := t.spans[n.i].vals.Index(int(n.j))
 	return *(*interface{})(unsafe.Pointer(&val))
 }
 
@@ -395,7 +397,8 @@ func (t *tree) gothrough(ch uintptr, n node) node {
 }
 
 // Count return the num of n key equal to key in this tree
-func (t *tree) Count(key interface{}) (count int) {
+func (t *tree) Count(_key interface{}) (count int) {
+	key := noescapeInterface(_key)
 	if t.unique {
 		if sameNode(t.find(key), t.end()) {
 			return 0
@@ -411,7 +414,8 @@ func (t *tree) Count(key interface{}) (count int) {
 }
 
 // EqualRange return the _node range of equal key n in this tree
-func (t *tree) EqualRange(key interface{}) (beg, end _node) {
+func (t *tree) EqualRange(_key interface{}) (beg, end _node) {
+	key := noescapeInterface(_key)
 	return t.LowerBound(key), t.UpperBound(key)
 }
 
@@ -442,13 +446,13 @@ func (t *tree) find(key interface{}) node {
 // Insert insert a new n with data to tree
 // it return the insert a _node and true when success insert
 // otherwise, it return the exist _node and false
-func (t *tree) Insert(key, val interface{}) (_node, bool) {
+func (t *tree) Insert(_key, _val interface{}) (_node, bool) {
+	key := noescapeInterface(_key)
+	val := noescapeInterface(_val)
 	n, ok := t.insert(key, val)
 	return t.pack(n), ok
 }
-func (t *tree) insert(_key, _val interface{}) (node, bool) {
-	key := noescapeInterface(_key)
-	val := noescapeInterface(_val)
+func (t *tree) insert(key, val interface{}) (node, bool) {
 	var root = t.root()
 	var rootPoiter = t.rootPoiter()
 	if sameNode(root, t.end()) {
@@ -697,7 +701,8 @@ func (t *tree) eraseNodeRange(beg, end node) (count int) {
 }
 
 // LowerBound return the first _node greater than or equal to key
-func (t *tree) LowerBound(key interface{}) _node {
+func (t *tree) LowerBound(_key interface{}) _node {
+	key := noescapeInterface(_key)
 	return t.pack(t.lowerBound(key))
 }
 func (t *tree) lowerBound(key interface{}) node {
@@ -722,7 +727,8 @@ func (t *tree) lowerBound(key interface{}) node {
 }
 
 // UpperBound return the first _node greater than key
-func (t *tree) UpperBound(key interface{}) _node {
+func (t *tree) UpperBound(_key interface{}) _node {
+	key := noescapeInterface(_key)
 	return t.pack(t.upperBound(key))
 }
 func (t *tree) upperBound(key interface{}) node {
@@ -772,23 +778,3 @@ func (t *tree) rotate(ch uintptr, n node) {
 		t.setChild(grandpa, 1, n)
 	}
 }
-
-/* TODO: 实现调用typedmemmove
-// Set assigns x to the value v.
-  // It panics if CanSet returns false.
-  // As in Go, x's value must be assignable to v's type.
-  func (v Value) Set(x Value) {
-  	v.mustBeAssignable()
-  	x.mustBeExported() // do not let unexported x leak
-  	var target unsafe.Pointer
-  	if v.kind() == Interface {
-  		target = v.ptr
-  	}
-  	x = x.assignTo("reflect.Set", v.typ, target)
-  	if x.flag&flagIndir != 0 {
-  		typedmemmove(v.typ, v.ptr, x.ptr)
-  	} else {
-  		*(*unsafe.Pointer)(v.ptr) = x.ptr
-  	}
-	}
-*/
