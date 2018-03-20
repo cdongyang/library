@@ -1,7 +1,6 @@
 package rbtree
 
 import (
-	"fmt"
 	"unsafe"
 )
 
@@ -145,66 +144,12 @@ func noescapeInterface(x interface{}) interface{} {
 	return *(*interface{})(noescape(unsafe.Pointer(&x)))
 }
 
+func NoescapeInterface(x interface{}) interface{} {
+	return *(*interface{})(noescape(unsafe.Pointer(&x)))
+}
+
 func interface2noescape(x interface{}) interface{} {
 	// return *(*interface{})(unsafe.Pointer(&x))
 	var xeface = *(*eface)(noescape(unsafe.Pointer(&x)))
 	return *(*interface{})(unsafe.Pointer(&xeface))
-}
-
-func lowbit(x uintptr) uintptr {
-	return x & (-x)
-}
-
-func memcopy(des, src unsafe.Pointer, size uintptr) {
-	for size >= 16 {
-		*(*complex128)(des) = *(*complex128)(src)
-		size -= 16
-		des = add(des, 16)
-		src = add(src, 16)
-	}
-	var lb uintptr
-	for size > 0 {
-		lb = lowbit(size)
-		switch lb {
-		case 1:
-			*(*uint8)(des) = *(*uint8)(src)
-		case 2:
-			*(*uint16)(des) = *(*uint16)(src)
-		case 4:
-			*(*uint32)(des) = *(*uint32)(src)
-		case 8:
-			*(*uint64)(des) = *(*uint64)(src)
-		default:
-			panic(fmt.Sprint("memcopy error: size:", size))
-		}
-		size -= lb
-		des = add(des, lb)
-		src = add(src, lb)
-	}
-}
-
-func memclr(p unsafe.Pointer, size uintptr) {
-	for size >= 16 {
-		*(*complex128)(p) = 0
-		size -= 16
-		p = add(p, 16)
-	}
-	var lb uintptr
-	for size > 0 {
-		lb = lowbit(size)
-		switch lb {
-		case 1:
-			*(*uint8)(p) = 0
-		case 2:
-			*(*uint16)(p) = 0
-		case 4:
-			*(*uint32)(p) = 0
-		case 8:
-			*(*uint64)(p) = 0
-		default:
-			panic(fmt.Sprint("memcopy error: size:", size))
-		}
-		size -= lb
-		p = add(p, lb)
-	}
 }

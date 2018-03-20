@@ -1,7 +1,4 @@
-###结构图
-![结构图](rbtree.png)
-
-###学习资料:
+###参考资料:
 - [wiki红黑树讲解]( https://zh.wikipedia.org/wiki/%E7%BA%A2%E9%BB%91%E6%A0%91)
 - 侯捷 <<STL源码剖析>>
 - 郝林 <<Go并发编程实战>>

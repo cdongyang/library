@@ -12,6 +12,10 @@ func (n MapNode) GetKey() interface{} {
 	return n.n.tree.getKey(n.n.node)
 }
 
+func (n MapNode) GetVal() interface{} {
+	return n.n.tree.getVal(n.n.node)
+}
+
 func (n MapNode) SetVal() interface{} {
 	return n.n.tree.getVal(n.n.node)
 }
@@ -77,8 +81,8 @@ func (s *Map) Find(key interface{}) MapNode {
 	return s.pack(s.tree.Find(key))
 }
 
-func (s *Map) Insert(key interface{}) (MapNode, bool) {
-	n, ok := s.tree.Insert(key, nil)
+func (s *Map) Insert(key interface{}, val interface{}) (MapNode, bool) {
+	n, ok := s.tree.Insert(key, val)
 	return s.pack(n), ok
 }
 

@@ -602,3 +602,36 @@ var benchRand = randint.Rand{First: 23456, Add: 12345, Mod: 1e9 + 7}
 func CompareInt(a, b interface{}) int {
 	return a.(int) - b.(int)
 }
+
+func ExampleMaxSpan() {
+	var tree = NewTree(true)
+	fmt.Println(tree.GetMaxSpan())
+	tree.SetMaxSpan(0)
+	fmt.Println(tree.GetMaxSpan())
+	tree.SetMaxSpan(20)
+	fmt.Println(tree.GetMaxSpan())
+	tree.SetMaxSpan(35)
+	fmt.Println(tree.GetMaxSpan())
+	tree.SetMaxSpan(512)
+	fmt.Println(tree.GetMaxSpan())
+	// Output:
+	//1024
+	//8
+	//16
+	//32
+	//512
+}
+
+func ExampleNoescapeInsert() {
+	var tree = NewTree(false)
+	var rand = benchRand
+	n := testing.AllocsPerRun(1000, func() {
+		_, ok := tree.Insert(noescapeInterface(rand.Int()), nil)
+		if !ok {
+			panic("insert error")
+		}
+	})
+	fmt.Println(n)
+	// Output:
+	//0
+}
