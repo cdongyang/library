@@ -1,1 +1,0 @@
-GODEBUG=gctrace=1 go test -bench="Insert" -benchmem -benchtime 10s -v

@@ -4,141 +4,104 @@ import (
 	"unsafe"
 )
 
-var pairType = interface2type(Pair{})
-
-// Pair is the data of MapNode
-type Pair struct {
-	Key, Value interface{}
-}
-
-// NewPair create a new Pair with key and value
-func NewPair(key, value interface{}) Pair {
-	return Pair{Key: key, Value: value}
-}
-
-// MapNode is the node of Map,it implement Iterator
 type MapNode struct {
-	_node
-	Pair
+	n _node
 }
 
-// Next return next Iterator of this
-func (node *MapNode) Next() Iterator {
-	return node.GetTree().(*Map).Next(node)
+func (n MapNode) GetKey() interface{} {
+	return n.n.tree.getKey(n.n.node)
 }
 
-// Last return last Iterator of this
-func (node *MapNode) Last() Iterator {
-	return node.GetTree().(*Map).Last(node)
+func (n MapNode) SetVal() interface{} {
+	return n.n.tree.getVal(n.n.node)
 }
 
-// GetData get the data of this
-func (node *MapNode) GetData() interface{} {
-	// do this to avoid heap alloc
-	return eface2interface(eface{pairType, unsafe.Pointer(&node.Pair)})
+func (n MapNode) Next() MapNode {
+	return MapNode{n.n.tree.Next(n.n)}
 }
 
-// GetKey get the compare key of this
-func (node *MapNode) GetKey() interface{} {
-	return node.Pair.Key
+func (n MapNode) Last() MapNode {
+	return MapNode{n.n.tree.Last(n.n)}
 }
 
-// GetValue get the value of this
-func (node *MapNode) GetValue() interface{} {
-	return node.Pair.Value
+func (n MapNode) GetMap() *Map {
+	return (*Map)(unsafe.Pointer(n.n.tree))
 }
 
-// SetValue set the value of this
-func (node *MapNode) SetValue(value interface{}) {
-	node.Pair.Value = value
-}
-
-//CopyData copy the node data to this from src
-func (node *MapNode) CopyData(src Iterator) {
-	node.Pair = src.(*MapNode).Pair
-}
-
-var mapNodeOffset = unsafe.Offsetof(MapNode{}._node)
-
-// Map is a set of key-value Pair with red-black tree data struct, it implement Treer
-// you can use the Unique method to find out wheather the Map key is unique
-// you can use NewMap or NewCustomMap to create a unique Map
-// you can use NewMultiMap or NewCustomMap to create a not unique Map
 type Map struct {
-	_tree
+	tree
 }
 
-// Insert is rewrite to get data key and type assert data to Pair
-func (m *Map) Insert(data interface{}) (Iterator, bool) {
-	iter, ok := m.Tree.insert(data, interface2pointer(data.(Pair).Key))
-	return m.pointer2iterator(iter), ok
+func NewMap(key, val interface{}, compare func(a, b interface{}) int) *Map {
+	var m = &Map{}
+	m.Init(true, key, val, compare)
+	return m
 }
 
-func getMapNodeKeyPointer(p unsafe.Pointer) unsafe.Pointer {
-	return (*eface)(unsafe.Pointer(&(*MapNode)(p).Key)).pointer
+func NewMultiMap(key, val interface{}, compare func(a, b interface{}) int) *Map {
+	var s = &Map{}
+	s.Init(false, key, val, compare)
+	return s
 }
 
-// NewMapNode use to create a new SetNode when create custom set
-func NewMapNode(data interface{}) Iterator {
-	return &MapNode{Pair: data.(Pair)}
+func (s *Map) pack(n _node) MapNode {
+	return MapNode{n: n}
 }
 
-// NewMap create a new unique Map with compare func
-// the compare func
-//	return negative int when a < b
-//	return 0 when a == b and
-//	return positive int when a > b
-func NewMap(compare func(a, b unsafe.Pointer) int) *Map {
-	var mp = &Map{}
-	return NewTreer(
-		mp,
-		&MapNode{},
-		mapNodeOffset,
-		NewMapNode,
-		func(Iterator) {
-		},
-		compare,
-		getMapNodeKeyPointer,
-		true,
-	).(*Map)
+func (s *Map) Init(unique bool, key, val interface{}, compare func(a, b interface{}) int) {
+	s.tree.Init(unique, key, val, compare)
 }
 
-// NewCustomMap create a new unique Map with newNode, deleteNode and compare func
-// you can define you own func to create a new node and a new node
-// such as with a sync.Pool to reduce the pressure of GC
-func NewCustomMap(newNode func(interface{}) Iterator,
-	deleteNode func(Iterator),
-	compare func(a, b unsafe.Pointer) int) *Map {
-	var set = &Map{}
-	return NewTreer(set, &MapNode{}, mapNodeOffset, newNode, deleteNode, compare, getMapNodeKeyPointer, true).(*Map)
+func (s *Map) Begin() MapNode {
+	return s.pack(s.tree.Begin())
 }
 
-// NewMultiMap create a new not unique Map with compare func
-// the compare func
-//	return negative int when a < b
-//	return 0 when a == b and
-//	return positive int when a > b
-func NewMultiMap(compare func(a, b unsafe.Pointer) int) *Map {
-	var mp = &Map{}
-	return NewTreer(
-		mp,
-		&MapNode{},
-		mapNodeOffset,
-		NewMapNode,
-		func(Iterator) {
-		},
-		compare,
-		getMapNodeKeyPointer,
-		false,
-	).(*Map)
+func (s *Map) End() MapNode {
+	return s.pack(s.tree.End())
 }
 
-// NewCustomMultiMap create a new not unique Map with newNode, deleteNode and compare func
-// you can define you own func to create a new node and a new node
-// such as with a sync.Pool to reduce the pressure of GC
-func NewCustomMultiMap(newNode func(interface{}) Iterator,
-	deleteNode func(Iterator),
-	compare func(a, b unsafe.Pointer) int) *Map {
-	var mp = &Map{}
-	return NewTreer(mp, &MapNode{}, mapNodeOffset, newNode, deleteNode, compare, getMapNodeKeyPointer, false).(*Map)
+func (s *Map) EqualRange(key interface{}) (beg, end MapNode) {
+	a, b := s.tree.EqualRange(key)
+	return s.pack(a), s.pack(b)
+}
+
+func (s *Map) EraseNode(n MapNode) {
+	s.tree.EraseNode(n.n)
+}
+
+func (s *Map) EraseNodeRange(beg, end MapNode) (count int) {
+	return s.tree.EraseNodeRange(beg.n, end.n)
+}
+
+func (s *Map) Find(key interface{}) MapNode {
+	return s.pack(s.tree.Find(key))
+}
+
+func (s *Map) Insert(key interface{}) (MapNode, bool) {
+	n, ok := s.tree.Insert(key, nil)
+	return s.pack(n), ok
+}
+
+func (s *Map) LowerBound(key interface{}) MapNode {
+	return s.pack(s.tree.LowerBound(key))
+}
+
+func (s *Map) Last(n MapNode) MapNode {
+	return s.pack(s.tree.Last(n.n))
+}
+
+func (s *Map) Next(n MapNode) MapNode {
+	return s.pack(s.tree.Next(n.n))
+}
+
+func (s *Map) UpperBound(key interface{}) MapNode {
+	return s.pack(s.tree.UpperBound(key))
+}
+
+func (s *Map) Count(key interface{}) (count int) {
+	return s.tree.Count(key)
+}
+
+func (s *Map) Erase(key interface{}) (count int) {
+	return s.tree.Erase(key)
 }

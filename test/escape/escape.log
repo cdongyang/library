@@ -1,0 +1,479 @@
+# github.com/cdongyang/library/test/escape_test
+./escape1_test.go:15:6: can inline noescape
+./escape1_test.go:20:6: can inline noescapeInterface
+./escape1_test.go:21:33: inlining call to noescape
+./reflect_test.go:15:33: can inline TestReflectValueEscape.func2
+./reflect_test.go:17:21: inlining call to reflect.TypeOf
+./reflect_test.go:17:21: inlining call to reflect.toType
+./escape1_test.go:15:33: noescape p does not escape
+./escape1_test.go:20:43: noescapeInterface iface does not escape
+./escape1_test.go:21:49: noescapeInterface &iface does not escape
+./escape1_test.go:24:23: typeAssert iface does not escape
+./escape1_test.go:40:4: t.common escapes to heap
+./escape1_test.go:31:20: leaking param: t
+./escape1_test.go:40:10: n escapes to heap
+./escape1_test.go:49:4: t.common escapes to heap
+./escape1_test.go:49:10: n escapes to heap
+./escape1_test.go:61:4: t.common escapes to heap
+./escape1_test.go:61:10: n escapes to heap
+./escape1_test.go:74:4: t.common escapes to heap
+./escape1_test.go:74:10: n escapes to heap
+./escape1_test.go:84:4: t.common escapes to heap
+./escape1_test.go:84:10: n escapes to heap
+./escape1_test.go:70:5: i escapes to heap
+./escape1_test.go:35:10: i escapes to heap
+./escape1_test.go:32:34: TestEscape func literal does not escape
+./escape1_test.go:40:10: TestEscape ... argument does not escape
+./escape1_test.go:42:33: TestEscape func literal does not escape
+./escape1_test.go:49:10: TestEscape ... argument does not escape
+./escape1_test.go:51:33: TestEscape func literal does not escape
+./escape1_test.go:61:10: TestEscape ... argument does not escape
+./escape1_test.go:63:33: TestEscape func literal does not escape
+./escape1_test.go:74:10: TestEscape ... argument does not escape
+./escape1_test.go:78:33: TestEscape func literal does not escape
+./escape1_test.go:84:10: TestEscape ... argument does not escape
+./escape1_test.go:44:8: TestEscape.func2 i does not escape
+./escape1_test.go:53:8: TestEscape.func3 i does not escape
+./escape1_test.go:65:4: TestEscape.func4 func literal does not escape
+./escape1_test.go:65:15: TestEscape.func4.1 iface does not escape
+./escape1_test.go:80:14: TestEscape.func5 i does not escape
+./escape_test.go:13:48: (*Comp).compareMethod c does not escape
+./escape_test.go:13:48: (*Comp).compareMethod a does not escape
+./escape_test.go:13:48: (*Comp).compareMethod b does not escape
+./escape_test.go:34:36: compareFunc a does not escape
+./escape_test.go:34:36: compareFunc b does not escape
+./escape_test.go:63:3: t.common escapes to heap
+./escape_test.go:55:26: leaking param: t
+./escape_test.go:63:7: n escapes to heap
+./escape_test.go:63:11: "allocs" escapes to heap
+./escape_test.go:70:3: t.common escapes to heap
+./escape_test.go:70:7: n escapes to heap
+./escape_test.go:70:11: "allocs" escapes to heap
+./escape_test.go:78:3: t.common escapes to heap
+./escape_test.go:78:7: n escapes to heap
+./escape_test.go:78:11: "allocs" escapes to heap
+./escape_test.go:86:3: t.common escapes to heap
+./escape_test.go:86:7: n escapes to heap
+./escape_test.go:86:11: "allocs" escapes to heap
+./escape_test.go:94:3: t.common escapes to heap
+./escape_test.go:94:7: n escapes to heap
+./escape_test.go:94:11: "allocs" escapes to heap
+./escape_test.go:101:3: t.common escapes to heap
+./escape_test.go:101:7: n escapes to heap
+./escape_test.go:101:11: "allocs" escapes to heap
+./escape_test.go:109:3: t.common escapes to heap
+./escape_test.go:109:7: n escapes to heap
+./escape_test.go:109:11: "allocs" escapes to heap
+./escape_test.go:117:3: t.common escapes to heap
+./escape_test.go:117:7: n escapes to heap
+./escape_test.go:117:11: "allocs" escapes to heap
+./escape_test.go:57:33: TestMethodEscape func literal does not escape
+./escape_test.go:63:7: TestMethodEscape ... argument does not escape
+./escape_test.go:64:33: TestMethodEscape func literal does not escape
+./escape_test.go:70:7: TestMethodEscape ... argument does not escape
+./escape_test.go:71:33: TestMethodEscape func literal does not escape
+./escape_test.go:78:7: TestMethodEscape ... argument does not escape
+./escape_test.go:79:33: TestMethodEscape func literal does not escape
+./escape_test.go:86:7: TestMethodEscape ... argument does not escape
+./escape_test.go:87:33: TestMethodEscape func literal does not escape
+./escape_test.go:94:7: TestMethodEscape ... argument does not escape
+./escape_test.go:95:33: TestMethodEscape func literal does not escape
+./escape_test.go:101:7: TestMethodEscape ... argument does not escape
+./escape_test.go:102:33: TestMethodEscape func literal does not escape
+./escape_test.go:109:7: TestMethodEscape ... argument does not escape
+./escape_test.go:110:33: TestMethodEscape func literal does not escape
+./escape_test.go:117:7: TestMethodEscape ... argument does not escape
+./escape_test.go:58:20: TestMethodEscape.func1 &Comp literal does not escape
+./escape_test.go:60:23: TestMethodEscape.func1 2 does not escape
+./escape_test.go:60:26: TestMethodEscape.func1 3 does not escape
+./escape_test.go:65:20: TestMethodEscape.func2 &Comp literal does not escape
+./escape_test.go:67:23: TestMethodEscape.func2 1 does not escape
+./escape_test.go:67:26: TestMethodEscape.func2 2 does not escape
+./escape_test.go:72:20: TestMethodEscape.func3 &Comp literal does not escape
+./escape_test.go:75:22: TestMethodEscape.func3 a does not escape
+./escape_test.go:75:22: TestMethodEscape.func3 i does not escape
+./escape_test.go:80:20: TestMethodEscape.func4 &Comp literal does not escape
+./escape_test.go:83:22: TestMethodEscape.func4 a does not escape
+./escape_test.go:83:22: TestMethodEscape.func4 a does not escape
+./escape_test.go:88:20: TestMethodEscape.func5 &Comp literal does not escape
+./escape_test.go:91:22: TestMethodEscape.func5 t does not escape
+./escape_test.go:91:22: TestMethodEscape.func5 t does not escape
+./escape_test.go:96:20: TestMethodEscape.func6 &Comp literal does not escape
+./escape_test.go:98:22: TestMethodEscape.func6 i does not escape
+./escape_test.go:98:22: TestMethodEscape.func6 i does not escape
+./escape_test.go:103:20: TestMethodEscape.func7 &Comp literal does not escape
+./escape_test.go:106:24: TestMethodEscape.func7 a[0] does not escape
+./escape_test.go:106:30: TestMethodEscape.func7 a[1] does not escape
+./escape_test.go:111:20: TestMethodEscape.func8 &Comp literal does not escape
+./escape_test.go:112:16: TestMethodEscape.func8 []int literal does not escape
+./escape_test.go:114:24: TestMethodEscape.func8 a[0] does not escape
+./escape_test.go:114:30: TestMethodEscape.func8 a[1] does not escape
+./escape_test.go:127:3: t.common escapes to heap
+./escape_test.go:120:24: leaking param: t
+./escape_test.go:127:7: n escapes to heap
+./escape_test.go:127:11: "allocs" escapes to heap
+./escape_test.go:133:3: t.common escapes to heap
+./escape_test.go:133:7: n escapes to heap
+./escape_test.go:133:11: "allocs" escapes to heap
+./escape_test.go:140:3: t.common escapes to heap
+./escape_test.go:140:7: n escapes to heap
+./escape_test.go:140:11: "allocs" escapes to heap
+./escape_test.go:147:3: t.common escapes to heap
+./escape_test.go:147:7: n escapes to heap
+./escape_test.go:147:11: "allocs" escapes to heap
+./escape_test.go:154:3: t.common escapes to heap
+./escape_test.go:154:7: n escapes to heap
+./escape_test.go:154:11: "allocs" escapes to heap
+./escape_test.go:160:3: t.common escapes to heap
+./escape_test.go:160:7: n escapes to heap
+./escape_test.go:160:11: "allocs" escapes to heap
+./escape_test.go:167:3: t.common escapes to heap
+./escape_test.go:167:7: n escapes to heap
+./escape_test.go:167:11: "allocs" escapes to heap
+./escape_test.go:174:3: t.common escapes to heap
+./escape_test.go:174:7: n escapes to heap
+./escape_test.go:174:11: "allocs" escapes to heap
+./escape_test.go:122:33: TestFuncEscape func literal does not escape
+./escape_test.go:127:7: TestFuncEscape ... argument does not escape
+./escape_test.go:128:33: TestFuncEscape func literal does not escape
+./escape_test.go:133:7: TestFuncEscape ... argument does not escape
+./escape_test.go:134:33: TestFuncEscape func literal does not escape
+./escape_test.go:140:7: TestFuncEscape ... argument does not escape
+./escape_test.go:141:33: TestFuncEscape func literal does not escape
+./escape_test.go:147:7: TestFuncEscape ... argument does not escape
+./escape_test.go:148:33: TestFuncEscape func literal does not escape
+./escape_test.go:154:7: TestFuncEscape ... argument does not escape
+./escape_test.go:155:33: TestFuncEscape func literal does not escape
+./escape_test.go:160:7: TestFuncEscape ... argument does not escape
+./escape_test.go:161:33: TestFuncEscape func literal does not escape
+./escape_test.go:167:7: TestFuncEscape ... argument does not escape
+./escape_test.go:168:33: TestFuncEscape func literal does not escape
+./escape_test.go:174:7: TestFuncEscape ... argument does not escape
+./escape_test.go:124:16: TestFuncEscape.func1 2 does not escape
+./escape_test.go:124:19: TestFuncEscape.func1 3 does not escape
+./escape_test.go:130:16: TestFuncEscape.func2 1 does not escape
+./escape_test.go:130:19: TestFuncEscape.func2 2 does not escape
+./escape_test.go:137:15: TestFuncEscape.func3 a does not escape
+./escape_test.go:137:15: TestFuncEscape.func3 i does not escape
+./escape_test.go:144:15: TestFuncEscape.func4 a does not escape
+./escape_test.go:144:15: TestFuncEscape.func4 a does not escape
+./escape_test.go:151:15: TestFuncEscape.func5 t does not escape
+./escape_test.go:151:15: TestFuncEscape.func5 t does not escape
+./escape_test.go:157:15: TestFuncEscape.func6 i does not escape
+./escape_test.go:157:15: TestFuncEscape.func6 i does not escape
+./escape_test.go:164:17: TestFuncEscape.func7 a[0] does not escape
+./escape_test.go:164:23: TestFuncEscape.func7 a[1] does not escape
+./escape_test.go:169:16: TestFuncEscape.func8 []int literal does not escape
+./escape_test.go:171:17: TestFuncEscape.func8 a[0] does not escape
+./escape_test.go:171:23: TestFuncEscape.func8 a[1] does not escape
+./escape_test.go:185:3: t.common escapes to heap
+./escape_test.go:177:30: leaking param: t
+./escape_test.go:185:7: n escapes to heap
+./escape_test.go:185:11: "allocs" escapes to heap
+./escape_test.go:192:3: t.common escapes to heap
+./escape_test.go:192:7: n escapes to heap
+./escape_test.go:192:11: "allocs" escapes to heap
+./escape_test.go:200:3: t.common escapes to heap
+./escape_test.go:200:7: n escapes to heap
+./escape_test.go:200:11: "allocs" escapes to heap
+./escape_test.go:208:3: t.common escapes to heap
+./escape_test.go:208:7: n escapes to heap
+./escape_test.go:208:11: "allocs" escapes to heap
+./escape_test.go:216:3: t.common escapes to heap
+./escape_test.go:216:7: n escapes to heap
+./escape_test.go:216:11: "allocs" escapes to heap
+./escape_test.go:223:3: t.common escapes to heap
+./escape_test.go:223:7: n escapes to heap
+./escape_test.go:223:11: "allocs" escapes to heap
+./escape_test.go:231:3: t.common escapes to heap
+./escape_test.go:231:7: n escapes to heap
+./escape_test.go:231:11: "allocs" escapes to heap
+./escape_test.go:239:3: t.common escapes to heap
+./escape_test.go:239:7: n escapes to heap
+./escape_test.go:239:11: "allocs" escapes to heap
+./escape_test.go:182:17: 2 escapes to heap
+./escape_test.go:182:20: 3 escapes to heap
+./escape_test.go:189:17: 1 escapes to heap
+./escape_test.go:189:20: 2 escapes to heap
+./escape_test.go:197:16: a escapes to heap
+./escape_test.go:197:16: i escapes to heap
+./escape_test.go:205:16: a escapes to heap
+./escape_test.go:205:16: a escapes to heap
+./escape_test.go:213:16: t escapes to heap
+./escape_test.go:213:16: t escapes to heap
+./escape_test.go:220:16: i escapes to heap
+./escape_test.go:220:16: i escapes to heap
+./escape_test.go:228:18: a[0] escapes to heap
+./escape_test.go:228:24: a[1] escapes to heap
+./escape_test.go:236:18: a[0] escapes to heap
+./escape_test.go:236:24: a[1] escapes to heap
+./escape_test.go:179:33: TestStructFuncEscape func literal does not escape
+./escape_test.go:185:7: TestStructFuncEscape ... argument does not escape
+./escape_test.go:186:33: TestStructFuncEscape func literal does not escape
+./escape_test.go:192:7: TestStructFuncEscape ... argument does not escape
+./escape_test.go:193:33: TestStructFuncEscape func literal does not escape
+./escape_test.go:200:7: TestStructFuncEscape ... argument does not escape
+./escape_test.go:201:33: TestStructFuncEscape func literal does not escape
+./escape_test.go:208:7: TestStructFuncEscape ... argument does not escape
+./escape_test.go:209:33: TestStructFuncEscape func literal does not escape
+./escape_test.go:216:7: TestStructFuncEscape ... argument does not escape
+./escape_test.go:217:33: TestStructFuncEscape func literal does not escape
+./escape_test.go:223:7: TestStructFuncEscape ... argument does not escape
+./escape_test.go:224:33: TestStructFuncEscape func literal does not escape
+./escape_test.go:231:7: TestStructFuncEscape ... argument does not escape
+./escape_test.go:232:33: TestStructFuncEscape func literal does not escape
+./escape_test.go:239:7: TestStructFuncEscape ... argument does not escape
+./escape_test.go:180:20: TestStructFuncEscape.func1 &Comp literal does not escape
+./escape_test.go:187:20: TestStructFuncEscape.func2 &Comp literal does not escape
+./escape_test.go:194:20: TestStructFuncEscape.func3 &Comp literal does not escape
+./escape_test.go:202:20: TestStructFuncEscape.func4 &Comp literal does not escape
+./escape_test.go:210:20: TestStructFuncEscape.func5 &Comp literal does not escape
+./escape_test.go:218:20: TestStructFuncEscape.func6 &Comp literal does not escape
+./escape_test.go:225:20: TestStructFuncEscape.func7 &Comp literal does not escape
+./escape_test.go:233:20: TestStructFuncEscape.func8 &Comp literal does not escape
+./escape_test.go:234:16: TestStructFuncEscape.func8 []int literal does not escape
+./escape_test.go:250:3: t.common escapes to heap
+./escape_test.go:242:35: leaking param: t
+./escape_test.go:250:7: n escapes to heap
+./escape_test.go:250:11: "allocs" escapes to heap
+./escape_test.go:257:3: t.common escapes to heap
+./escape_test.go:257:7: n escapes to heap
+./escape_test.go:257:11: "allocs" escapes to heap
+./escape_test.go:265:3: t.common escapes to heap
+./escape_test.go:265:7: n escapes to heap
+./escape_test.go:265:11: "allocs" escapes to heap
+./escape_test.go:273:3: t.common escapes to heap
+./escape_test.go:273:7: n escapes to heap
+./escape_test.go:273:11: "allocs" escapes to heap
+./escape_test.go:281:3: t.common escapes to heap
+./escape_test.go:281:7: n escapes to heap
+./escape_test.go:281:11: "allocs" escapes to heap
+./escape_test.go:288:3: t.common escapes to heap
+./escape_test.go:288:7: n escapes to heap
+./escape_test.go:288:11: "allocs" escapes to heap
+./escape_test.go:296:3: t.common escapes to heap
+./escape_test.go:296:7: n escapes to heap
+./escape_test.go:296:11: "allocs" escapes to heap
+./escape_test.go:304:3: t.common escapes to heap
+./escape_test.go:304:7: n escapes to heap
+./escape_test.go:304:11: "allocs" escapes to heap
+./escape_test.go:247:23: 2 escapes to heap
+./escape_test.go:247:26: 3 escapes to heap
+./escape_test.go:245:7: &Comp literal escapes to heap
+./escape_test.go:245:24: &Comp literal escapes to heap
+./escape_test.go:254:23: 1 escapes to heap
+./escape_test.go:254:26: 2 escapes to heap
+./escape_test.go:252:7: &Comp literal escapes to heap
+./escape_test.go:252:24: &Comp literal escapes to heap
+./escape_test.go:262:22: a escapes to heap
+./escape_test.go:262:22: i escapes to heap
+./escape_test.go:259:7: &Comp literal escapes to heap
+./escape_test.go:259:24: &Comp literal escapes to heap
+./escape_test.go:270:22: a escapes to heap
+./escape_test.go:270:22: a escapes to heap
+./escape_test.go:267:7: &Comp literal escapes to heap
+./escape_test.go:267:24: &Comp literal escapes to heap
+./escape_test.go:278:22: t escapes to heap
+./escape_test.go:278:22: t escapes to heap
+./escape_test.go:275:7: &Comp literal escapes to heap
+./escape_test.go:275:24: &Comp literal escapes to heap
+./escape_test.go:285:22: i escapes to heap
+./escape_test.go:285:22: i escapes to heap
+./escape_test.go:283:7: &Comp literal escapes to heap
+./escape_test.go:283:24: &Comp literal escapes to heap
+./escape_test.go:293:24: a[0] escapes to heap
+./escape_test.go:293:30: a[1] escapes to heap
+./escape_test.go:290:7: &Comp literal escapes to heap
+./escape_test.go:290:24: &Comp literal escapes to heap
+./escape_test.go:301:24: a[0] escapes to heap
+./escape_test.go:301:30: a[1] escapes to heap
+./escape_test.go:298:7: &Comp literal escapes to heap
+./escape_test.go:298:24: &Comp literal escapes to heap
+./escape_test.go:244:33: TestInterfaceMethodEscape func literal does not escape
+./escape_test.go:250:7: TestInterfaceMethodEscape ... argument does not escape
+./escape_test.go:251:33: TestInterfaceMethodEscape func literal does not escape
+./escape_test.go:257:7: TestInterfaceMethodEscape ... argument does not escape
+./escape_test.go:258:33: TestInterfaceMethodEscape func literal does not escape
+./escape_test.go:265:7: TestInterfaceMethodEscape ... argument does not escape
+./escape_test.go:266:33: TestInterfaceMethodEscape func literal does not escape
+./escape_test.go:273:7: TestInterfaceMethodEscape ... argument does not escape
+./escape_test.go:274:33: TestInterfaceMethodEscape func literal does not escape
+./escape_test.go:281:7: TestInterfaceMethodEscape ... argument does not escape
+./escape_test.go:282:33: TestInterfaceMethodEscape func literal does not escape
+./escape_test.go:288:7: TestInterfaceMethodEscape ... argument does not escape
+./escape_test.go:289:33: TestInterfaceMethodEscape func literal does not escape
+./escape_test.go:296:7: TestInterfaceMethodEscape ... argument does not escape
+./escape_test.go:297:33: TestInterfaceMethodEscape func literal does not escape
+./escape_test.go:304:7: TestInterfaceMethodEscape ... argument does not escape
+./escape_test.go:299:16: TestInterfaceMethodEscape.func8 []int literal does not escape
+./escape_test.go:315:3: t.common escapes to heap
+./escape_test.go:307:37: leaking param: t
+./escape_test.go:315:7: n escapes to heap
+./escape_test.go:315:11: "allocs" escapes to heap
+./escape_test.go:322:3: t.common escapes to heap
+./escape_test.go:322:7: n escapes to heap
+./escape_test.go:322:11: "allocs" escapes to heap
+./escape_test.go:330:3: t.common escapes to heap
+./escape_test.go:330:7: n escapes to heap
+./escape_test.go:330:11: "allocs" escapes to heap
+./escape_test.go:338:3: t.common escapes to heap
+./escape_test.go:338:7: n escapes to heap
+./escape_test.go:338:11: "allocs" escapes to heap
+./escape_test.go:346:3: t.common escapes to heap
+./escape_test.go:346:7: n escapes to heap
+./escape_test.go:346:11: "allocs" escapes to heap
+./escape_test.go:353:3: t.common escapes to heap
+./escape_test.go:353:7: n escapes to heap
+./escape_test.go:353:11: "allocs" escapes to heap
+./escape_test.go:361:3: t.common escapes to heap
+./escape_test.go:361:7: n escapes to heap
+./escape_test.go:361:11: "allocs" escapes to heap
+./escape_test.go:369:3: t.common escapes to heap
+./escape_test.go:369:7: n escapes to heap
+./escape_test.go:369:11: "allocs" escapes to heap
+./escape_test.go:312:17: 2 escapes to heap
+./escape_test.go:312:20: 3 escapes to heap
+./escape_test.go:319:17: 1 escapes to heap
+./escape_test.go:319:20: 2 escapes to heap
+./escape_test.go:327:17: &a escapes to heap
+./escape_test.go:327:17: &a escapes to heap
+./escape_test.go:325:7: moved to heap: a
+./escape_test.go:327:21: &i escapes to heap
+./escape_test.go:327:21: &i escapes to heap
+./escape_test.go:326:12: moved to heap: i
+./escape_test.go:335:17: &a escapes to heap
+./escape_test.go:335:17: &a escapes to heap
+./escape_test.go:333:7: moved to heap: a
+./escape_test.go:335:21: &a escapes to heap
+./escape_test.go:335:21: &a escapes to heap
+./escape_test.go:343:17: &t escapes to heap
+./escape_test.go:343:17: &t escapes to heap
+./escape_test.go:342:8: moved to heap: t
+./escape_test.go:343:21: &t escapes to heap
+./escape_test.go:343:21: &t escapes to heap
+./escape_test.go:350:17: &i escapes to heap
+./escape_test.go:350:17: &i escapes to heap
+./escape_test.go:349:12: moved to heap: i
+./escape_test.go:350:21: &i escapes to heap
+./escape_test.go:350:21: &i escapes to heap
+./escape_test.go:358:17: &a[0] escapes to heap
+./escape_test.go:358:17: &a[0] escapes to heap
+./escape_test.go:356:7: moved to heap: a
+./escape_test.go:358:24: &a[1] escapes to heap
+./escape_test.go:358:24: &a[1] escapes to heap
+./escape_test.go:366:17: &a[0] escapes to heap
+./escape_test.go:366:17: &a[0] escapes to heap
+./escape_test.go:364:16: []int literal escapes to heap
+./escape_test.go:366:24: &a[1] escapes to heap
+./escape_test.go:366:24: &a[1] escapes to heap
+./escape_test.go:309:33: TestStructFuncPointerEscape func literal does not escape
+./escape_test.go:315:7: TestStructFuncPointerEscape ... argument does not escape
+./escape_test.go:316:33: TestStructFuncPointerEscape func literal does not escape
+./escape_test.go:322:7: TestStructFuncPointerEscape ... argument does not escape
+./escape_test.go:323:33: TestStructFuncPointerEscape func literal does not escape
+./escape_test.go:330:7: TestStructFuncPointerEscape ... argument does not escape
+./escape_test.go:331:33: TestStructFuncPointerEscape func literal does not escape
+./escape_test.go:338:7: TestStructFuncPointerEscape ... argument does not escape
+./escape_test.go:339:33: TestStructFuncPointerEscape func literal does not escape
+./escape_test.go:346:7: TestStructFuncPointerEscape ... argument does not escape
+./escape_test.go:347:33: TestStructFuncPointerEscape func literal does not escape
+./escape_test.go:353:7: TestStructFuncPointerEscape ... argument does not escape
+./escape_test.go:354:33: TestStructFuncPointerEscape func literal does not escape
+./escape_test.go:361:7: TestStructFuncPointerEscape ... argument does not escape
+./escape_test.go:362:33: TestStructFuncPointerEscape func literal does not escape
+./escape_test.go:369:7: TestStructFuncPointerEscape ... argument does not escape
+./escape_test.go:310:20: TestStructFuncPointerEscape.func1 &Comp literal does not escape
+./escape_test.go:317:20: TestStructFuncPointerEscape.func2 &Comp literal does not escape
+./escape_test.go:324:20: TestStructFuncPointerEscape.func3 &Comp literal does not escape
+./escape_test.go:332:20: TestStructFuncPointerEscape.func4 &Comp literal does not escape
+./escape_test.go:340:20: TestStructFuncPointerEscape.func5 &Comp literal does not escape
+./escape_test.go:348:20: TestStructFuncPointerEscape.func6 &Comp literal does not escape
+./escape_test.go:355:20: TestStructFuncPointerEscape.func7 &Comp literal does not escape
+./escape_test.go:363:20: TestStructFuncPointerEscape.func8 &Comp literal does not escape
+./reflect_test.go:14:3: t.common escapes to heap
+./reflect_test.go:8:32: leaking param: t
+./reflect_test.go:14:7: n escapes to heap
+./reflect_test.go:14:11: "allocs" escapes to heap
+./reflect_test.go:19:3: t.common escapes to heap
+./reflect_test.go:19:7: n escapes to heap
+./reflect_test.go:19:11: "allocs" escapes to heap
+./reflect_test.go:25:3: t.common escapes to heap
+./reflect_test.go:25:7: n escapes to heap
+./reflect_test.go:25:11: "allocs" escapes to heap
+./reflect_test.go:12:22: a escapes to heap
+./reflect_test.go:21:26: compareFunc escapes to heap
+./reflect_test.go:22:43: 1 escapes to heap
+./reflect_test.go:22:63: 2 escapes to heap
+./reflect_test.go:10:33: TestReflectValueEscape func literal does not escape
+./reflect_test.go:14:7: TestReflectValueEscape ... argument does not escape
+./reflect_test.go:15:33: TestReflectValueEscape func literal does not escape
+./reflect_test.go:19:7: TestReflectValueEscape ... argument does not escape
+./reflect_test.go:20:33: TestReflectValueEscape func literal does not escape
+./reflect_test.go:25:7: TestReflectValueEscape ... argument does not escape
+./reflect_test.go:17:21: TestReflectValueEscape.func2 a does not escape
+./reflect_test.go:17:21: TestReflectValueEscape.func2 &reflect.i·2 does not escape
+./reflect_test.go:17:21: TestReflectValueEscape.func2 reflect.Type(reflect.t·2) does not escape
+./reflect_test.go:22:26: TestReflectValueEscape.func3 []reflect.Value literal does not escape
+<autogenerated>:1:0: leaking param: a
+<autogenerated>:1:0: leaking param: b
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: reflect.u
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: reflect.u
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: reflect.index
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: reflect.name
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: reflect.match
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: reflect.u
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .anon0
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+# testmain
+/tmp/go-build543256503/github.com/cdongyang/library/test/escape/_test/_testmain.go:46:6: can inline init.0
+/tmp/go-build543256503/github.com/cdongyang/library/test/escape/_test/_testmain.go:54:24: inlining call to testing.MainStart
+/tmp/go-build543256503/github.com/cdongyang/library/test/escape/_test/_testmain.go:54:42: testdeps.TestDeps literal escapes to heap
+/tmp/go-build543256503/github.com/cdongyang/library/test/escape/_test/_testmain.go:54:24: main &testing.M literal does not escape
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: testing.pat
+<autogenerated>:1:0: leaking param: testing.str
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .anon0
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .anon0
+<autogenerated>:1:0: leaking param: .this
+<autogenerated>:1:0: leaking param: .anon0
+<autogenerated>:1:0: leaking param: .anon1
+<autogenerated>:1:0: leaking param: .this
+testing: warning: no tests to run
+PASS
+ok  	github.com/cdongyang/library/test/escape	0.004s
