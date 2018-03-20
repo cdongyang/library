@@ -456,17 +456,10 @@ func (t *tree) find(key interface{}) node {
 	}
 }
 
-type cheat struct {
-	p unsafe.Pointer
-	a bool
-}
-
 // Insert insert a new n with data to tree
 // it return the insert a _node and true when success insert
 // otherwise, it return the exist _node and false
 func (t *tree) Insert(key, val interface{}) (_node, bool) {
-	//key := noescapeInterface(_key)
-	//val := noescapeInterface(_val)
 	n, ok := t.insert(key, val)
 	return t.pack(n), ok
 }

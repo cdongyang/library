@@ -4,7 +4,7 @@ import (
 	"testing"
 	"unsafe"
 
-	. "github.com/cdongyang/library/runtimecp"
+	. "github.com/cdongyang/library/test/runtimecp"
 )
 
 func read(x interface{}) {
