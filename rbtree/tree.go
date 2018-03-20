@@ -25,7 +25,7 @@ const _NodeOffSet = unsafe.Offsetof(struct {
 	color  colorType
 }{}.color)
 const _PointerSize = unsafe.Sizeof(unsafe.Pointer(nil))
-const _DefaultMaxSpan = 512
+const _DefaultMaxSpan = 1024
 const _ColorSize = unsafe.Sizeof(colorType(false))
 
 type colorType bool
