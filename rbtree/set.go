@@ -4,10 +4,14 @@ import (
 	"unsafe"
 )
 
+// SetNode is the iterator of set, but it's not thread safe,
+// if the node was erase from set, calling it's method may panic
 type SetNode struct {
 	n _node
 }
 
+// GetData get the data of SetNode, but you should not hold the return interface{},
+// instead, you should do type assert immediately when after call this method
 func (n SetNode) GetData() interface{} {
 	return n.n.tree.getKey(n.n.node)
 }

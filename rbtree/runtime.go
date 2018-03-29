@@ -147,9 +147,3 @@ func noescapeInterface(x interface{}) interface{} {
 func NoescapeInterface(x interface{}) interface{} {
 	return *(*interface{})(noescape(unsafe.Pointer(&x)))
 }
-
-func interface2noescape(x interface{}) interface{} {
-	// return *(*interface{})(unsafe.Pointer(&x))
-	var xeface = *(*eface)(noescape(unsafe.Pointer(&x)))
-	return *(*interface{})(unsafe.Pointer(&xeface))
-}

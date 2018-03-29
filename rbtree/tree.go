@@ -197,7 +197,7 @@ func (t *tree) setValueOfVal(n node, val reflect.Value) {
 }
 
 func (t *tree) getKey(n node) interface{} {
-	// func getValueOfKey can not inlined, but it's invoke frequently,
+	// func getValueOfKey can not be inlined, but it's invoke frequently,
 	// so copy the func code to there
 	key := t.spans[n.i].keys.Index(int(n.j))
 	iface := *(*eface)(unsafe.Pointer(&key))
@@ -208,7 +208,7 @@ func (t *tree) getKey(n node) interface{} {
 }
 
 func (t *tree) getVal(n node) interface{} {
-	// func getValueOfVal can not inlined, but it's invoke frequently,
+	// func getValueOfVal can not be inlined, but it's invoke frequently,
 	// so copy the func code to there
 	val := t.spans[n.i].vals.Index(int(n.j))
 	iface := *(*eface)(unsafe.Pointer(&val))

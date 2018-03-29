@@ -4,14 +4,20 @@ import (
 	"unsafe"
 )
 
+// MapNode is the iterator of Map, but it's not thread safe,
+// if the node was erase from map, calling it's method may panic
 type MapNode struct {
 	n _node
 }
 
+// GetKey get the key of MapNode, but you should not hold the return interface{},
+// instead, you should do type assert immediately when after call this method
 func (n MapNode) GetKey() interface{} {
 	return n.n.tree.getKey(n.n.node)
 }
 
+// GetVal get the value of MapNode, but you should not hold the return interface{},
+// instead, you should do type assert immediately when after call this method
 func (n MapNode) GetVal() interface{} {
 	return n.n.tree.getVal(n.n.node)
 }
