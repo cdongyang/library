@@ -1,4 +1,4 @@
-package handler
+package base
 
 import (
 	"encoding/json"
@@ -69,6 +69,7 @@ func WriteJSON(w http.ResponseWriter, data interface{}) {
 	if err != nil {
 		w.Write([]byte(`{
 			"success": false,
+			"timestamp": ` + fmt.Sprint(time.Now().Unix()) + `,
 			"message": "marshal json error: ` + err.Error() + `"
 		}`))
 		return

@@ -41,116 +41,104 @@ func (l *Logger) SetCalldepth(calldepth int) {
 	l.calldepth = calldepth
 }
 
-func (l *Logger) outputln(level int, args ...interface{}) {
+func (l *Logger) outputln(level int, info string, args ...interface{}) {
 	if l.level < level {
 		return
 	}
-	l.Output(l.calldepth, fmt.Sprintln(args...))
+	cpargs := make([]interface{}, 0, len(args)+1)
+	cpargs = append(cpargs, info)
+	cpargs = append(cpargs, args...)
+	l.Output(l.calldepth, fmt.Sprintln(cpargs...))
 }
 
-func (l *Logger) output(level int, args ...interface{}) {
+func (l *Logger) output(level int, info string, args ...interface{}) {
 	if l.level < level {
 		return
 	}
-	l.Output(l.calldepth, fmt.Sprint(args...))
+	cpargs := make([]interface{}, 0, len(args)+1)
+	cpargs = append(cpargs, info)
+	cpargs = append(cpargs, args...)
+	l.Output(l.calldepth, fmt.Sprint(cpargs...))
 }
 
-func (l *Logger) outputf(level int, format string, args ...interface{}) {
+func (l *Logger) outputf(level int, info string, format string, args ...interface{}) {
 	if l.level < level {
 		return
 	}
-	l.Output(l.calldepth, fmt.Sprintf(format, args...))
+	l.Output(l.calldepth, fmt.Sprintf(info+format, args...))
 }
 
 func (l *Logger) Panicln(args ...interface{}) {
-	args = append(args, "[PANIC] ")
-	l.outputln(LOG_LEVEL_PANIC, args...)
+	l.outputln(LOG_LEVEL_PANIC, "[PANIC] ", args...)
 	panic(fmt.Sprintln(args...))
 }
 
 func (l *Logger) Panic(args ...interface{}) {
-	args = append(args, "[PANIC] ")
-	l.output(LOG_LEVEL_PANIC, args...)
+	l.output(LOG_LEVEL_PANIC, "[PANIC] ", args...)
 	panic(fmt.Sprint(args...))
 }
 
 func (l *Logger) Panicf(format string, args ...interface{}) {
-	args = append(args, "[PANIC] ")
-	l.outputf(LOG_LEVEL_PANIC, format, args...)
+	l.outputf(LOG_LEVEL_PANIC, "[PANIC] ", format, args...)
 	panic(fmt.Sprintf(format, args...))
 }
 
 func (l *Logger) Debugln(args ...interface{}) {
-	args = append(args, "[DEBUG] ")
-	l.outputln(LOG_LEVEL_DEBUG, args...)
+	l.outputln(LOG_LEVEL_DEBUG, "[DEBUG] ", args...)
 }
 
 func (l *Logger) Debug(args ...interface{}) {
-	args = append(args, "[DEBUG] ")
-	l.output(LOG_LEVEL_DEBUG, args...)
+	l.output(LOG_LEVEL_DEBUG, "[DEBUG] ", args...)
 }
 
 func (l *Logger) Debugf(format string, args ...interface{}) {
-	args = append(args, "[DEBUG] ")
-	l.outputf(LOG_LEVEL_DEBUG, format, args...)
+	l.outputf(LOG_LEVEL_DEBUG, "[DEBUG] ", format, args...)
 }
 
 func (l *Logger) Logln(args ...interface{}) {
-	args = append(args, "[LOG] ")
-	l.outputln(LOG_LEVEL_LOG, args...)
+	l.outputln(LOG_LEVEL_LOG, "[LOG] ", args...)
 }
 
 func (l *Logger) Log(args ...interface{}) {
-	args = append(args, "[LOG] ")
-	l.output(LOG_LEVEL_LOG, args...)
+	l.output(LOG_LEVEL_LOG, "[LOG] ", args...)
 }
 
 func (l *Logger) Logf(format string, args ...interface{}) {
-	args = append(args, "[LOG] ")
-	l.outputf(LOG_LEVEL_LOG, format, args...)
+	l.outputf(LOG_LEVEL_LOG, "[LOG] ", format, args...)
 }
 
 func (l *Logger) Noticeln(args ...interface{}) {
-	args = append(args, "[NOTICE] ")
-	l.outputln(LOG_LEVEL_NOTICE, args...)
+	l.outputln(LOG_LEVEL_NOTICE, "[NOTICE] ", args...)
 }
 
 func (l *Logger) Notice(args ...interface{}) {
-	args = append(args, "[NOTICE] ")
-	l.output(LOG_LEVEL_NOTICE, args...)
+	l.output(LOG_LEVEL_NOTICE, "[NOTICE] ", args...)
 }
 
 func (l *Logger) Noticef(format string, args ...interface{}) {
-	args = append(args, "[NOTICE] ")
-	l.outputf(LOG_LEVEL_NOTICE, format, args...)
+	l.outputf(LOG_LEVEL_NOTICE, "[NOTICE] ", format, args...)
 }
 
 func (l *Logger) Warnln(args ...interface{}) {
-	args = append(args, "[WARN] ")
-	l.outputln(LOG_LEVEL_WARN, args...)
+	l.outputln(LOG_LEVEL_WARN, "[WARN] ", args...)
 }
 
 func (l *Logger) Warn(args ...interface{}) {
-	args = append(args, "[WARN] ")
-	l.output(LOG_LEVEL_WARN, args...)
+	l.output(LOG_LEVEL_WARN, "[WARN] ", args...)
 }
 
 func (l *Logger) Warnf(format string, args ...interface{}) {
-	args = append(args, "[WARN] ")
-	l.outputf(LOG_LEVEL_WARN, format, args...)
+	l.outputf(LOG_LEVEL_WARN, "[WARN] ", format, args...)
 }
 
 func (l *Logger) Errorln(args ...interface{}) {
-	args = append(args, "[ERROR] ")
-	l.outputln(LOG_LEVEL_ERROR, args...)
+	l.outputln(LOG_LEVEL_ERROR, "[ERROR] ", args...)
 }
 
 func (l *Logger) Error(args ...interface{}) {
-	args = append(args, "[ERROR] ")
-	l.output(LOG_LEVEL_ERROR, args...)
+	l.output(LOG_LEVEL_ERROR, "[ERROR] ", args...)
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
-	args = append(args, "[ERROR] ")
-	l.outputf(LOG_LEVEL_ERROR, format, args...)
+	l.outputf(LOG_LEVEL_ERROR, "[ERROR] ", format, args...)
 }
