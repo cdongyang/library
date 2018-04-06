@@ -18,8 +18,8 @@ type Filter interface {
 	AfterServeHTTP(w http.ResponseWriter, r *http.Request) bool
 }
 
-func NewHandler(f func(w http.ResponseWriter, r *http.Request), filters ...Filter) BaseHandler {
-	return BaseHandler{Filters: filters, Handler: f}
+func NewHandler(handleFunc func(w http.ResponseWriter, r *http.Request), filters ...Filter) BaseHandler {
+	return BaseHandler{Filters: filters, Handler: handleFunc}
 }
 
 func (b BaseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +40,27 @@ func (b BaseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+type MethodFilter struct {
+	methods []string
+}
+
+func NewMethodFilter(methods []string) MethodFilter {
+	return MethodFilter{methods: methods}
+}
+
+func (f MethodFilter) BeforeServeHTTP(w http.ResponseWriter, r *http.Request) bool {
+	for _, method := range f.methods {
+		if r.Method == method {
+			return true
+		}
+	}
+	return false
+}
+
+func (f MethodFilter) AfterServeHTTP(w http.ResponseWriter, r *http.Request) bool {
+	return true
 }
 
 func WriteJSON(w http.ResponseWriter, data interface{}) {
