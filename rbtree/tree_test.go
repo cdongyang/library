@@ -5,9 +5,11 @@ import (
 	"sort"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/cdongyang/library/algorithm"
 	"github.com/cdongyang/library/randint"
+	"github.com/cdongyang/library/test"
 )
 
 func (t colorType) String() string {
@@ -634,4 +636,34 @@ func ExampleNoescapeInsert() {
 	fmt.Println(n)
 	// Output:
 	//0
+}
+
+func TestGC(t *testing.T) {
+	test.MemStats("begin")
+	t.Run("GC tree", func(t *testing.T) {
+		s := NewSet(int(0), CompareInt)
+		for i := 0; i < 1e5; i++ {
+			s.Insert(i)
+		}
+		test.MemStats("1e5 node")
+		s = nil
+		time.Sleep(time.Second)
+		test.MemStats("free")
+	})
+	t.Run("hode interface", func(t *testing.T) {
+		s := NewSet(int(0), CompareInt)
+		for i := 0; i < 1e5; i++ {
+			s.Insert(i)
+		}
+		s.SetMaxSpan(1 << 20)
+		test.MemStats("1e5 node")
+		node := s.Find(int(1e5 - 1)).GetData()
+		s = nil
+		time.Sleep(time.Second)
+		test.MemStats("hold node, free tree")
+		node = nil
+		_ = node
+		time.Sleep(time.Second)
+		test.MemStats("free node")
+	})
 }

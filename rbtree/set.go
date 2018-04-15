@@ -48,14 +48,19 @@ func (s *Set) pack(n _node) SetNode {
 	return SetNode{n: n}
 }
 
+// Init init the set, function NewSet and NewMultiSet will calle it,
+// only the first call of this function will have an affect on set
 func (s *Set) Init(unique bool, data interface{}, compare func(a, b interface{}) int) {
 	s.tree.Init(unique, data, nil, compare)
 }
 
+// Begin return the first SetNode of set, if set is empty,
+// it return set.End()
 func (s *Set) Begin() SetNode {
 	return s.pack(s.tree.Begin())
 }
 
+// End represent the end of set,but it isn't a real node
 func (s *Set) End() SetNode {
 	return s.pack(s.tree.End())
 }
@@ -65,6 +70,8 @@ func (s *Set) EqualRange(data interface{}) (beg, end SetNode) {
 	return s.pack(a), s.pack(b)
 }
 
+// EraseNode erase a SetNode from tree with O(1) time use,
+// if SetNode has been erased, calling will panic
 func (s *Set) EraseNode(n SetNode) {
 	s.tree.EraseNode(n.n)
 }

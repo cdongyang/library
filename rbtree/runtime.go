@@ -144,6 +144,10 @@ func noescapeInterface(x interface{}) interface{} {
 	return *(*interface{})(noescape(unsafe.Pointer(&x)))
 }
 
+// you can use this func to make the arguments of insert method don't escape to heap
+// if it's not direct interface{} (make sure this)!
+// you can find a example in file example_test.go
+// USE CAREFULLY!
 func NoescapeInterface(x interface{}) interface{} {
 	return *(*interface{})(noescape(unsafe.Pointer(&x)))
 }

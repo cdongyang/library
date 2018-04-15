@@ -3,6 +3,7 @@ package rbtree
 import (
 	"errors"
 	"reflect"
+	"sync"
 	"unsafe"
 )
 
@@ -98,9 +99,17 @@ type tree struct {
 	// use two-dimension slice to avoid a too long append action in a tree action
 	// when there is no free slice to free node, alloc a slice whose len is curSpan
 	freeNodes [][]node
+	// ensure that tree only Init once
+	onceInit sync.Once
 }
 
 func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interface{}) int) {
+	t.onceInit.Do(func() {
+		t.init(unique, key, val, compare)
+	})
+}
+
+func (t *tree) init(unique bool, key, val interface{}, compare func(a, b interface{}) int) {
 	t.header = node{-1, -1}
 	t.unique = unique
 	t.keyType = reflect.TypeOf(key)

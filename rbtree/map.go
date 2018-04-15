@@ -22,8 +22,8 @@ func (n MapNode) GetVal() interface{} {
 	return n.n.tree.getVal(n.n.node)
 }
 
-func (n MapNode) SetVal() interface{} {
-	return n.n.tree.getVal(n.n.node)
+func (n MapNode) SetVal(val interface{}) {
+	n.n.tree.setVal(n.n.node, val)
 }
 
 func (n MapNode) Next() MapNode {
