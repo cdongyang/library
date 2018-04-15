@@ -59,11 +59,11 @@ func (n _node) SetVal(val interface{}) {
 }
 
 func (n _node) Next() _node {
-	return n.tree.Next(n)
+	return n.tree.nextNode(n)
 }
 
 func (n _node) Last() _node {
-	return n.tree.Last(n)
+	return n.tree.lastNode(n)
 }
 
 type mem struct {
@@ -370,7 +370,7 @@ func sameNode(a, b node) bool {
 
 // Next return the next _node of n in this tree
 // if n has no next _node, it will panic
-func (t *tree) Next(n _node) _node {
+func (t *tree) nextNode(n _node) _node {
 	if t != n.tree {
 		panic(ErrNotInTree.Error())
 	}
@@ -388,7 +388,7 @@ func (t *tree) next(n node) node {
 
 // Last return the last _node of n in this tree
 // if n has no last _node, it will panic
-func (t *tree) Last(n _node) _node {
+func (t *tree) lastNode(n _node) _node {
 	if t != n.tree {
 		panic(ErrNotInTree.Error())
 	}

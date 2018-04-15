@@ -91,14 +91,6 @@ func (s *IntSet) LowerBound(data int) IntSetNode {
 	return s.pack(s.set.LowerBound(data))
 }
 
-func (s *IntSet) Last(n IntSetNode) IntSetNode {
-	return s.pack(s.set.Last(n.n))
-}
-
-func (s *IntSet) Next(n IntSetNode) IntSetNode {
-	return s.pack(s.set.Next(n.n))
-}
-
 func (s *IntSet) UpperBound(data int) IntSetNode {
 	return s.pack(s.set.UpperBound(data))
 }

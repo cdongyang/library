@@ -17,11 +17,11 @@ func (n SetNode) GetData() interface{} {
 }
 
 func (n SetNode) Next() SetNode {
-	return SetNode{n.n.tree.Next(n.n)}
+	return SetNode{n.n.Next()}
 }
 
 func (n SetNode) Last() SetNode {
-	return SetNode{n.n.tree.Last(n.n)}
+	return SetNode{n.n.Last()}
 }
 
 func (n SetNode) GetSet() *Set {
@@ -91,14 +91,6 @@ func (s *Set) Insert(data interface{}) (SetNode, bool) {
 
 func (s *Set) LowerBound(data interface{}) SetNode {
 	return s.pack(s.tree.LowerBound(data))
-}
-
-func (s *Set) Last(n SetNode) SetNode {
-	return s.pack(s.tree.Last(n.n))
-}
-
-func (s *Set) Next(n SetNode) SetNode {
-	return s.pack(s.tree.Next(n.n))
 }
 
 func (s *Set) UpperBound(data interface{}) SetNode {

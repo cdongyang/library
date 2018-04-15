@@ -27,11 +27,11 @@ func (n MapNode) SetVal(val interface{}) {
 }
 
 func (n MapNode) Next() MapNode {
-	return MapNode{n.n.tree.Next(n.n)}
+	return MapNode{n.n.Next()}
 }
 
 func (n MapNode) Last() MapNode {
-	return MapNode{n.n.tree.Last(n.n)}
+	return MapNode{n.n.Last()}
 }
 
 func (n MapNode) GetMap() *Map {
@@ -94,14 +94,6 @@ func (s *Map) Insert(key interface{}, val interface{}) (MapNode, bool) {
 
 func (s *Map) LowerBound(key interface{}) MapNode {
 	return s.pack(s.tree.LowerBound(key))
-}
-
-func (s *Map) Last(n MapNode) MapNode {
-	return s.pack(s.tree.Last(n.n))
-}
-
-func (s *Map) Next(n MapNode) MapNode {
-	return s.pack(s.tree.Next(n.n))
 }
 
 func (s *Map) UpperBound(key interface{}) MapNode {
