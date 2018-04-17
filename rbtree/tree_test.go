@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/cdongyang/library/algorithm"
 	"github.com/cdongyang/library/randint"
@@ -647,7 +646,6 @@ func TestGC(t *testing.T) {
 		}
 		test.MemStats("1e5 node")
 		s = nil
-		time.Sleep(time.Second)
 		test.MemStats("free")
 	})
 	t.Run("hode interface", func(t *testing.T) {
@@ -659,11 +657,23 @@ func TestGC(t *testing.T) {
 		test.MemStats("1e5 node")
 		node := s.Find(int(1e5 - 1)).GetData()
 		s = nil
-		time.Sleep(time.Second)
 		test.MemStats("hold node, free tree")
 		node = nil
 		_ = node
-		time.Sleep(time.Second)
+		test.MemStats("free node")
+	})
+	t.Run("hode interface map", func(t *testing.T) {
+		m := NewMap(int(0), false, CompareInt)
+		for i := 0; i < 1e5; i++ {
+			m.Insert(i, true)
+		}
+		m.SetMaxSpan(1 << 20)
+		test.MemStats("1e5 node")
+		k, v := m.Find(1).GetData()
+		m = nil
+		test.MemStats("hold node, free tree")
+		k, v = nil, nil
+		_, _ = k, v
 		test.MemStats("free node")
 	})
 }

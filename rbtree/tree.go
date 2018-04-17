@@ -58,10 +58,12 @@ func (n _node) SetVal(val interface{}) {
 	n.tree.setVal(n.node, val)
 }
 
+// O(1)
 func (n _node) Next() _node {
 	return n.tree.nextNode(n)
 }
 
+// O(1)
 func (n _node) Last() _node {
 	return n.tree.lastNode(n)
 }
@@ -87,12 +89,14 @@ type tree struct {
 	indirectkey bool
 	indirectval bool
 	// maxSpan means the max number of node alloc to a span of spans
+	// it must be a mutipile of 8
 	maxSpan uint32
-	// curSpan means the current number of node alloc to a span of spans
+	// curSpan means the current number of node alloc to a span of spans.
+	// it must be a mutipile of 8
 	curSpan uintptr
-	// spans is the memory to store node data, key and value
+	// spans is the memory to store node data, key and value.
 	// it arrange in this way:
-	// maxSpan*(child [2]node,parent node),maxSpan*(color colorType)
+	// maxSpan*(child [2]node,parent node),maxSpan*(color colorType).
 	// color also can store as a bit
 	spans []mem
 	// freeNodes store the node free by deleteNode
@@ -323,6 +327,7 @@ func (t *tree) Empty() bool {
 	return t.size == 1
 }
 
+// O(1)
 func (t *tree) Begin() _node {
 	return t.pack(t.begin())
 }
@@ -331,6 +336,7 @@ func (t *tree) begin() node {
 	return t.most(0)
 }
 
+// O(1)
 func (t *tree) End() _node {
 	return t.pack(t.end())
 }
@@ -418,7 +424,8 @@ func (t *tree) gothrough(ch uintptr, n node) node {
 	return t.getParent(n)
 }
 
-// Count return the num of n key equal to key in this tree
+// Count return the num of n key equal to key in this tree.
+// O(log(n)+count)
 func (t *tree) Count(_key interface{}) (count int) {
 	key := noescapeInterface(_key)
 	if t.unique {
@@ -435,15 +442,17 @@ func (t *tree) Count(_key interface{}) (count int) {
 	return count
 }
 
-// EqualRange return the _node range of equal key n in this tree
+// EqualRange return the _node range of equal key n in this tree.
+// O(2*log(n))
 func (t *tree) EqualRange(_key interface{}) (beg, end _node) {
 	key := noescapeInterface(_key)
 	return t.LowerBound(key), t.UpperBound(key)
 }
 
-// Find return the _node of key in this tree
-// if the key is not exist in this tree, result will be the End of tree
-// if there has multi n key equal to key, result will be random one
+// Find return the _node of key in this tree.
+// if the key is not exist in this tree, result will be the End of tree.
+// if there has multi n key equal to key, result will be random one.
+// O(log(n))
 func (t *tree) Find(_key interface{}) _node {
 	key := noescapeInterface(_key)
 	return t.pack(t.find(key))
@@ -465,9 +474,10 @@ func (t *tree) find(key interface{}) node {
 	}
 }
 
-// Insert insert a new n with data to tree
-// it return the insert a _node and true when success insert
-// otherwise, it return the exist _node and false
+// Insert insert a new n with data to tree.
+// it return the insert a _node and true when success insert.
+// otherwise, it return the exist _node and false.
+// O(log(n))
 func (t *tree) Insert(key, val interface{}) (_node, bool) {
 	n, ok := t.insert(key, val)
 	return t.pack(n), ok
@@ -582,8 +592,9 @@ func (t *tree) Erase(_key interface{}) (count int) {
 	return count
 }
 
-// EraseNode erase n from the tree
-// if n is not in tree, it will panic
+// EraseNode erase n from the tree.
+// if n is not in tree, it will panic.
+// O(1)
 func (t *tree) EraseNode(n _node) {
 	if t != n.tree {
 		panic(ErrNotInTree.Error())
@@ -704,9 +715,10 @@ func (t *tree) eraseAdjust(n, parent node) {
 	t.rotate(nCh, brother)
 }
 
-// EraseNodeRange erase the given iterator range
-// if the given range is not in this tree, it will panic with ErrNoIntree
-// if end can get beg after multi Next method, it will panic with ErrNoLast
+// EraseNodeRange erase the given iterator range.
+// if the given range is not in this tree, it will panic with ErrNoIntree.
+// if end can get beg after multi Next method, it will panic with ErrNoLast.
+// O(count)
 func (t *tree) EraseNodeRange(beg, end _node) (count int) {
 	return t.eraseNodeRange(beg.node, end.node)
 }
@@ -721,6 +733,7 @@ func (t *tree) eraseNodeRange(beg, end node) (count int) {
 }
 
 // LowerBound return the first _node greater than or equal to key
+// O(log(n))
 func (t *tree) LowerBound(_key interface{}) _node {
 	key := noescapeInterface(_key)
 	return t.pack(t.lowerBound(key))
@@ -747,6 +760,7 @@ func (t *tree) lowerBound(key interface{}) node {
 }
 
 // UpperBound return the first _node greater than key
+// O(log(n))
 func (t *tree) UpperBound(_key interface{}) _node {
 	key := noescapeInterface(_key)
 	return t.pack(t.upperBound(key))

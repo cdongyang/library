@@ -16,14 +16,19 @@ func (n SetNode) GetData() interface{} {
 	return n.n.tree.getKey(n.n.node)
 }
 
+// Next return the next node of current node.
+// it will panic if current node equal to set.End().
 func (n SetNode) Next() SetNode {
 	return SetNode{n.n.Next()}
 }
 
+// Last return the last node of current node.
+// it will panic if current node equal to set.Begin().
 func (n SetNode) Last() SetNode {
 	return SetNode{n.n.Last()}
 }
 
+// GetSet return the Set that current node belong to.
 func (n SetNode) GetSet() *Set {
 	return (*Set)(unsafe.Pointer(n.n.tree))
 }
@@ -32,12 +37,16 @@ type Set struct {
 	tree
 }
 
+// NewSet return a unique set with data type and compare func,
+// the return set has been executed init func.
 func NewSet(data interface{}, compare func(a, b interface{}) int) *Set {
 	var s = &Set{}
 	s.Init(true, data, compare)
 	return s
 }
 
+// NewSet return a not unique set with data type and compare func,
+// the return set has been executed init func.
 func NewMultiSet(data interface{}, compare func(a, b interface{}) int) *Set {
 	var s = &Set{}
 	s.Init(false, data, compare)
@@ -54,8 +63,8 @@ func (s *Set) Init(unique bool, data interface{}, compare func(a, b interface{})
 	s.tree.Init(unique, data, nil, compare)
 }
 
-// Begin return the first SetNode of set, if set is empty,
-// it return set.End()
+// Begin return the first SetNode of set,
+// if set is empty, it return set.End()
 func (s *Set) Begin() SetNode {
 	return s.pack(s.tree.Begin())
 }
@@ -70,7 +79,7 @@ func (s *Set) EqualRange(data interface{}) (beg, end SetNode) {
 	return s.pack(a), s.pack(b)
 }
 
-// EraseNode erase a SetNode from tree with O(1) time use,
+// EraseNode erase a SetNode from tree,
 // if SetNode has been erased, calling will panic
 func (s *Set) EraseNode(n SetNode) {
 	s.tree.EraseNode(n.n)

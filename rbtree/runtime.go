@@ -97,7 +97,7 @@ func add(p unsafe.Pointer, x uintptr) unsafe.Pointer {
 
 func newmem(size uintptr) unsafe.Pointer {
 	bytes := make([]byte, size)
-	return (*slice)(unsafe.Pointer(&bytes)).array
+	return unsafe.Pointer(&bytes[0])
 }
 
 // noescape hides a pointer from escape analysis.  noescape is

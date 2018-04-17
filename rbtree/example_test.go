@@ -263,3 +263,106 @@ func TestIntSetNoIterator(t *testing.T) {
 		}
 	})
 }
+
+type intMap struct {
+	mp rbtree.Map
+}
+
+func NewIntMap(compare func(a, b int) int) *intMap {
+	var m = &intMap{}
+	m.mp.Init(true, int(0), new(int), func(a, b interface{}) int {
+		return compare(a.(int), b.(int))
+	})
+	return m
+}
+
+func (m *intMap) StoreOrLoad(key int, val *int) (ok bool, actual *int) {
+	n, ok := m.mp.Insert(rbtree.NoescapeInterface(key), val)
+	return ok, n.GetVal().(*int)
+}
+
+func (m *intMap) Load(key int) (ok bool, val *int) {
+	n := m.mp.Find(key)
+	if n == m.mp.End() {
+		return false, nil
+	}
+	return true, n.GetVal().(*int)
+}
+
+func (m *intMap) Delete(key int) (ok bool) {
+	return m.mp.Erase(key) == 1
+}
+
+func (m *intMap) Range(f func(key int, val *int) bool) {
+	for it := m.mp.Begin(); it != m.mp.End(); it = it.Next() {
+		ok := f(it.GetKey().(int), it.GetVal().(*int))
+		if !ok {
+			return
+		}
+	}
+}
+
+func (m *intMap) Size() int {
+	return m.mp.Size()
+}
+func TestIntMapNoIterator(t *testing.T) {
+	t.Run("method", func(t *testing.T) {
+		var slice = []int{1, 4, 6, 5, 3, 7, 2, 9}
+		var cpSlice = make([]int, len(slice))
+		copy(cpSlice, slice)
+		sort.IntSlice(cpSlice).Sort()
+		s := NewIntMap(func(a, b int) int {
+			return a - b
+		})
+		for i := range slice {
+			s.StoreOrLoad(slice[i], &slice[i])
+		}
+		i := 0
+		s.Range(func(key int, val *int) bool {
+			if key != cpSlice[i] || *val != cpSlice[i] {
+				t.Fatal(key, *val, cpSlice[i])
+				return false
+			}
+			i++
+			return true
+		})
+		s.Range(func(key int, val *int) bool {
+			if !s.Delete(key) {
+				t.Fatal(key, *val)
+				return false
+			}
+			return true
+		})
+		if s.Size() != 0 {
+			t.Fatal(s.Size())
+		}
+	})
+	t.Run("escape", func(t *testing.T) {
+		var x = 1
+		s := NewIntMap(func(a, b int) int { return a - b })
+		n := testing.AllocsPerRun(1000, func() {
+			var tmp = x
+			s.StoreOrLoad(tmp, nil)
+			x++
+		})
+		if n > 0 {
+			t.Fatal("insert escape", n)
+		}
+		n = testing.AllocsPerRun(1000, func() {
+			var tmp = 10
+			s.Load(tmp)
+			x++
+		})
+		if n > 0 {
+			t.Fatal("find escape", n)
+		}
+		n = testing.AllocsPerRun(1000, func() {
+			var tmp = 10
+			s.Delete(tmp)
+			x++
+		})
+		if n > 0 {
+			t.Fatal("erase escape", n)
+		}
+	})
+}
