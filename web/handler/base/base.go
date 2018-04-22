@@ -25,7 +25,7 @@ func NewHandler(handleFunc func(w http.ResponseWriter, r *http.Request), filters
 func (b BaseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if b.Filters != nil {
 		for _, filter := range b.Filters {
-			if !filter.BeforeServeHTTP(w, r) {
+			if filter.BeforeServeHTTP(w, r) {
 				return
 			}
 		}
@@ -35,7 +35,7 @@ func (b BaseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if b.Filters != nil {
 		for _, filter := range b.Filters {
-			if !filter.AfterServeHTTP(w, r) {
+			if filter.AfterServeHTTP(w, r) {
 				return
 			}
 		}
@@ -53,14 +53,14 @@ func NewMethodFilter(methods []string) MethodFilter {
 func (f MethodFilter) BeforeServeHTTP(w http.ResponseWriter, r *http.Request) bool {
 	for _, method := range f.methods {
 		if r.Method == method {
-			return true
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 func (f MethodFilter) AfterServeHTTP(w http.ResponseWriter, r *http.Request) bool {
-	return true
+	return false
 }
 
 func WriteJSON(w http.ResponseWriter, data interface{}) {
