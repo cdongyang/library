@@ -1,6 +1,7 @@
 package rbtree_test
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 	"unsafe"
@@ -365,4 +366,37 @@ func TestIntMapNoIterator(t *testing.T) {
 			t.Fatal("erase escape", n)
 		}
 	})
+}
+
+func ExampleMap() {
+	var slice = []int{1, 4, 6, 5, 3, 7, 2, 9}
+	// key type: int, value type: *int
+	mp := rbtree.NewMap(int(0), new(int), func(a, b interface{}) int {
+		return a.(int) - b.(int)
+	})
+	for i := range slice {
+		mp.Insert(slice[i], &slice[i])
+	}
+	var indexOf = func(p *int) int {
+		for i := range slice {
+			if &slice[i] == p {
+				return i
+			}
+		}
+		return -1
+	}
+	// iterator
+	for it, i := mp.Begin(), 0; it != mp.End(); it = it.Next() {
+		fmt.Println(it.GetKey(), indexOf(it.GetVal().(*int)))
+		i++
+	}
+	//Output:
+	//1 0
+	//2 6
+	//3 4
+	//4 1
+	//5 3
+	//6 2
+	//7 5
+	//9 7
 }
