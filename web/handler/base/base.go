@@ -1,8 +1,10 @@
 package base
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -22,7 +24,28 @@ func NewHandler(handleFunc func(w http.ResponseWriter, r *http.Request), filters
 	return BaseHandler{Filters: filters, Handler: handleFunc}
 }
 
+func CopyRequestBody(r *http.Request) ([]byte, error) {
+	bs, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(bs))
+	return bs, nil
+}
+
+type ResponseWriter struct {
+	http.ResponseWriter
+	Buffer bytes.Buffer
+}
+
+func (w *ResponseWriter) Write(bs []byte) (int, error) {
+	w.Buffer.Write(bs)
+	return w.ResponseWriter.Write(bs)
+}
+
 func (b BaseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w = &ResponseWriter{ResponseWriter: w}
 	if b.Filters != nil {
 		for _, filter := range b.Filters {
 			if filter.BeforeServeHTTP(w, r) {

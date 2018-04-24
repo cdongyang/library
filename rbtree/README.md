@@ -1,4 +1,7 @@
-###参考资料:
+## 介绍:
+	这是用go写的一个红黑树的map,set,multimap,multiset, 模拟c++ 的STL实现相关函数, 并深入学习go的hash map 优化方法进行优化, 将heapObject数量优化到较低的水平, 相关使用参考example_test.go
+
+### 参考资料:
 - [wiki红黑树讲解]( https://zh.wikipedia.org/wiki/%E7%BA%A2%E9%BB%91%E6%A0%91)
 - 侯捷 <<STL源码剖析>>
 - 郝林 <<Go并发编程实战>>
