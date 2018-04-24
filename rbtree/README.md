@@ -97,7 +97,7 @@ type SetNode
     func (n SetNode) GetData() interface{}
     func (n SetNode) GetSet() *Set
     func (n SetNode) Last() SetNode
-		func (n SetNode) Next() SetNode
+    func (n SetNode) Next() SetNode
 ```
 
 
