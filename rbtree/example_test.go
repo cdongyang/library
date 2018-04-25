@@ -390,6 +390,7 @@ func ExampleMap() {
 		fmt.Println(it.GetKey(), indexOf(it.GetVal().(*int)))
 		i++
 	}
+	mp = nil // free tree to make it collect by GC
 	//Output:
 	//1 0
 	//2 6

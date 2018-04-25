@@ -29,7 +29,8 @@ func ExampleMap() {
 	for it, i := mp.Begin(), 0; it != mp.End(); it = it.Next() {
 		fmt.Println(it.GetKey(), indexOf(it.GetVal().(*int)))
 		i++
-	}
+  }
+  mp = nil // free tree to make it collect by GC
 	//Output:
 	//1 0
 	//2 6
@@ -101,7 +102,7 @@ type SetNode
 ```
 
 ## MEMORY ALLOC
-I use a slice of block memory to store node data. In addition, i store the unuse node in a two-dimension queue. when it needs a node, i pop from begin of queue, and push a node in queue when delete a node, so the node will reuse. And each block memory can store curSpan nodes, however, the curSpan is dynamic change following the tree size. If curSpan < maxSpan, curSpan = 1 << (high bit of tree size), if curSpan > maxSpan, curSpan = maxSpan, so the number of heap objects will be close to O(tree size / maxSpan) when tree size if so large.
+I use a slice of block memory to store node data. In addition, i store the unuse node in a two-dimension queue. when it needs a node, it pop from begin of queue, and push a node in queue when delete a node, so the node will reuse, cutting down the heap allocation. And each block memory can store curSpan nodes, however, the curSpan is dynamic change following the tree size. If curSpan < maxSpan, curSpan = 1 << (high bit of tree size), if curSpan > maxSpan, curSpan = maxSpan, so the number of heap objects will be close to O(tree size / maxSpan) when tree size if so large.
 
 ## ATTENTION
 Because of the strategy of memory alloc, the data of interface{} return by method GetKey(),GetVal() or GetData() will store in block memory, so we should do the type assert immediately when get this kind of interface{}. If not, don't hold it for a long time, otherwise the block memory will not collect by GC until you never hold the interface{}.What's more, you should only read the interface{} in compare function.
