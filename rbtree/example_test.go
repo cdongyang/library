@@ -83,7 +83,7 @@ func (s *IntSet) Find(data int) IntSetNode {
 func (s *IntSet) Insert(data int) (IntSetNode, bool) {
 	// if data type is not direct interface, use NoescapeInterface to avoid data escape to heap,
 	// thus reduce heap objects.
-	// but if you don't know wheather which type is direct interface, don't use NoescapeInterface !!!
+	// but if you don't know wheather the data type is direct interface, don't use NoescapeInterface !!!
 	n, ok := s.set.Insert(rbtree.NoescapeInterface(data))
 	return s.pack(n), ok
 }
