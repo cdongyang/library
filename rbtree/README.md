@@ -4,7 +4,16 @@ a high performance red-black tree with less heap objects.
 ```
     go get github.com/cdongyang/library/rbtree
 ```
-
+## TEST
+run test:
+```
+./test.sh
+```
+coverage: 95.5% of statements
+run bench:
+```sh
+/bin/go test -v -benchmem -run=^$ github.com/cdongyang/library/rbtree -bench ^BenchmarkSet$
+```
 ## EXAMPLE
 more example please see example_test.go
 ```go

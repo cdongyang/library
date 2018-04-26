@@ -79,8 +79,6 @@ type tree struct {
 	header      node
 	keyType     reflect.Type
 	valType     reflect.Type
-	zeroKey     reflect.Value
-	zeroVal     reflect.Value
 	key         reflect.Value
 	val         reflect.Value
 	size        int
@@ -135,9 +133,9 @@ func (t *tree) init(unique bool, key, val interface{}, compare func(a, b interfa
 		t.indirectval = isDirectIface(unpackIface(val)._type)
 	}
 	t.header = t.newNode(key, val)
-	t.getValueOfKey(t.header).Set(reflect.Zero(t.keyType))
+	t.getValueOfKey(t.header).Set(reflect.Zero(t.keyType)) // set key of header to zero value of key type
 	if t.valType != nil {
-		t.getValueOfVal(t.header).Set(reflect.Zero(t.valType))
+		t.getValueOfVal(t.header).Set(reflect.Zero(t.valType)) // set value of header to zero value of value type
 	}
 	t.setChild(t.header, 0, t.end())
 	t.setChild(t.header, 1, t.end())
@@ -297,9 +295,9 @@ func (t *tree) initNode(n node) {
 }
 
 func (t *tree) deleteNode(n node) {
-	t.setValueOfKey(n, t.getValueOfKey(t.header))
+	t.setValueOfKey(n, t.getValueOfKey(t.header)) // key of header is zero value of key type
 	if t.valType != nil {
-		t.setValueOfVal(n, t.getValueOfVal(t.header))
+		t.setValueOfVal(n, t.getValueOfVal(t.header)) // value of header is zero value of value type
 	}
 	t.size--
 	l := len(t.freeNodes)
@@ -423,6 +421,11 @@ func (t *tree) gothrough(ch uintptr, n node) node {
 	}
 	return t.getParent(n)
 }
+
+// TODO:
+/*func (t *tree) Copy() *tree {
+
+}*/
 
 // Count return the num of n key equal to key in this tree.
 // O(log(n)+count)
