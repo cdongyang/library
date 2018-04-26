@@ -29,6 +29,7 @@ func BenchmarkSet(b *testing.B) {
 	b.Run("setNoescapeInsert", runWith(benchmarkSetNoescapeInsert, 0))
 	b.Run("setErase", runWith(benchmarkSetErase, 0))
 	b.Run("setFind", runWith(benchmarkSetFind, 0))
+	b.Run("set", runWith(benchmarkSet, []int{10, 100, 1000, 10000, 100000, 1000000}...))
 }
 
 func BenchmarkSet1E5(b *testing.B) {
@@ -43,6 +44,25 @@ func BenchmarkSet1E6(b *testing.B) {
 	b.Run("setNoescapeInsert", runWith(benchmarkSetNoescapeInsert, 1e6))
 	b.Run("setErase", runWith(benchmarkSetErase, 1e6))
 	b.Run("setFind", runWith(benchmarkSetFind, 1e6))
+}
+
+func BenchmarkMap(b *testing.B) {
+	b.Run("mapInsert", runWith(benchmarkMapInsert, 0))
+	b.Run("mapErase", runWith(benchmarkSetErase, 0))
+	b.Run("mapFind", runWith(benchmarkMapFind, 0))
+	b.Run("map", runWith(benchmarkMap, []int{10, 100, 1000, 10000, 100000, 1000000}...))
+}
+
+func BenchmarkMap1E5(b *testing.B) {
+	b.Run("mapInsert", runWith(benchmarkMapInsert, 1e5))
+	b.Run("mapErase", runWith(benchmarkSetErase, 1e5))
+	b.Run("mapFind", runWith(benchmarkMapFind, 1e5))
+}
+
+func BenchmarkMap1E6(b *testing.B) {
+	b.Run("mapInsert", runWith(benchmarkMapInsert, 1e6))
+	b.Run("mapErase", runWith(benchmarkSetErase, 1e6))
+	b.Run("mapFind", runWith(benchmarkMapFind, 1e6))
 }
 
 func BenchmarkHashMap(b *testing.B) {
@@ -61,24 +81,6 @@ func BenchmarkHashMap1E6(b *testing.B) {
 	b.Run("hashMapInsert", runWith(benchmarkHashMapInsert, 1e6))
 	b.Run("hashMapErase", runWith(benchmarkHashMapErase, 1e6))
 	b.Run("hashMapFind", runWith(benchmarkHashMapFind, 1e6))
-}
-
-func BenchmarkMap(b *testing.B) {
-	b.Run("mapInsert", runWith(benchmarkMapInsert, 0))
-	b.Run("mapErase", runWith(benchmarkSetErase, 0))
-	b.Run("mapFind", runWith(benchmarkMapFind, 0))
-}
-
-func BenchmarkMap1E5(b *testing.B) {
-	b.Run("mapInsert", runWith(benchmarkMapInsert, 1e5))
-	b.Run("mapErase", runWith(benchmarkSetErase, 1e5))
-	b.Run("mapFind", runWith(benchmarkMapFind, 1e5))
-}
-
-func BenchmarkMap1E6(b *testing.B) {
-	b.Run("mapInsert", runWith(benchmarkMapInsert, 1e6))
-	b.Run("mapErase", runWith(benchmarkSetErase, 1e6))
-	b.Run("mapFind", runWith(benchmarkMapFind, 1e6))
 }
 
 func BenchmarkSetInsert(b *testing.B) {
@@ -148,6 +150,24 @@ func benchmarkSetErase(b *testing.B, n int) {
 	}
 }
 
+func benchmarkSet(b *testing.B, m int) {
+	var keys = make([]int, m)
+	var rand = benchRand
+	for i := 0; i < m; i++ {
+		keys[i] = rand.Int()
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var set = rbtree.NewSet(int(0), rbtree.CompareInt)
+		for j := 0; j < m; j++ {
+			_, _ = set.Insert(rbtree.NoescapeInterface(keys[j]))
+		}
+		for j := 0; j < m; j++ {
+			_ = set.Erase(keys[j])
+		}
+	}
+}
+
 func benchmarkSetFind(b *testing.B, n int) {
 	if n != 0 {
 		b.N = n
@@ -197,6 +217,24 @@ func benchmarkMapErase(b *testing.B, n int) {
 	for i := 0; i < b.N; i++ {
 		key = keys[i]
 		_ = mp.Erase(key)
+	}
+}
+
+func benchmarkMap(b *testing.B, m int) {
+	var mp = rbtree.NewMap(int(0), false, rbtree.CompareInt)
+	var keys = make([]int, m)
+	var rand = benchRand
+	for i := 0; i < m; i++ {
+		keys[i] = rand.Int()
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for j := 0; j < m; j++ {
+			_, _ = mp.Insert(rbtree.NoescapeInterface(keys[j]), rbtree.NoescapeInterface(true))
+		}
+		for j := 0; j < m; j++ {
+			_ = mp.Erase(keys[j])
+		}
 	}
 }
 
