@@ -12,7 +12,7 @@ coverage: 95.5% of statements
 ```
 run bench:
 ```sh
-/bin/go test -v -benchmem -run=^$ github.com/cdongyang/library/rbtree -bench ^BenchmarkSet$
+/bin/go test -v -benchmem -run=^$ github.com/cdongyang/library/rbtree -bench ^Benchmark$
 ```
 ## EXAMPLE
 more example please see example_test.go
