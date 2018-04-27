@@ -1,10 +1,11 @@
+# rbtree [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![GoDoc](https://godoc.org/github.com/cdongyang/library/rbtree?status.svg)](https://godoc.org/github.com/cdongyang/library/rbtree)
 ## A red-black tree with an API similar to C++ STL's.
 a high performance red-black tree with less heap objects.
-## INSTALLTION
+## Installtion
 ```
     go get github.com/cdongyang/library/rbtree
 ```
-## TEST
+## Test
 run test:
 ```sh
 ./test.sh
@@ -14,7 +15,7 @@ run bench:
 ```sh
 /bin/go test -v -benchmem -run=^$ github.com/cdongyang/library/rbtree -bench ^Benchmark$
 ```
-## EXAMPLE
+## Example
 more example please see example_test.go
 ```go
 func ExampleMap() {
@@ -52,7 +53,7 @@ func ExampleMap() {
 }
 ```
 
-## TYPES AND FUNCTION
+## Types and functions
 ```go
 func NoescapeInterface(x interface{}) interface{}
 type Map
@@ -110,13 +111,13 @@ type SetNode
     func (n SetNode) Next() SetNode
 ```
 
-## MEMORY ALLOC
+## Memory alloc
 I use a slice of block memory to store node data. In addition, i store the unuse node in a two-dimension queue. when it needs a node, it pop from begin of queue, and push a node in queue when delete a node, so the node will reuse, cutting down the heap allocation. And each block memory can store curSpan nodes, however, the curSpan is dynamic change following the tree size. If curSpan < maxSpan, curSpan = 1 << (high bit of tree size), if curSpan > maxSpan, curSpan = maxSpan, so the number of heap objects will be close to O(tree size / maxSpan) when tree size if so large.
 
-## ATTENTION
+## Attention
 Because of the strategy of memory alloc, the data of interface{} return by method GetKey(),GetVal() or GetData() will store in block memory, so we should do the type assert immediately when get this kind of interface{}. If not, don't hold it for a long time, otherwise the block memory will not collect by GC until you never hold the interface{}.What's more, you should only read the interface{} in compare function.
 
-### 参考资料:
+## Reference documentation
 - [wiki红黑树讲解]( https://zh.wikipedia.org/wiki/%E7%BA%A2%E9%BB%91%E6%A0%91)
 - 侯捷 <<STL源码剖析>>
 - 郝林 <<Go并发编程实战>>
