@@ -6,10 +6,10 @@ a high performance red-black tree with less heap objects.
 ```
 ## TEST
 run test:
-```
+```sh
 ./test.sh
-```
 coverage: 95.5% of statements
+```
 run bench:
 ```sh
 /bin/go test -v -benchmem -run=^$ github.com/cdongyang/library/rbtree -bench ^BenchmarkSet$
