@@ -7,8 +7,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
+
+var pool = &sync.Pool{New: func() interface{} {
+	return &bytes.Buffer{}
+}}
 
 type BaseHandler struct {
 	Filters []Filter
@@ -19,6 +24,8 @@ type Filter interface {
 	BeforeServeHTTP(w http.ResponseWriter, r *http.Request) bool
 	AfterServeHTTP(w http.ResponseWriter, r *http.Request) bool
 }
+
+type HandlerWarpper func(func(w http.ResponseWriter, r *http.Request))
 
 func NewHandler(handleFunc func(w http.ResponseWriter, r *http.Request), filters ...Filter) BaseHandler {
 	return BaseHandler{Filters: filters, Handler: handleFunc}
@@ -36,7 +43,7 @@ func CopyRequestBody(r *http.Request) ([]byte, error) {
 
 type ResponseWriter struct {
 	http.ResponseWriter
-	Buffer bytes.Buffer
+	Buffer *bytes.Buffer
 }
 
 func (w *ResponseWriter) Write(bs []byte) (int, error) {
@@ -45,24 +52,26 @@ func (w *ResponseWriter) Write(bs []byte) (int, error) {
 }
 
 func (b BaseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w = &ResponseWriter{ResponseWriter: w}
+	bw := &ResponseWriter{ResponseWriter: w, Buffer: pool.Get().(*bytes.Buffer)}
 	if b.Filters != nil {
 		for _, filter := range b.Filters {
-			if filter.BeforeServeHTTP(w, r) {
+			if filter.BeforeServeHTTP(bw, r) {
 				return
 			}
 		}
 	}
 
-	b.Handler(w, r)
+	b.Handler(bw, r)
 
 	if b.Filters != nil {
 		for _, filter := range b.Filters {
-			if filter.AfterServeHTTP(w, r) {
+			if filter.AfterServeHTTP(bw, r) {
 				return
 			}
 		}
 	}
+	pool.Put(bw.Buffer)
+	bw.Buffer = nil
 }
 
 type MethodFilter struct {
