@@ -2,6 +2,7 @@ package chan_test
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 )
@@ -19,4 +20,31 @@ func TestChan(t *testing.T) {
 	}()
 	time.Sleep(time.Second)
 	close(ch)
+}
+
+func TestChanMiltiRecv(t *testing.T) {
+	ch := make(chan int)
+	closech := make(chan struct{})
+	group := sync.WaitGroup{}
+	for i := 0; i < 10; i++ {
+		go func(idx int) {
+			for {
+				select {
+				case elem := <-ch:
+					fmt.Println("recv", idx, "get elem", elem)
+					group.Done()
+				case <-closech:
+					fmt.Println("recv close")
+					return
+				}
+			}
+		}(i)
+	}
+	for i := 0; i < 10; i++ {
+		group.Add(1)
+		ch <- i
+	}
+	group.Wait()
+	close(closech)
+	time.Sleep(time.Second)
 }

@@ -69,10 +69,12 @@ func (n _node) Last() _node {
 }
 
 type mem struct {
-	p    unsafe.Pointer
-	size uintptr
-	keys reflect.Value
-	vals reflect.Value
+	p           unsafe.Pointer
+	size        uintptr
+	keys        reflect.Value
+	vals        reflect.Value
+	keyArrayPtr unsafe.Pointer
+	valArrayPtr unsafe.Pointer
 }
 
 type tree struct {
@@ -81,6 +83,10 @@ type tree struct {
 	valType     reflect.Type
 	key         reflect.Value
 	val         reflect.Value
+	keyT        *_type
+	valT        *_type
+	keySize     uintptr
+	valSize     uintptr
 	size        int
 	compare     func(a, b interface{}) int
 	unique      bool
@@ -114,23 +120,27 @@ func (t *tree) Init(unique bool, key, val interface{}, compare func(a, b interfa
 func (t *tree) init(unique bool, key, val interface{}, compare func(a, b interface{}) int) {
 	t.header = node{-1, -1}
 	t.unique = unique
-	t.keyType = reflect.TypeOf(key)
-	t.valType = reflect.TypeOf(val)
 	t.size = 0
 	t.compare = compare
 	t.spans = nil
 	t.freeNodes = nil
 	t.maxSpan = _DefaultMaxSpan
 
-	if t.keyType == nil {
+	if key == nil {
 		panic(ErrNoData.Error())
 	}
 	//fmt.Println(t.keyType.String(), t.valType.String())
+	t.keyType = reflect.TypeOf(key)
 	t.key = reflect.ValueOf(key)
-	t.indirectkey = isDirectIface(unpackIface(key)._type)
-	if t.valType != nil {
+	t.keyT = unpackIface(key)._type
+	t.keySize = t.keyType.Size()
+	t.indirectkey = isDirectIface(t.keyT)
+	if val != nil {
+		t.valType = reflect.TypeOf(val)
 		t.val = reflect.ValueOf(val)
-		t.indirectval = isDirectIface(unpackIface(val)._type)
+		t.valT = unpackIface(val)._type
+		t.valSize = t.valType.Size()
+		t.indirectval = isDirectIface(t.valT)
 	}
 	t.header = t.newNode(key, val)
 	t.getValueOfKey(t.header).Set(reflect.Zero(t.keyType)) // set key of header to zero value of key type
@@ -207,26 +217,24 @@ func (t *tree) setValueOfVal(n node, val reflect.Value) {
 	t.getValueOfVal(n).Set(val)
 }
 
+func arrayAt(p unsafe.Pointer, i int, eltSize uintptr) unsafe.Pointer {
+	return unsafe.Pointer(uintptr(p) + uintptr(i)*eltSize)
+}
+
 func (t *tree) getKey(n node) interface{} {
-	// func getValueOfKey can not be inlined, but it's invoke frequently,
-	// so copy the func code to there
-	key := t.spans[n.i].keys.Index(int(n.j))
-	iface := *(*eface)(unsafe.Pointer(&key))
+	key := arrayAt(t.spans[n.i].keyArrayPtr, int(n.j), t.keySize)
 	if t.indirectkey {
-		iface.p = *(*unsafe.Pointer)(iface.p)
+		key = *(*unsafe.Pointer)(key)
 	}
-	return *(*interface{})(unsafe.Pointer(&iface))
+	return pack2Iface(t.keyT, key)
 }
 
 func (t *tree) getVal(n node) interface{} {
-	// func getValueOfVal can not be inlined, but it's invoke frequently,
-	// so copy the func code to there
-	val := t.spans[n.i].vals.Index(int(n.j))
-	iface := *(*eface)(unsafe.Pointer(&val))
+	val := arrayAt(t.spans[n.i].valArrayPtr, int(n.j), t.valSize)
 	if t.indirectval {
-		iface.p = *(*unsafe.Pointer)(iface.p)
+		val = *(*unsafe.Pointer)(val)
 	}
-	return *(*interface{})(unsafe.Pointer(&iface))
+	return pack2Iface(t.valT, val)
 }
 
 func (t *tree) setKey(n node, key interface{}) {
@@ -248,6 +256,10 @@ func (t *tree) copyNodeData(des, src node) {
 	}
 }
 
+func getArrayPtrOfSliceValue(s reflect.Value) unsafe.Pointer {
+	return (*slice)((*eface)(unsafe.Pointer(&s)).p).array
+}
+
 func (t *tree) newSpan() {
 	t.curSpan = uintptr(t.size)
 	if t.curSpan > uintptr(t.maxSpan) {
@@ -255,10 +267,13 @@ func (t *tree) newSpan() {
 	} else if t.size <= 8 {
 		t.curSpan = 8 // begin at 8 node, and then the curSpan must be the multiple of 8
 	}
+
 	span := mem{p: newmem(t.curSpan * (_NodeOffSet + _ColorSize)), size: t.curSpan}
 	span.keys = reflect.MakeSlice(reflect.SliceOf(t.keyType), int(t.curSpan), int(t.curSpan))
+	span.keyArrayPtr = getArrayPtrOfSliceValue(span.keys)
 	if t.valType != nil {
 		span.vals = reflect.MakeSlice(reflect.SliceOf(t.valType), int(t.curSpan), int(t.curSpan))
+		span.valArrayPtr = getArrayPtrOfSliceValue(span.vals)
 	}
 	//fmt.Println("keys:", span.keys.String(), "vals:", span.vals.String())
 	t.spans = append(t.spans, span)

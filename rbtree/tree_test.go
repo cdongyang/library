@@ -2,9 +2,11 @@ package rbtree
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"testing"
+	"unsafe"
 
 	"github.com/cdongyang/library/algorithm"
 	"github.com/cdongyang/library/randint"
@@ -676,4 +678,40 @@ func TestGC(t *testing.T) {
 		_, _ = k, v
 		test.MemStats("free node")
 	})
+}
+
+func TestGetArrayPtrOfSliceValue(t *testing.T) {
+	a := 10
+	atype := reflect.TypeOf(a)
+	avalue := reflect.ValueOf(a)
+	as := reflect.MakeSlice(reflect.SliceOf(atype), 4, 4)
+	asp := getArrayPtrOfSliceValue(as)
+	as.Index(0).Set(avalue)
+	as.Index(2).Set(avalue)
+	t.Log(*(*[4]int)(asp))
+	t.Log(pack2Iface(unpackIface(a)._type, arrayAt(asp, 2, 8)))
+	if *(*int)(asp) != a {
+		t.Logf("%+v\n%+v\n", as, *(*slice)((*eface)(unsafe.Pointer(&as)).p))
+		t.Fatal(*(*int)(asp))
+	}
+	b := &a
+	btype := reflect.TypeOf(b)
+	bvalue := reflect.ValueOf(b)
+	bs := reflect.MakeSlice(reflect.SliceOf(btype), 4, 4)
+	bsp := getArrayPtrOfSliceValue(bs)
+	bs.Index(0).Set(bvalue)
+	bs.Index(2).Set(bvalue)
+	t.Log(*(*[4]unsafe.Pointer)(bsp))
+	t.Log(pack2Iface(unpackIface(b)._type, *(*unsafe.Pointer)(arrayAt(bsp, 2, 8))), b)
+	if **(**int)(bsp) != a {
+		t.Fatal(**(**int)(bsp))
+	}
+	tree := NewTree2(false)
+	beg, ok := tree.Insert("10", b)
+	if !ok {
+		t.Fatal()
+	}
+	if beg.GetKey() != "10" || beg.GetVal() != b {
+		t.Fatal(beg.GetKey(), beg.GetVal())
+	}
 }
