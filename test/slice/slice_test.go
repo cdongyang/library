@@ -72,3 +72,8 @@ func TestAppendSlice(t *testing.T) {
 		}
 	}
 }
+
+func TestSliceLen(t *testing.T) {
+	a := make([]int, 10)
+	t.Log(len(a), cap(a))
+}

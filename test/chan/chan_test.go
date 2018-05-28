@@ -12,10 +12,8 @@ func TestChan(t *testing.T) {
 	ch := make(chan struct{})
 	go func() {
 		for {
-			select {
-			case <-ch:
-				fmt.Println("close chan")
-			}
+			<-ch
+			fmt.Println("close chan")
 		}
 	}()
 	time.Sleep(time.Second)
@@ -47,4 +45,24 @@ func TestChanMiltiRecv(t *testing.T) {
 	group.Wait()
 	close(closech)
 	time.Sleep(time.Second)
+}
+
+func TestChanClose(t *testing.T) {
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	var ch chan int
+	if ch != nil {
+		t.Fatal("not nil")
+	}
+	ch = make(chan int)
+	if ch == nil {
+		t.Fatal("nil")
+	}
+	close(ch)
+	if ch != nil {
+		t.Log("close chan is not nil")
+	}
+	close(ch)
 }
