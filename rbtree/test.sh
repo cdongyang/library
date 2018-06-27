@@ -1,1 +1,0 @@
-go test -coverprofile=cover.out -v ; go tool cover -html=cover.out ; rm cover.out

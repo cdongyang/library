@@ -1,9 +1,10 @@
-# rbtree [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![GoDoc](https://godoc.org/github.com/cdongyang/library/rbtree?status.svg)](https://godoc.org/github.com/cdongyang/library/rbtree) [![Go Report Card](https://goreportcard.com/badge/github.com/cdongyang/library)](https://goreportcard.com/report/github.com/cdongyang/library)
+# rbtree [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![GoDoc](https://godoc.org/github.com/cdongyang/rbtree?status.svg)](https://godoc.org/github.com/cdongyang/rbtree) [![Go Report Card](https://goreportcard.com/badge/github.com/cdongyang/rbtree)](https://goreportcard.com/report/github.com/cdongyang/rbtree)
+this project has been move to [github.com/cdongyang/rbtree](https://github.com/cdongyang/rbtree)
 ## A red-black tree with an API similar to C++ STL's.
 a high performance red-black tree with less heap objects.
 ## Installtion
 ```
-    go get github.com/cdongyang/library/rbtree
+    go get -u -v github.com/cdongyang/rbtree
 ```
 ## Test
 run test:
@@ -13,7 +14,7 @@ coverage: 95.5% of statements
 ```
 run bench:
 ```sh
-/bin/go test -v -benchmem -run=^$ github.com/cdongyang/library/rbtree -bench ^Benchmark$
+/bin/go test -v -benchmem -run=^$ github.com/cdongyang/rbtree -bench ^Benchmark$
 ```
 ## Example
 more example please see example_test.go
